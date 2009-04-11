@@ -1,0 +1,21 @@
+<html>
+<head>
+	<title>Alignment List</title>
+</head>
+<body>
+	<h1>Create a new alignment:</h1>
+		<form action='/alignments/' enctype="multipart/form-data" method="POST" />
+			{{ form.as_p }}
+			<input type="submit" value="submit" />
+		</form>
+	<h1>List of alignments:</h1>
+	<ol>
+		{# obviously there's a DRY violation here -- there should be a canonical mapping from object to URL and back #}
+		
+		{% for alignment in alignments %}
+		<li> <a href="/alignment/{{alignment.id}}/">{{alignment.name}}</a> </li>
+		{% endfor %}
+	</ol>
+</body>
+</html>
+	

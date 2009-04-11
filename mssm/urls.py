@@ -1,6 +1,7 @@
 from django.conf.urls.defaults import *
+from django.conf import settings
 
-urlpatterns = patterns('mysite.mssm.views',
+urlpatterns = patterns(settings.PROJECT_NAME + '.mssm.views',
 	(r'^alignments/$','alignment_list'),
 	(r'^alignment/(\d+)/$', 'alignment_detail'),
 )
