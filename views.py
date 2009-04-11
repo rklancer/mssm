@@ -1,7 +1,8 @@
 from django.shortcuts import render_to_response, get_object_or_404, get_list_or_404
 from django.http import HttpResponseRedirect
 #FIXME redundancy
-project_module = __import__(settings.PROJECT_NAME + '.mssm.models', from_list=['Alignment', 'AlignmentRow', 'AlignmentForm'])
+from django.conf import settings
+project_module = __import__(settings.PROJECT_NAME + '.mssm.models', fromlist=['Alignment', 'AlignmentRow', 'AlignmentForm'])
 Alignment = project_module.Alignment
 AlignmentRow = project_module.AlignmentRow
 AlignmentForm = project_module.AlignmentForm
