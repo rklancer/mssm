@@ -1,15 +1,10 @@
 from django.conf import settings
 from django.contrib import admin
 
-# the following dynamically imports Alignment and AlignmentRow
-# without hardcoding the Django project name
+# the following line allows us to reference Alignment and AlignmentRow from the
+# MSSM model without hardcoding the Django project name into an import statement
 
-MODELS = settings.PROJECT_NAME + '.mssm.models'
-project_module = __import__(MODELS)
-Alignment = project_module.mssm.models.Alignment
-AlignmentRow = project_module.mssm.models.AlignmentRow
+project_module = __import__(settings.PROJECT_NAME + '.mssm.models')
 
-# now register the models...
-
-admin.site.register(Alignment)
-admin.site.register(AlignmentRow)
+admin.site.register(project_module.mssm.models.Alignment)
+admin.site.register(project_module.mssm.models.AlignmentRow)

@@ -36,7 +36,7 @@ def alignment_list(request):
 		form = AlignmentForm(form_data)
 			
 	alignments = Alignment.objects.all()
-	return render_to_response('mssm/alignment_list.html', {'alignments' : alignments, 'form' : form})
+	return render_to_response('alignment_list.html', {'alignments' : alignments, 'form' : form})
 
 
 def alignment_detail(request, alignment_id):
@@ -44,7 +44,7 @@ def alignment_detail(request, alignment_id):
 	alignment_rows = alignment.alignmentrow_set.all()
 	header_row = range(1,alignment.length+1)
 
-	return render_to_response('mssm/alignment_detail.html', 
+	return render_to_response('alignment_detail.html', 
 		{'alignment': alignment, 
 		 'alignment_rows': alignment_rows,
 		 'header_row': header_row})
