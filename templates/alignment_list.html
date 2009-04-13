@@ -9,11 +9,9 @@
             <input type="submit" value="submit" />
         </form>
     <h1>List of alignments:</h1>
-    <ol>
-        {# obviously there's a DRY violation here -- there should be a canonical mapping from object to URL and back #}
-        
+    <ol>        
         {% for alignment in alignments %}
-        <li> <a href="/alignment/{{alignment.id}}/">{{alignment.name}}</a> </li>
+        <li> <a href="{% url mssm.views.alignment_detail alignment.id %}">{{alignment.name}}</a> </li>
         {% endfor %}
     </ol>
 </body>
