@@ -1,19 +1,19 @@
 <html>
 <head>
-    <title>Alignment {{ alignment.id }} Detail</title>
+    <title>Alignment {{ alignment.id }}: {{ alignment.name }}</title>
 </head>
 <body>
-    <h1>Detail of alignment {{ alignment.id }}</h1>
-    <h2>{{ alignment.name }}</h2>
-    <ul>    
-        <li>{{ alignment.description }}</li>
-        <li>Context URL: <a href="{{alignment.context_url}}">{{alignment.context_url}}</a></li>
-        <li>Source URL: <a href="{{alignment.source_url}}">{{alignment.source_url}}</a></li>
+    <h1>Detail of alignment {{ alignment.id }}: {{ alignment.name }}</h1>
+   
+    <p>{{ alignment.description }}</p>
+    <ul> 
+        <li>Context: <a href="{{alignment.context_url}}">{{alignment.context_url}}</a></li>
+        <li>Source: <a href="{{alignment.source_url}}">{{alignment.source_url}}</a></li>
         <li>File: <a href="{{alignment.source_file.url}}">{{alignment.source_file.url}}</a></li>
     </ul>
     
     <table>
-        <tr><th>row id</th>{% for colnum in header_row %}<th>{{colnum}}</th>{% endfor %}</tr>
+        <tr><th>row</th>{% for colnum in header_row %}<th>{{colnum}}</th>{% endfor %}</tr>
         {% for row in alignment_rows %}
         <tr><td>{{row.name}}</td>{% for residue in row.sequence_as_list %}<td>{{residue}}</td>{% endfor %}</tr>
         {% endfor %}

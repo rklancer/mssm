@@ -1,5 +1,5 @@
 from django.shortcuts import render_to_response, get_object_or_404
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseNotAllowed
 from django.core.urlresolvers import reverse
 from django.db.models.fields.files import FieldFile
 from urllib import urlretrieve
@@ -13,16 +13,15 @@ AlignmentForm = project_module.AlignmentForm
 
 
 def alignment_list(request):
+    
     if request.method == 'POST':
         form = AlignmentForm(request.POST, request.FILES)
-        if not form.is_valid():
-            # display form with errors
-            return HttpResponseRedirect(reverse(alignment_list))
-        else:
+        if form.is_valid():      
             new_alignment = form.save()
 
             if not new_alignment.source_file:
-                # the field object from the Alignment model can generate a filename in the appropriate uploads directory
+                # no file => we need to retrieve one from the url in the source_url field
+                # (The Alignment model knows how to generate a filename in the uploads dir.)
                 model_field = new_alignment.source_file.field
                 upload_filename = model_field.generate_filename(new_alignment, "%d.%s" % (new_alignment.id, new_alignment.format))
                 urlretrieve(new_alignment.source_url, settings.MEDIA_ROOT + upload_filename)
@@ -33,12 +32,16 @@ def alignment_list(request):
     
             return HttpResponseRedirect(reverse(alignment_detail, args=[new_alignment.id]))
 
-    if request.method == 'GET':
-        form_data = {}
+    elif request.method == 'GET':
+        form = AlignmentForm()
         if 'url' in request.GET and request.GET['url']:
-            form_data['source_url'] = request.GET['url']
-        form = AlignmentForm(form_data)
+            form.initial = { 'source_url': request.GET['url'] }
             
+    else:
+        response = HttpResponseNotAllowed(permitted_methods=['GET', 'POST'])
+        response.write('Method %s not allowed.' % request.method)
+        return response
+
     alignments = Alignment.objects.all()
     return render_to_response('alignment_list.html', {'alignments' : alignments, 'form' : form})
 

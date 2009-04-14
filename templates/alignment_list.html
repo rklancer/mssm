@@ -3,7 +3,7 @@
     <title>Alignment List</title>
 </head>
 <body>
-    <h1>Create a new alignment:</h1>
+    <h1>Import an alignment:</h1>
         <form action="{% url mssm.views.alignment_list %}" enctype="multipart/form-data" method="POST" />
             {{ form.as_p }}
             <input type="submit" value="submit" />
