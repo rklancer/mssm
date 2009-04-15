@@ -13,23 +13,16 @@ AlignmentForm = project_module.AlignmentForm
 
 
 def alignment_list(request):
-    
+        
     if request.method == 'POST':
         form = AlignmentForm(request.POST, request.FILES)
-        if form.is_valid():      
-            new_alignment = form.save()
 
-            if not new_alignment.source_file:
-                # no file => we need to retrieve one from the url in the source_url field
-                # (The Alignment model knows how to generate a filename in the uploads dir.)
-                model_field = new_alignment.source_file.field
-                upload_filename = model_field.generate_filename(new_alignment, "%d.%s" % (new_alignment.id, new_alignment.format))
-                urlretrieve(new_alignment.source_url, settings.MEDIA_ROOT + upload_filename)
-                new_alignment.source_file = FieldFile(instance=new_alignment, field=model_field, name=upload_filename)
+        if form.is_valid():
             
-            new_alignment.save()
-            new_alignment.extract_rows()
-    
+            new_alignment = form.save()
+            new_alignment.extract_alignment_details(form.cleaned_data['biopy_alignment'])
+            new_alignment.save_file(form.cleaned_data['file_contents'])
+
             return HttpResponseRedirect(reverse(alignment_detail, args=[new_alignment.id]))
 
     elif request.method == 'GET':
