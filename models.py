@@ -5,15 +5,11 @@ from django.forms import ValidationError
 from django.forms.util import ErrorList
 from django.conf import settings
 from django.db.models.fields.files import FieldFile
-from django.forms.util import ErrorList
 
 from urllib import urlopen
 from Bio import AlignIO
 from StringIO import StringIO
 import os
-
-# what's the right place for object URLs?
-# what's the right place for forms?
 
 ALIGNMENT_FORMAT_CHOICES = (
     ('clustal', 'Clustal'),
@@ -39,7 +35,6 @@ class Alignment(models.Model):
     source_file = models.FileField(blank=True, null=True, upload_to=MSSM_UPLOAD_DIR)
     
     def extract_alignment_details(self, biopy_alignment):
-            
         self.length = biopy_alignment.get_alignment_length()
         self.save()
         
@@ -84,8 +79,12 @@ class AlignmentRow(models.Model):
 
 class AlignmentForm(ModelForm):
     
-    def clean(self):
+    class Meta:
+        model = Alignment
+        exclude = ('length',)
         
+        
+    def clean(self):
         cleaned_data = self.cleaned_data
         source_url = cleaned_data.get('source_url')
         source_file = cleaned_data.get('source_file')
@@ -118,8 +117,4 @@ class AlignmentForm(ModelForm):
         
         cleaned_data['biopy_alignment'] = biopy_alignment
         return cleaned_data
-    
-        
-    class Meta:
-        model = Alignment
-        exclude = ('length',)
+

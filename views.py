@@ -1,14 +1,11 @@
 from django.shortcuts import render_to_response, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponseNotAllowed
 from django.core.urlresolvers import reverse
-from django.db.models.fields.files import FieldFile
-from urllib import urlretrieve
 
 #FIXME redundancy
 from django.conf import settings
-project_module = __import__(settings.PROJECT_NAME + '.mssm.models', fromlist=['Alignment', 'AlignmentRow', 'AlignmentForm'])
+project_module = __import__(settings.PROJECT_NAME + '.mssm.models', fromlist=['Alignment', 'AlignmentForm'])
 Alignment = project_module.Alignment
-AlignmentRow = project_module.AlignmentRow
 AlignmentForm = project_module.AlignmentForm
 
 
@@ -18,10 +15,10 @@ def alignment_list(request):
         form = AlignmentForm(request.POST, request.FILES)
 
         if form.is_valid():
-            
             new_alignment = form.save()
             new_alignment.extract_alignment_details(form.cleaned_data['biopy_alignment'])
-            new_alignment.save_file(form.cleaned_data['file_contents'])
+            if 'file_contents' in form.cleaned_data:
+                new_alignment.save_file(form.cleaned_data['file_contents'])
 
             return HttpResponseRedirect(reverse(alignment_detail, args=[new_alignment.id]))
 
