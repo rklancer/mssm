@@ -2,24 +2,24 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponseNotAllowed
 from django.core.urlresolvers import reverse
 
-from models import AlignmentForm
+from models import CreateAlignmentForm
 from models import Alignment
 
 def alignment_list(request):
         
     if request.method == 'POST':
-        form = AlignmentForm(request.POST, request.FILES)
+        form = CreateAlignmentForm(request.POST, request.FILES)
         
         if form.is_valid():
             new_alignment = form.save()
             new_alignment.extract_alignment_details(form.cleaned_data['biopy_alignment'])
-            if 'file_contents' in form.cleaned_data:
-                new_alignment.save_file(form.cleaned_data['file_contents'])
+            if 'remote_url_contents' in form.cleaned_data:
+                new_alignment.save_to_file(form.cleaned_data['remote_url_contents'])
 
             return HttpResponseRedirect(reverse(alignment_detail, args=[new_alignment.id]))
 
     elif request.method == 'GET':
-        form = AlignmentForm()
+        form = CreateAlignmentForm()
         if 'url' in request.GET and request.GET['url']:
             form.initial = { 'source_url': request.GET['url'] }
             

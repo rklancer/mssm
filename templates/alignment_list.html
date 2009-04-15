@@ -5,8 +5,12 @@
 <body>
     <h1>Import an alignment:</h1>
         <form action="{% url mssm.views.alignment_list %}" enctype="multipart/form-data" method="POST" />
-            {{ form.as_p }}
-            <input type="submit" value="submit" />
+        <table>
+            {{ form.as_table }}
+            <tr>
+                <th><input type="submit" value="submit" /></th>
+            </tr>
+        </table>
         </form>
     <h1>List of alignments:</h1>
     <ol>        
