@@ -2,14 +2,14 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponseNotAllowed
 from django.core.urlresolvers import reverse
 
-from mssm.models import AlignmentForm
-from mssm.models import Alignment
+from models import AlignmentForm
+from models import Alignment
 
 def alignment_list(request):
         
     if request.method == 'POST':
         form = AlignmentForm(request.POST, request.FILES)
-
+        
         if form.is_valid():
             new_alignment = form.save()
             new_alignment.extract_alignment_details(form.cleaned_data['biopy_alignment'])

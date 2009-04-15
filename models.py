@@ -82,14 +82,14 @@ class AlignmentForm(ModelForm):
     class Meta:
         model = Alignment
         exclude = ('length',)
-        
-        
+
+
     def clean(self):
         cleaned_data = self.cleaned_data
         source_url = cleaned_data.get('source_url')
         source_file = cleaned_data.get('source_file')
         format = cleaned_data.get('format')
-            
+        
         if source_file:
             # workaround ticket 7712: source_file may be an InMemoryUploadedFile, which doesn't implement readlines()
             # (see http://code.djangoproject.com/ticket/7712)
@@ -113,6 +113,7 @@ class AlignmentForm(ModelForm):
         try:
             biopy_alignment = AlignIO.read(file_object, format)
         except ValueError:
+
             raise ValidationError("The supplied file could not be parsed. Perhaps you chose the wrong format?")
         
         cleaned_data['biopy_alignment'] = biopy_alignment
