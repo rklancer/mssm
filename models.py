@@ -100,13 +100,13 @@ class AlignmentForm(ModelForm):
         elif source_url:
             try:
                 file_contents = urlopen(source_url).read()
-                file_object = StringIO(file_contents)
             except IOError:
                 self._errors['source_url'] = ErrorList(['Could not load url: %s' % source_url])
                 del cleaned_data['source_url']
                 return cleaned_data
             
             cleaned_data['file_contents'] = file_contents
+            file_object = StringIO(file_contents)
             
         else:
             raise ValidationError("You need to either supply a file or a valid URL.")
