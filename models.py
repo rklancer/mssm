@@ -91,7 +91,7 @@ class AlignmentForm(ModelForm):
         format = cleaned_data.get('format')
             
         if source_file:
-            # workaround for ticket 7712: source_file if often an InMemoryUploadedObject, which doesn't implement readlines()
+            # workaround ticket 7712: source_file may be an InMemoryUploadedFile, which doesn't implement readlines()
             # (see http://code.djangoproject.com/ticket/7712)
             
             file_object = StringIO(source_file.read())

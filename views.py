@@ -2,12 +2,8 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponseNotAllowed
 from django.core.urlresolvers import reverse
 
-#FIXME redundancy
-from django.conf import settings
-project_module = __import__(settings.PROJECT_NAME + '.mssm.models', fromlist=['Alignment', 'AlignmentForm'])
-Alignment = project_module.Alignment
-AlignmentForm = project_module.AlignmentForm
-
+from mssm.models import AlignmentForm
+from mssm.models import Alignment
 
 def alignment_list(request):
         
