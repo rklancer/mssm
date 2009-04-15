@@ -1,6 +1,7 @@
 from django.shortcuts import render_to_response, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponseNotAllowed
 from django.core.urlresolvers import reverse
+from django.conf import settings
 
 from models import CreateAlignmentForm
 from models import Alignment
@@ -41,3 +42,7 @@ def alignment_detail(request, alignment_id):
         { 'alignment': alignment, 
           'alignment_rows': alignment_rows,
           'header_row': header_row })
+
+def index_page(request):
+    
+    return render_to_response('index.html', {'absolute_url_prefix' : settings.ABSOLUTE_URL_PREFIX})
