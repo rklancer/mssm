@@ -53,7 +53,20 @@ def alignment_detail(request, alignment_id):
             return HttpResponseRedirect(reverse(alignment_detail, args=[alignment.id]))
 
     elif request.method == 'GET':
+        
         alignment_rows = alignment.alignmentrow_set.all()
+        
+        if 'sort-by' in request.GET and request.GET['sort-by']:
+            sort_by = int(request.GET['sort-by'])
+            col = [row.sequence[sort_by-1] for row in alignment_rows]
+            l = zip(col, range(len(col)+1))
+            l.sort()            # sorts list of tuples by first element of tuple, then second
+            alignment_rows = [alignment_rows[t[1]] for t in l]
+
+        if 'show-ungapped' in request.GET and request.GET['show-ungapped']:
+            return HttpResponse("Show row %s ungapped" % request.GET['show-ungapped'])
+            
+        
         header_row = range(1,alignment.length+1)
 
         context = { 'alignment': alignment, 

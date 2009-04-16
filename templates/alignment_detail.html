@@ -3,7 +3,7 @@
     <title>Alignment {{ alignment.id }}: {{ alignment.name }}</title>
 </head>
 <body>
-    <a href="{% url mssm.views.alignment_list %}">Return to MSSM aignment list</a>
+    <a href="{% url mssm.views.alignment_list %}">Return to MSSM alignment list</a>
     <h1>Detail of alignment {{ alignment.id }}: {{ alignment.name }}</h1>
    
     <ul>
@@ -62,7 +62,7 @@
         <tr>
             <th>row</th>
             {% for colnum in header_row %}
-            <th>{{colnum}}</th>
+            <th><a href="?sort-by={{colnum}}">{{colnum}}</a></th>
             {% endfor %}
         </tr>
             
