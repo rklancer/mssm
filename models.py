@@ -29,7 +29,6 @@ class Alignment(models.Model):
         "Format of alignment file",
         max_length=max([len(t[0]) for t in ALIGNMENT_FORMAT_CHOICES]), 
         choices = ALIGNMENT_FORMAT_CHOICES,
-        blank=False
     )
     description = models.TextField("Description of alignment")
     context_url = models.URLField("Optional URL with more info", max_length=1000, blank=True)
@@ -41,11 +40,14 @@ class Alignment(models.Model):
         self.length = biopy_alignment.get_alignment_length()
         self.save()
         
+        row_num = 1
         for biopy_seqrec in biopy_alignment:
             new_row = AlignmentRow()
             new_row.alignment = self
             new_row.sequence = str(biopy_seqrec.seq)
             new_row.name = biopy_seqrec.id
+            new_row.row_num = row_num
+            row_num += 1
             new_row.save()
             
             
@@ -68,6 +70,7 @@ class AlignmentRow(models.Model):
     alignment = models.ForeignKey(Alignment)
     name = models.CharField(max_length=100)
     sequence = models.TextField()
+    row_num = models.IntegerField(editable=False)
 
     def _get_sequence_as_list(self):
         return [c[0] for c in zip(self.sequence)]

@@ -64,15 +64,20 @@ def alignment_detail(request, alignment_id):
             alignment_rows = [alignment_rows[t[1]] for t in l]
 
         if 'show-ungapped' in request.GET and request.GET['show-ungapped']:
-            return HttpResponse("Show row %s ungapped" % request.GET['show-ungapped'])
-            
-        
-        header_row = range(1,alignment.length+1)
+            show_ungapped = int(request.GET['show-ungapped'])
+            ungapped_row = alignment.alignmentrow_set.get(row_num=show_ungapped) 
+            to_show = [r != '-' for r in ungapped_row.sequence]
+        else:
+            to_show = [True] * alignment.length
+
+        header_row = [t[0] for t in zip(range(1,alignment.length+1), to_show) if t[1]]
+        for row in alignment_rows:
+            row.filtered_sequence = [t[0] for t in zip(row.sequence_as_list, to_show) if t[1]]
 
         context = { 'alignment': alignment, 
                     'alignment_rows': alignment_rows,
                     'header_row': header_row }
-                    
+
         if 'edit' in request.GET:
             context['edit_form'] = EditAlignmentForm(instance=alignment)
         elif 'delete' in request.GET:

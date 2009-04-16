@@ -60,16 +60,20 @@
     <table>
     {% spaceless %}
         <tr>
-            <th>row</th>
-            {% for colnum in header_row %}
-            <th><a href="?sort-by={{colnum}}">{{colnum}}</a></th>
+            <th>description</th>
+            <th><a href="{% url mssm.views.alignment_detail alignment.id %}">row</a></th>
+            <th></th>
+            {% for col in header_row %}
+            <th><a href="?sort-by={{col}}">{{col}}</a></th>
             {% endfor %}
         </tr>
             
         {% for row in alignment_rows %}
         <tr>
             <td>{{row.name}}</td>
-            {% for residue in row.sequence_as_list %}
+            <td>{{row.row_num}}</td>
+            <td><a href="?show-ungapped={{row.row_num}}">ungap</a></td>
+            {% for residue in row.filtered_sequence %}
             <td>{{residue}}</td>
             {% endfor %}
         </tr>
