@@ -131,7 +131,7 @@ class CreateAlignmentForm(BaseAlignmentForm):
             biopy_alignment = AlignIO.read(file_object, format)
         except ValueError:
             raise ValidationError(
-                "The file at the supplied URL could not be parsed. Perhaps you chose the wrong format?")
+                "The alignment could not be parsed. Perhaps you chose the wrong format?")
         
         cleaned_data['biopy_alignment'] = biopy_alignment
         return cleaned_data
