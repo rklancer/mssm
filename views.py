@@ -59,7 +59,7 @@ def alignment_detail(request, alignment_id):
         if 'sort-by' in request.GET and request.GET['sort-by']:
             sort_by = int(request.GET['sort-by'])
             col = [row.sequence[sort_by-1] for row in alignment_rows]
-            l = zip(col, range(len(col)+1))
+            l = zip(col, range(len(col)))
             l.sort()            # sorts list of tuples by first element of tuple, then second
             alignment_rows = [alignment_rows[t[1]] for t in l]
 
