@@ -3,6 +3,7 @@
     <title>Alignment {{ alignment.id }}: {{ alignment.name }}</title>
 </head>
 <body>
+    <a href="{% url mssm.views.alignment_list %}">Return to MSSM aignment list</a>
     <h1>Detail of alignment {{ alignment.id }}: {{ alignment.name }}</h1>
    
     <ul>
@@ -45,9 +46,13 @@
     {% else %}
     <p>{{ alignment.description }}</p>
     <ul> 
-        <li>Context: <a href="{{alignment.context_url}}">{{alignment.context_url}}</a></li>
-        <li>Source: <a href="{{alignment.source_url}}">{{alignment.source_url}}</a></li>
-        <li>File: <a href="{{alignment.local_file.url}}">{{alignment.local_file.url}}</a></li>
+        {% if alignment.context_url %}
+        <li>More context: <a href="{{alignment.context_url}}">{{alignment.context_url}}</a></li>
+        {% endif %}
+        {% if alignment.source_url %}
+        <li>Downloaded from: <a href="{{alignment.source_url}}">{{alignment.source_url}}</a></li>
+        {% endif %}
+        <li>Download ({{alignment.format}} format): <a href="{{alignment.local_file.url}}">{{alignment.local_file.url}}</a></li>
     </ul>
     {% endif %}
 
