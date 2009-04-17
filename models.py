@@ -8,7 +8,9 @@ from django.db.models.fields.files import FieldFile
 from urllib import urlopen
 from Bio import AlignIO
 from StringIO import StringIO
+from datetime import datetime
 import os
+
 
 ALIGNMENT_FORMAT_CHOICES = (
     ('clustal', 'Clustal'),
@@ -65,7 +67,11 @@ class Alignment(models.Model):
             upload_file.close()
             self.local_file = FieldFile(instance=self, field=model_field, name=upload_filename)
             self.save()
-
+    
+    def save(self, *args, **kwargs):
+        super(Alignment, self).save(*args, **kwargs)
+        if AlignmentCalculation.objects.filter(alignment=self).count() == 0:
+            AlignmentCalculation(alignment=self, last_accessed=datetime.now()).save()
 
 
 class AlignmentRow(models.Model):
@@ -74,12 +80,16 @@ class AlignmentRow(models.Model):
     sequence = models.TextField()
     row_num = models.IntegerField(editable=False)
     
-    def save(self):
-        super(AlignmentRow, self).save()
+    def save(self, *args, **kwargs):
+        super(AlignmentRow, self).save(*args, **kwargs)
+        calc = AlignmentCalculation.objects.get(alignment=self.alignment)
         for index, residue in enumerate(self.sequence):
             cell = AlignmentCell(row=self, col=index+1, residue=residue)
             cell.save()
-        
+            value = ord(cell.residue) if cell.residue != '-' else 255
+            cell_stat = CellStatistic(cell=cell, calculation=calc, value=value)
+            cell_stat.save()
+            
     def __unicode__(self):
         return self.name
 
@@ -91,6 +101,38 @@ class AlignmentCell(models.Model):
     
     class Meta:
         unique_together = (('col', 'row'),) 
+    
+    
+class Phylogeny(models.Model):
+    pass
+    
+    
+class AlignmentSubgrouping(models.Model):
+    pass
+    
+    
+class AlignmentSubgroup(models.Model):
+    pass
+    
+    
+class AlignmentCalculation(models.Model):
+    alignment = models.ForeignKey(Alignment)
+    # link to subgrouping
+    last_accessed = models.DateTimeField()          # possibly index
+
+    
+class CellStatistic(models.Model):
+    cell = models.ForeignKey(AlignmentCell)
+    calculation = models.ForeignKey(AlignmentCalculation)
+    value = models.FloatField()
+    
+
+class RowStatistic(models.Model):
+    pass
+    
+    
+class ColumnStatistic(models.Model):
+    pass 
     
     
 class BaseAlignmentForm(ModelForm):
@@ -154,6 +196,4 @@ class EditAlignmentForm(BaseAlignmentForm):
     
     class Meta(BaseAlignmentForm.Meta):
         exclude = ['source_url', 'local_file', 'format']
-        
-        
-        
+     

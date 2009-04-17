@@ -53,8 +53,14 @@ def alignment_detail(request, alignment_id):
         if 'sort-by' in request_data and request_data['sort-by']:
             sort_by = int(request_data['sort-by'])
             column_cells = AlignmentCell.objects.filter(row__in=alignment_rows).filter(col=sort_by)
-            alignment_rows = AlignmentRow.objects.filter(
-                alignmentcell__in=column_cells).order_by('alignmentcell__residue')
+            alignment_rows = \
+                AlignmentRow.objects.extra(
+                        tables=["mssm_cellstatistic"], 
+                        where=["mssm_cellstatistic.cell_id=mssm_alignmentcell.id"], 
+                        select={'statistic_value': "mssm_cellstatistic.value"}). \
+                    filter(
+                        alignmentcell__in=column_cells). \
+                    order_by('statistic_value') 
 
         if 'show-ungapped' in request_data and request_data['show-ungapped']:
             show_ungapped = int(request_data['show-ungapped'])
