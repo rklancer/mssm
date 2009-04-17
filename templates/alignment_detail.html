@@ -56,18 +56,17 @@
     </ul>
     {% endif %}
 
-
     <table>
     {% spaceless %}
         <tr>
             <th>description</th>
-            <th><a href="{% url mssm.views.alignment_detail alignment.id %}">row</a></th>
+            <th><a href="{{ alignment.get_absolute_url }}">row</a></th>
             <th></th>
             {% for col in header_row %}
             <th><a href="?sort-by={{col}}">{{col}}</a></th>
             {% endfor %}
         </tr>
-            
+        
         {% for row in alignment_rows %}
         <tr>
             <td>{{row.name}}</td>

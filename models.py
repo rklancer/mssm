@@ -35,7 +35,15 @@ class Alignment(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     length = models.IntegerField(blank=True, null=True, editable=False)
 
-    
+    @models.permalink
+    def get_absolute_url(self):
+        # for whatever reason, must include fully qualified package path (with project path) below
+        return (settings.PROJECT_NAME + '.mssm.views.alignment_detail', [self.id])
+
+    def __unicode__(self):
+        return self.name
+
+
     def extract_alignment_details(self, biopy_alignment):
         self.length = biopy_alignment.get_alignment_length()
         self.save()
@@ -60,10 +68,7 @@ class Alignment(models.Model):
             upload_file.close()
             self.local_file = FieldFile(instance=self, field=model_field, name=upload_filename)
             self.save()
-            
-            
-    def __unicode__(self):
-        return self.name
+
 
 
 class AlignmentRow(models.Model):
@@ -71,18 +76,26 @@ class AlignmentRow(models.Model):
     name = models.CharField(max_length=100)
     sequence = models.TextField()
     row_num = models.IntegerField(editable=False)
-
-    def _get_sequence_as_list(self):
-        return [c[0] for c in zip(self.sequence)]
-    def _set_sequence_as_list(self, seqlist):
-        self.sequence = ''.join(seqlist)
-        
-    sequence_as_list = property(_get_sequence_as_list, _set_sequence_as_list)
     
+    def save(self):
+        super(AlignmentRow, self).save()
+        for index, residue in enumerate(self.sequence):
+            cell = AlignmentCell(row=self, col=index+1, residue=residue)
+            cell.save()
+        
     def __unicode__(self):
         return self.name
 
 
+class AlignmentCell(models.Model):
+    row = models.ForeignKey(AlignmentRow)
+    col = models.IntegerField()
+    residue = models.CharField(max_length=1)        # haven't yet decided which 1-letter codes to limit to...
+    
+    class Meta:
+        unique_together = (('col', 'row'),) 
+    
+    
 class BaseAlignmentForm(ModelForm):
     
     class Meta:

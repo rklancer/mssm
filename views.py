@@ -4,7 +4,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 
 from models import CreateAlignmentForm, EditAlignmentForm
-from models import Alignment
+from models import Alignment, AlignmentRow, AlignmentCell
 
 from django.http import HttpResponse
 
@@ -58,10 +58,9 @@ def alignment_detail(request, alignment_id):
         
         if 'sort-by' in request.GET and request.GET['sort-by']:
             sort_by = int(request.GET['sort-by'])
-            col = [row.sequence[sort_by-1] for row in alignment_rows]
-            l = zip(col, range(len(col)))
-            l.sort()            # sorts list of tuples by first element of tuple, then second
-            alignment_rows = [alignment_rows[t[1]] for t in l]
+            column_cells = AlignmentCell.objects.filter(row__in=alignment_rows).filter(col=sort_by)
+            alignment_rows = AlignmentRow.objects.filter(
+                alignmentcell__in=column_cells).order_by('alignmentcell__residue')
 
         if 'show-ungapped' in request.GET and request.GET['show-ungapped']:
             show_ungapped = int(request.GET['show-ungapped'])
@@ -72,7 +71,7 @@ def alignment_detail(request, alignment_id):
 
         header_row = [t[0] for t in zip(range(1,alignment.length+1), to_show) if t[1]]
         for row in alignment_rows:
-            row.filtered_sequence = [t[0] for t in zip(row.sequence_as_list, to_show) if t[1]]
+            row.filtered_sequence = [t[0] for t in zip(row.sequence, to_show) if t[1]]
 
         context = { 'alignment': alignment, 
                     'alignment_rows': alignment_rows,

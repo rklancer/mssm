@@ -15,7 +15,7 @@
     <h1>List of alignments:</h1>
     <ol>        
         {% for alignment in alignments %}
-        <li> <a href="{% url mssm.views.alignment_detail alignment.id %}">{{alignment.name}}</a> </li>
+        <li> <a href="{{ alignment.get_absolute_url }}">{{alignment.name}}</a> </li>
         {% endfor %}
     </ol>
 </body>
