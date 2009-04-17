@@ -2,6 +2,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponseNotAllowed
 from django.core.urlresolvers import reverse
 from django.conf import settings
+from django.http import QueryDict
 
 from models import CreateAlignmentForm, EditAlignmentForm
 from models import Alignment, AlignmentRow, AlignmentCell
@@ -25,45 +26,41 @@ def alignment_list(request):
         form = CreateAlignmentForm()
         if 'url' in request.GET and request.GET['url']:
             form.initial = { 'source_url': request.GET['url'] }
-            
     else:
-        response = HttpResponseNotAllowed(permitted_methods=['GET', 'POST'])
-        response.write('Method %s not allowed.' % request.method)
-        return response
+        return respond_not_allowed(request.method, permitted_methods=['GET', 'POST'])
 
     alignments = Alignment.objects.all()
     return render_to_response('alignment_list.html', {'alignments' : alignments, 'form' : form})
 
 
 def alignment_detail(request, alignment_id):
-
+        
+    method = get_request_method(request)
+    request_data = get_request_data(request)
     alignment = get_object_or_404(Alignment, pk=alignment_id)
     
-    # FIXME make this handle real PUT and DELETE
-    
-    if request.method == 'POST' and 'method_tunnel' in request.POST and request.POST['method_tunnel'] == 'DELETE':
+    if method == 'DELETE':
         alignment.delete()
         return HttpResponseRedirect(reverse(deleted))
     
-    elif request.method == 'POST' and 'method_tunnel' in request.POST and request.POST['method_tunnel'] == 'PUT':
-        form = EditAlignmentForm(request.POST, instance=alignment)
+    elif method == 'PUT':
+        form = EditAlignmentForm(request_data, instance=alignment)
             
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(alignment.get_absolute_url())
 
-    elif request.method == 'GET':
-        
+    elif method == 'GET':
         alignment_rows = alignment.alignmentrow_set.all()
         
-        if 'sort-by' in request.GET and request.GET['sort-by']:
-            sort_by = int(request.GET['sort-by'])
+        if 'sort-by' in request_data and request_data['sort-by']:
+            sort_by = int(request_data['sort-by'])
             column_cells = AlignmentCell.objects.filter(row__in=alignment_rows).filter(col=sort_by)
             alignment_rows = AlignmentRow.objects.filter(
                 alignmentcell__in=column_cells).order_by('alignmentcell__residue')
 
-        if 'show-ungapped' in request.GET and request.GET['show-ungapped']:
-            show_ungapped = int(request.GET['show-ungapped'])
+        if 'show-ungapped' in request_data and request_data['show-ungapped']:
+            show_ungapped = int(request_data['show-ungapped'])
             ungapped_row = alignment.alignmentrow_set.get(row_num=show_ungapped) 
             to_show = [r != '-' for r in ungapped_row.sequence]
         else:
@@ -77,25 +74,42 @@ def alignment_detail(request, alignment_id):
                     'alignment_rows': alignment_rows,
                     'header_row': header_row }
 
-        if 'edit' in request.GET:
+        if 'edit' in request_data:
             context['edit_form'] = EditAlignmentForm(instance=alignment)
-        elif 'delete' in request.GET:
+        elif 'delete' in request_data:
             context['show_delete_form'] = True
             
         return render_to_response('alignment_detail.html', context)
 
     else:
-        # technically, this is a lie. We don't even handle *actual* PUT requests yet
-        
-        response = HttpResponseNotAllowed(permitted_methods=['GET', 'PUT', 'DELETE'])
-        response.write('Method %s not allowed.' % request.method)
-        return response
+        return respond_not_allowed(method, permitted_methods=['GET', 'PUT', 'DELETE'])
 
 
 def index(request):
     return render_to_response('index.html', {'absolute_url_prefix' : settings.ABSOLUTE_URL_PREFIX})
     
-    
+
 def deleted(request):
     return render_to_response('deleted.html')
-    
+
+
+def respond_not_allowed(method, permitted_methods=None):
+    response = HttpResponseNotAllowed(permitted_methods)
+    response.write('Method %(method)s not allowed.' % locals())
+    return response
+
+
+def get_request_method(request):
+    if request.method == 'POST' and 'method_tunnel' in request.POST:
+        return request.POST['method_tunnel']
+    else:
+        return request.method
+
+
+def get_request_data(request):
+    if request.method == 'GET':
+        return request.GET
+    elif request.method == 'POST':
+        return request.POST
+    else:
+        return QueryDict(request.raw_post_data)
