@@ -93,7 +93,7 @@ def deleted(request):
     return render_to_response('deleted.html')
 
 
-def respond_not_allowed(method, permitted_methods=None):
+def respond_not_allowed(method, permitted_methods=[]):
     response = HttpResponseNotAllowed(permitted_methods)
     response.write('Method %(method)s not allowed.' % locals())
     return response
