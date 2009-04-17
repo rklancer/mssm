@@ -19,7 +19,7 @@ def alignment_list(request):
             if 'remote_url_contents' in form.cleaned_data:
                new_alignment.save_to_file(form.cleaned_data['remote_url_contents'])
 
-            return HttpResponseRedirect(reverse(alignment_detail, args=[new_alignment.id]))
+            return HttpResponseRedirect(new_alignment.get_absolute_url())
 
     elif request.method == 'GET':
         form = CreateAlignmentForm()
@@ -50,7 +50,7 @@ def alignment_detail(request, alignment_id):
             
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect(reverse(alignment_detail, args=[alignment.id]))
+            return HttpResponseRedirect(alignment.get_absolute_url())
 
     elif request.method == 'GET':
         
@@ -69,9 +69,9 @@ def alignment_detail(request, alignment_id):
         else:
             to_show = [True] * alignment.length
 
-        header_row = [t[0] for t in zip(range(1,alignment.length+1), to_show) if t[1]]
+        header_row = (t[0] for t in zip(xrange(1,alignment.length+1), to_show) if t[1])
         for row in alignment_rows:
-            row.filtered_sequence = [t[0] for t in zip(row.sequence, to_show) if t[1]]
+            row.filtered_sequence = (t[0] for t in zip(row.sequence, to_show) if t[1])
 
         context = { 'alignment': alignment, 
                     'alignment_rows': alignment_rows,
