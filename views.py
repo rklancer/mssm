@@ -7,8 +7,6 @@ from django.http import QueryDict
 from models import CreateAlignmentForm, EditAlignmentForm
 from models import Alignment, AlignmentRow, AlignmentCell
 
-from django.http import HttpResponse
-
 def alignment_list(request):
 
     if request.method == 'POST':
@@ -34,7 +32,7 @@ def alignment_list(request):
 
 
 def alignment_detail(request, alignment_id):
-        
+
     method = get_request_method(request)
     request_data = get_request_data(request)
     alignment = get_object_or_404(Alignment, pk=alignment_id)
@@ -45,7 +43,6 @@ def alignment_detail(request, alignment_id):
     
     elif method == 'PUT':
         form = EditAlignmentForm(request_data, instance=alignment)
-            
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(alignment.get_absolute_url())
@@ -78,7 +75,7 @@ def alignment_detail(request, alignment_id):
             context['edit_form'] = EditAlignmentForm(instance=alignment)
         elif 'delete' in request_data:
             context['show_delete_form'] = True
-            
+        
         return render_to_response('alignment_detail.html', context)
 
     else:

@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.files.storage import FileSystemStorage
 from django.forms import ModelForm
 from django.forms import ValidationError
 from django.forms.util import ErrorList
@@ -43,7 +42,6 @@ class Alignment(models.Model):
     def __unicode__(self):
         return self.name
 
-
     def extract_alignment_details(self, biopy_alignment):
         self.length = biopy_alignment.get_alignment_length()
         self.save()
@@ -57,8 +55,7 @@ class Alignment(models.Model):
             new_row.row_num = row_num
             row_num += 1
             new_row.save()
-            
-            
+                        
     def save_to_file(self, unsaved_contents):
         if not self.local_file:
             model_field = self.local_file.field
@@ -127,7 +124,7 @@ class CreateAlignmentForm(BaseAlignmentForm):
             # workaround ticket 7712: local_file may be an InMemoryUploadedFile, which doesn't implement readlines()
             # (see http://code.djangoproject.com/ticket/7712)
             
-            file_object = StringIO(local_file.read())
+            file_object = local_file._file
 
         elif source_url:
             try:
