@@ -34,9 +34,14 @@ def get_mat(alignment):
 def log_pp_mat(A):
     ncol = A.shape[1]
     logPP = np.zeros((ncol, ncol))
+    Acols = np.zeros((ncol,), dtype='O')
+    
+    for i in xrange(ncol):
+        Acols[i] = A[:,i].tolist()
+        
     for i in xrange(ncol):
         for j in xrange(i):
-            logPP[i, j] = log_partition_prob(A, i, j)
+            logPP[i, j] = log_partition_prob(Acols, i, j)
         
     return logPP
 
@@ -93,16 +98,14 @@ def print_pairs(A, i, j):
        print t[0] + ' : ' + t[1]
     
 
-def log_partition_prob(A, i, j):
+def log_partition_prob(Acols, i, j):
     # of course, this could be done less naively, with log factorials among other things,
     # but we'll get to that...
     
     nkc = defaultdict(lambda : defaultdict(float))
-    for ai, aj in izip(A[:,i].tolist(), A[:,j].tolist()):
-        nkc[ai][aj]+=1.
-
     nc = defaultdict(float)
-    for aj in A[:,j].tolist():
+    for ai, aj in izip(Acols[i], Acols[j]):
+        nkc[ai][aj]+=1.
         nc[aj] += 1.
 
     nk = dict((k, sum(nkc[k].values())) for k in nkc)
