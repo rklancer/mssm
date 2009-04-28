@@ -41,10 +41,30 @@ def log_pp_mat(A):
         
     for i in xrange(ncol):
         for j in xrange(i):
-            logPP[i, j] = log_partition_prob(Acols, i, j)
+            logPP[i, j] = log_partition_prob(Acols[i], Acols[j])
         
     return logPP
 
+
+    def log_partition_prob(Acoli, Acolj):    
+        nkc = defaultdict(lambda : defaultdict(float))
+        nc = defaultdict(float)
+        for ai, aj in izip(Acoli,Acolj):
+            nkc[ai][aj]+=1.
+            nc[aj] += 1.
+
+        nk = dict((k, sum(nkc[k].values())) for k in nkc)
+        n = sum(nk.values())
+
+        s1 = sum(logfact(nk[k]) - sum(logfact(nkc[k][c]) for c in nkc[k]) for k in nk)
+        s2 = sum(logfact(nc[c]) for c in nc)
+        s3 = logfact(n)
+
+        return s1 + s2 - s3
+        
+
+# older stuff.
+        
 
 def mi_mat(A):
     ncol = A.shape[1]
@@ -98,52 +118,4 @@ def print_pairs(A, i, j):
        print t[0] + ' : ' + t[1]
     
 
-def log_partition_prob(Acols, i, j):
-    # of course, this could be done less naively, with log factorials among other things,
-    # but we'll get to that...
-    
-    nkc = defaultdict(lambda : defaultdict(float))
-    nc = defaultdict(float)
-    for ai, aj in izip(Acols[i], Acols[j]):
-        nkc[ai][aj]+=1.
-        nc[aj] += 1.
 
-    nk = dict((k, sum(nkc[k].values())) for k in nkc)
-
-    assert sum(nk.values()) == sum(nc.values())
-    n = sum(nk.values())
-    
-    s1 = sum(logfact(nk[k]) - sum(logfact(nkc[k][c]) for c in nkc[k]) for k in nk)
-    s2 = sum(logfact(nc[c]) for c in nc)
-    s3 = logfact(n)
-    
-    return s1 + s2 - s3
-    
-    #f1 = reduce(mul,
-    #    (float(factorial(nk[k])) /
-    #        reduce(mul, (factorial(nkc[k][c]) for c in nkc[k]))
-    #     for k in nk))
-    
-    #f2 = reduce(mul, (factorial(nc[c]) for c in nc))
-    #f3 = factorial(n)
-    
-    #return f1 * f2 / f3
-    
-#crazy.
-def make_col_and_zip_arrays(A):
-    
-    ncols = A.shape[1]
-    zips = np.zeros((ncols, ncols), dtype='O')              # dtype='O' -> arbitrary python objects
-    cols = np.zeros((ncols,), dtype='O')
-    
-    for i in xrange(ncols):
-        cols[i] = A[:,i].tolist()
-    
-    for j in xrange(ncols):
-        for i in xrange(j):
-            zips[i,j] = zip(cols[i], cols[j])
-    
-    return cols, zips
- 
-    
-    
