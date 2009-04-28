@@ -1,0 +1,146 @@
+from models import Alignment, AlignmentRow
+from itertools import combinations, izip
+import numpy as np
+import scipy
+import math
+from collections import defaultdict
+from operator import mul
+from math import factorial
+
+
+def make_memoized_logfact():
+    memo = {}
+    def logfact(n):
+        if memo.has_key(n):
+            return memo[n]
+        else:
+            memo[n] = math.log(scipy.factorial(n))
+            print "(memoized logfact(%d) = %f)" % (n, memo[n])
+            return memo[n]
+    
+    return logfact
+
+logfact = make_memoized_logfact()
+    
+def get_mat(alignment):
+     
+    rows = alignment.alignmentrow_set.all()
+    A = np.chararray((rows.count(),alignment.length), 1)
+
+    for row in rows.all():
+        A[row.row_num-1] = list(row.sequence)
+    return A
+    
+def log_pp_mat(A):
+    ncol = A.shape[1]
+    logPP = np.zeros((ncol, ncol))
+    for i in xrange(ncol):
+        for j in xrange(i):
+            logPP[i, j] = log_partition_prob(A, i, j)
+        
+    return logPP
+
+
+def mi_mat(A):
+    ncol = A.shape[1]
+    MI = np.zeros((ncol, ncol))
+    for i, j in combinations(xrange(ncol),2):
+        MI[i, j] = mi(A, i, j)
+
+    return MI
+
+def mis_list(MI):
+    return [(v, np.unravel_index(i, shape)) for i,v in enumerate(MI.flat)]
+    
+def counts(A, i, j):
+    Ai = A[:,i].tolist()
+    Aj = A[:,j].tolist()
+    AiAj = zip(Ai, Aj)
+    return map(make_one_counts_dict, (AiAj, Ai, Aj))
+
+def make_one_counts_dict(l):
+    d = defaultdict(int)
+    for k in l:
+        d[k] += 1
+    return d
+    
+def H(A, i):
+    d = make_one_counts_dict(A[:,i].tolist())
+    n = sum(d.values())
+    return -sum((float(d[k])/n) * np.log2(float(d[k])/n) for k in d)
+
+def filter_pred(pair, npair, leftchar, nleft, rightchar, nright):
+    if pair[0] == '-' or pair[1] == '-':
+        return False
+    elif npair == 1:
+        if nleft == 1 and nright == 1:
+            return False
+    else:
+        return True  
+
+def mi(A, i, j):
+    n = A.shape[0]
+    pair_ct, Ai_ct, Aj_ct = counts(A, i, j)
+    pair_ct = dict((k,pair_ct[k]) for k in pair_ct if filter_pred(k, pair_ct[k], k[0], Ai_ct[k[0]], k[1], Aj_ct[k[1]]))
+    pxy_over_pxpy = np.array([n * (float(nij) / (Ai_ct[t[0]] * Aj_ct[t[1]])) for t, nij in pair_ct.iteritems()])
+    pxy = np.array(pair_ct.values())/float(n)
+    return sum(pxy * np.log2(pxy_over_pxpy))
+
+def print_pairs(A, i, j):
+    AiAj_zipped = zip(A[:,i], A[:,j])
+    AiAj_zipped.sort()
+    for t in AiAj_zipped:
+       print t[0] + ' : ' + t[1]
+    
+
+def log_partition_prob(A, i, j):
+    # of course, this could be done less naively, with log factorials among other things,
+    # but we'll get to that...
+    
+    nkc = defaultdict(lambda : defaultdict(float))
+    for ai, aj in izip(A[:,i].tolist(), A[:,j].tolist()):
+        nkc[ai][aj]+=1.
+
+    nc = defaultdict(float)
+    for aj in A[:,j].tolist():
+        nc[aj] += 1.
+
+    nk = dict((k, sum(nkc[k].values())) for k in nkc)
+
+    assert sum(nk.values()) == sum(nc.values())
+    n = sum(nk.values())
+    
+    s1 = sum(logfact(nk[k]) - sum(logfact(nkc[k][c]) for c in nkc[k]) for k in nk)
+    s2 = sum(logfact(nc[c]) for c in nc)
+    s3 = logfact(n)
+    
+    return s1 + s2 - s3
+    
+    #f1 = reduce(mul,
+    #    (float(factorial(nk[k])) /
+    #        reduce(mul, (factorial(nkc[k][c]) for c in nkc[k]))
+    #     for k in nk))
+    
+    #f2 = reduce(mul, (factorial(nc[c]) for c in nc))
+    #f3 = factorial(n)
+    
+    #return f1 * f2 / f3
+    
+#crazy.
+def make_col_and_zip_arrays(A):
+    
+    ncols = A.shape[1]
+    zips = np.zeros((ncols, ncols), dtype='O')              # dtype='O' -> arbitrary python objects
+    cols = np.zeros((ncols,), dtype='O')
+    
+    for i in xrange(ncols):
+        cols[i] = A[:,i].tolist()
+    
+    for j in xrange(ncols):
+        for i in xrange(j):
+            zips[i,j] = zip(cols[i], cols[j])
+    
+    return cols, zips
+ 
+    
+    
