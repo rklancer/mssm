@@ -4,8 +4,8 @@ import numpy as np
 import scipy
 import math
 from collections import defaultdict
-from operator import mul
 from math import factorial
+from numpy.random import permutation
 
 
 def make_memoized_logfact():
@@ -33,6 +33,96 @@ def get_mat(alignment):
     return A
     
 
+def find_nongaps(lcol, rcol):
+    return np.logical_and(lcol != '-', rcol !='-')
+        
+
+def randomized_experiment_protocol_2(A, n_expts):
+    print "saving A"
+    A.tofile('A.save')
+    nrow, ncol = A.shape
+    randomized_logPPs = np.zeros((n_expts, ncol, ncol))
+    logPP = np.zeros((ncol, ncol))
+
+    print "precalculating col_nongaps and col."
+    col_nongaps = np.zeros((ncol,), dtype='O')
+    col = np.zeros((ncol,), dtype='O')
+    for i in xrange(ncol):
+        col[i] = A[:,i]
+        col_nongaps[i] = col[i] != '-'
+
+    def save(i):
+        print "SAVING; col %d of %d completed." % (i, ncol)
+        logPP.tofile('logPP.save')
+        randomized_logPPs.tofile('randomized_logPPs.save')
+    
+    for j in xrange(ncol):
+        for i in xrange(j):
+            print "rcol %d vs. lcol %d:" % (j,i)
+            pair_nongaps = np.logical_and(col_nongaps[i], col_nongaps[j])
+            n_pair_nongaps = sum(pair_nongaps)
+            if n_pair_nongaps == 0:
+                logPP[i,j] = np.nan
+                print "  no nongaps; skipping."
+            else:
+                lcol, rcol = col[i][pair_nongaps], col[j][pair_nongaps]
+                lcol_as_list = lcol.tolist()
+                logPP[i,j] = log_partition_prob(lcol_as_list, rcol.tolist())
+                print "  stored logPP; running %d experiments." % n_expts
+                for expt in xrange(n_expts):
+                    randomized_rcol = rcol[permutation(n_pair_nongaps)]
+                    randomized_logPPs[expt, i, j] = log_partition_prob(lcol_as_list, randomized_rcol.tolist())
+
+        if j % 20 == 1:
+            save(j)
+    save(j)
+    print "done."
+    
+    
+def log_partition_prob(lcol, rcol):    
+        nkc, nc, nk = make_dicts(lcol, rcol)
+        n = sum(nk.values())
+        
+        s1 = sum(logfact(nk[k]) - sum(logfact(nkc[k][c]) for c in nkc[k]) for k in nk)
+        s2 = sum(logfact(nc[c]) for c    in nc)
+        s3 = logfact(n)
+
+        return s1 + s2 - s3
+
+
+def make_dicts(lcol, rcol):
+    nkc = defaultdict(lambda : defaultdict(float))
+    nc = defaultdict(float)
+    for cl, cr in izip(lcol, rcol):
+        nkc[cl][cr]+=1.
+        nc[cr] += 1.
+
+    nk = dict((k, sum(nkc[k].values())) for k in nkc)
+    return nkc, nc, nk
+
+
+def apply_to_randomized_logPPs(randomized_logPPs, f):
+    ncol = randomized_logPPs.shape[1]
+    randomized_logPP_results = np.zeros(randomized_logPPs[0].shape)
+    for j in xrange(ncol):
+        for i in xrange(j):
+            randomized_logPP_results[i,j] = f(randomized_logPPs[:,i,j])
+            
+    return randomized_logPP_results
+
+
+    
+def logPP_chebyshev_bound(logPP, randomized_logPPs, means, vars):
+
+    alpha = np.abs(logPP - means)
+    return vars / alpha ** 2
+
+
+# 
+# older stuff
+#
+
+
 def log_pp_mat(A):
     ncol = A.shape[1]
     logPP = np.zeros((ncol, ncol))
@@ -57,11 +147,11 @@ def randomize(A):
     copy = A.copy()
 
     for i in xrange(A.shape[1]):
-        perm = scipy.random.permutation(sum(residue_locs[:,i]))
+        perm = permutation(sum(residue_locs[:,i]))
         copy[:,i][residue_locs[:,i]] = A[:,i][residue_locs[:,i]][perm]
     return copy
+    
 
-        
 def load_experiment_files(n_expts,shape):
     nrow, ncol = shape
     A = np.fromfile('A.save', dtype='S1').reshape(shape)
@@ -72,6 +162,8 @@ def load_experiment_files(n_expts,shape):
     return A, randomized_As, logPP, randomized_logPPs
 
 
+
+    
 def randomized_experiment(A, n_expts):
 
     randomized_As = np.zeros((n_expts,) + A.shape, dtype=A.dtype)
@@ -100,55 +192,6 @@ def rank_logPPs(logPP, randomized_logPPs):
 
     return logPP_ranks
 
-
-def apply_to_randomized_logPPs(randomized_logPPs, f):
-    ncol = randomized_logPPs.shape[1]
-    randomized_logPP_results = np.zeros(randomized_logPPs[0].shape)
-    for j in xrange(ncol):
-        for i in xrange(j):
-            randomized_logPP_results[i,j] = f(randomized_logPPs[:,i,j])
-            
-    return randomized_logPP_results
-    
-            
-def randomized_logPP_means(randomized_logPPs):
-    return apply_to_randomized_logPPs(randomized_logPPs, np.mean)
-    
-def randomized_logPP_vars(randomized_logPPs):
-    return apply_to_randomized_logPPs(randomized_logPPs, np.var)
-    
-    
-def logPP_chebyshev_bound(logPP, randomized_logPPs, means, vars):
-
-    alpha = np.abs(logPP - means)
-    return vars / alpha ** 2
-
-
-def log_partition_prob(lcol, rcol):    
-        nkc, nc, nk = make_dicts(lcol, rcol)
-        n = sum(nk.values())
-        
-        s1 = sum(logfact(nk[k]) - sum(logfact(nkc[k][c]) for c in nkc[k]) for k in nk)
-        s2 = sum(logfact(nc[c]) for c    in nc)
-        s3 = logfact(n)
-
-        return s1 + s2 - s3
-        
-def make_dicts(lcol, rcol):
-    nkc = defaultdict(lambda : defaultdict(float))
-    nc = defaultdict(float)
-    for cl, cr in izip(lcol, rcol):
-        if cl !='-' and cr != '-':
-            nkc[cl][cr]+=1.
-            nc[cr] += 1.
-
-    nk = dict((k, sum(nkc[k].values())) for k in nkc)
-
-    return nkc, nc, nk
-    
-
-# older stuff.
-        
 
 def mi_mat(A):
     ncol = A.shape[1]
