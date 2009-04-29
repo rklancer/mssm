@@ -100,25 +100,52 @@ def rank_logPPs(logPP, randomized_logPPs):
 
     return logPP_ranks
 
+
+def apply_to_randomized_logPPs(randomized_logPPs, f):
+    ncol = randomized_logPPs.shape[1]
+    randomized_logPP_results = np.zeros(randomized_logPPs[0].shape)
+    for j in xrange(ncol):
+        for i in xrange(j):
+            randomized_logPP_results[i,j] = f(randomized_logPPs[:,i,j])
+            
+    return randomized_logPP_results
     
+            
+def randomized_logPP_means(randomized_logPPs):
+    return apply_to_randomized_logPPs(randomized_logPPs, np.mean)
+    
+def randomized_logPP_vars(randomized_logPPs):
+    return apply_to_randomized_logPPs(randomized_logPPs, np.var)
+    
+    
+def logPP_chebyshev_bound(logPP, randomized_logPPs, means, vars):
+
+    alpha = np.abs(logPP - means)
+    return vars / alpha ** 2
+
+
 def log_partition_prob(lcol, rcol):    
-        nkc = defaultdict(lambda : defaultdict(float))
-        nc = defaultdict(float)
-        for cl, cr in izip(lcol, rcol):
-            if cl !='-' and cr != '-':
-                nkc[cl][cr]+=1.
-                nc[cr] += 1.
-
-        nk = dict((k, sum(nkc[k].values())) for k in nkc)
+        nkc, nc, nk = make_dicts(lcol, rcol)
         n = sum(nk.values())
-
+        
         s1 = sum(logfact(nk[k]) - sum(logfact(nkc[k][c]) for c in nkc[k]) for k in nk)
-        s2 = sum(logfact(nc[c]) for c in nc)
+        s2 = sum(logfact(nc[c]) for c    in nc)
         s3 = logfact(n)
 
         return s1 + s2 - s3
         
+def make_dicts(lcol, rcol):
+    nkc = defaultdict(lambda : defaultdict(float))
+    nc = defaultdict(float)
+    for cl, cr in izip(lcol, rcol):
+        if cl !='-' and cr != '-':
+            nkc[cl][cr]+=1.
+            nc[cr] += 1.
 
+    nk = dict((k, sum(nkc[k].values())) for k in nkc)
+
+    return nkc, nc, nk
+    
 
 # older stuff.
         
