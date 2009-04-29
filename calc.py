@@ -21,7 +21,8 @@ def make_memoized_logfact():
     return logfact
 
 logfact = make_memoized_logfact()
-    
+
+
 def get_mat(alignment):
      
     rows = alignment.alignmentrow_set.all()
@@ -31,27 +32,82 @@ def get_mat(alignment):
         A[row.row_num-1] = list(row.sequence)
     return A
     
+
 def log_pp_mat(A):
     ncol = A.shape[1]
     logPP = np.zeros((ncol, ncol))
-    Acols = np.zeros((ncol,), dtype='O')
-    
-    for i in xrange(ncol):
-        Acols[i] = A[:,i].tolist()
-        
-    for i in xrange(ncol):
-        for j in xrange(i):
+    Acols = make_cols(A)
+    for j in xrange(ncol):
+        for i in xrange(j):
             logPP[i, j] = log_partition_prob(Acols[i], Acols[j])
-        
     return logPP
 
 
-    def log_partition_prob(Acoli, Acolj):    
+def make_cols(A):
+    ncol = A.shape[1]
+    Acols = np.zeros((ncol,), dtype='O')
+    for i in xrange(ncol):
+        Acols[i] = A[:,i].tolist()
+    return Acols
+    
+
+def randomize(A):
+    """ return a copy of A with the non-gap residues in each column permuted."""
+    residue_locs = (A != '-')
+    copy = A.copy()
+
+    for i in xrange(A.shape[1]):
+        perm = scipy.random.permutation(sum(residue_locs[:,i]))
+        copy[:,i][residue_locs[:,i]] = A[:,i][residue_locs[:,i]][perm]
+    return copy
+
+        
+def load_experiment_files(n_expts,shape):
+    nrow, ncol = shape
+    A = np.fromfile('A.save', dtype='S1').reshape(shape)
+    randomized_As = np.fromfile('randomized_As.save', dtype='S1').reshape(n_expts, nrow, ncol)
+    logPP = np.fromfile('logPP.save').reshape(ncol, ncol)
+    randomized_logPPs = np.fromfile('randomized_logPPs.save').reshape(n_expts, ncol, ncol)
+    
+    return A, randomized_As, logPP, randomized_logPPs
+
+
+def randomized_experiment(A, n_expts):
+
+    randomized_As = np.zeros((n_expts,) + A.shape, dtype=A.dtype)
+    randomized_logPPs = np.zeros((n_expts, A.shape[1], A.shape[1]))
+    print "calculating log_pp_mat for real A"
+    logPP = log_pp_mat(A)
+    A.tofile('A.save')
+    logPP.tofile('logPP.save')
+        
+    for i in xrange(n_expts):
+        print "randomizing A (experiment %d)" % i
+        randomized_A = randomize(A)
+        randomized_As[i,:,:] = randomized_A
+        print "calculating log_pp_mat for randomized A"
+        randomized_logPPs[i,:,:] = log_pp_mat(randomized_A)
+        print "saving..."
+        randomized_As.tofile('randomized_As.save')
+        randomized_logPPs.tofile('randomized_logPPs.save')
+
+def rank_logPPs(logPP, randomized_logPPs):
+    
+    logPP_ranks = np.zeros(logPP.shape)
+    for j in xrange(logPP.shape[0]):
+        for i in xrange(j):
+            logPP_ranks[i,j] = sum(logPP[i,j] < randomized_logPPs[:,i,j])
+
+    return logPP_ranks
+
+    
+def log_partition_prob(lcol, rcol):    
         nkc = defaultdict(lambda : defaultdict(float))
         nc = defaultdict(float)
-        for ai, aj in izip(Acoli,Acolj):
-            nkc[ai][aj]+=1.
-            nc[aj] += 1.
+        for cl, cr in izip(lcol, rcol):
+            if cl !='-' and cr != '-':
+                nkc[cl][cr]+=1.
+                nc[cr] += 1.
 
         nk = dict((k, sum(nkc[k].values())) for k in nkc)
         n = sum(nk.values())
@@ -62,6 +118,7 @@ def log_pp_mat(A):
 
         return s1 + s2 - s3
         
+
 
 # older stuff.
         
