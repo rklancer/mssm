@@ -78,7 +78,51 @@ def randomized_experiment_protocol_2(A, n_expts):
     save(j)
     print "done."
     
+
+def load_protocol_2(n_expts, shape):
+    nrow, ncol = shape
+    A = np.fromfile('A.save', dtype='S1').reshape(shape)
+    logPP = np.fromfile('logPP.save').reshape(ncol, ncol)
+    randomized_logPPs = np.fromfile('randomized_logPPs.save').reshape(n_expts, ncol, ncol)
+    return A, logPP, randomized_logPPs
+
+
+def get_n_nongapped(A):
+    nrow, ncol = A.shape
+    n_nongapped = np.zeros((ncol, ncol),dtype='int')
+    nongaps = A != '-'
+    for j in xrange(ncol):
+        rcol = nongaps[:,j]
+        for i in xrange(j):
+            lcol = nongaps[:,i]
+            n_nongapped[i,j] = sum(np.logical_and(lcol, rcol))
     
+    return n_nongapped
+
+def analyze_protocol_2(A, logPP, randomized_logPPs, n_nongapped):
+
+    nrow, ncol = A.shape
+    min_nongapped_rows = nrow/10
+    usable = np.logical_and(n_nongapped > min_nongapped_rows, np.logical_not(np.isnan(logPP)))
+
+    means = np.mean(randomized_logPPs, axis=0)
+    stds = np.std(randomized_logPPs, axis=0)
+    
+    assert means.shape == stds.shape == logPP.shape
+    
+    diffs = means - logPP           # expect logPP < mean
+    diffs_over_std = diffs / stds
+    
+    diffs_over_std_iter = np.ndenumerate(diffs_over_std)
+    diffs_over_std_list = [(val, pos) for pos, val in diffs_over_std_iter if usable[pos] and not np.isnan(val)]
+    
+    return means, stds, diffs, diffs_over_std, diffs_over_std_list
+
+    
+    
+    
+
+
 def log_partition_prob(lcol, rcol):    
         nkc, nc, nk = make_dicts(lcol, rcol)
         n = sum(nk.values())
