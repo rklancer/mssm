@@ -6,6 +6,7 @@ import math
 from collections import defaultdict
 from math import factorial
 from numpy.random import permutation
+from pylab import hist
 
 
 def make_memoized_logfact():
@@ -78,6 +79,15 @@ def randomized_experiment_protocol_2(A, n_expts):
     save(j)
     print "done."
     
+    
+def dist_hists(logPP, randomized_logPPs, nbins, i,j):
+
+    random_hist = np.histogram(np.append(randomized_logPPs[:,i,j], logPP[i,j]), bins=nbins)
+    random_hist_bins = random_hist[1]
+    
+    hist(randomized_logPPs[:,i,j], bins=random_hist_bins)
+    hist(np.array([logPP[i,j]]), bins=random_hist_bins)
+    
 
 def load_protocol_2(n_expts, shape):
     nrow, ncol = shape
@@ -114,7 +124,7 @@ def analyze_protocol_2(A, logPP, randomized_logPPs, n_nongapped):
     diffs_over_std = diffs / stds
     
     diffs_over_std_iter = np.ndenumerate(diffs_over_std)
-    diffs_over_std_list = [(val, pos) for pos, val in diffs_over_std_iter if usable[pos] and not np.isnan(val)]
+    diffs_over_std_list = [(val, pos) for pos, val in diffs_over_std_iter if usable[pos] and not np.isnan(val)  ]
     
     return means, stds, diffs, diffs_over_std, diffs_over_std_list
 
