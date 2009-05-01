@@ -1,3 +1,6 @@
+# a collection of ad hoc & one-off calculations for evaluation of proposed statistical
+# summaries to be embedded in MSSM
+
 from models import Alignment, AlignmentRow
 from itertools import combinations, izip
 import numpy as np
@@ -7,6 +10,7 @@ from collections import defaultdict
 from math import factorial
 from numpy.random import permutation
 from pylab import hist
+import matplotlib.pyplot as plt
 
 
 def make_memoized_logfact():
@@ -36,7 +40,7 @@ def get_mat(alignment):
 
 def find_nongaps(lcol, rcol):
     return np.logical_and(lcol != '-', rcol !='-')
-        
+
 
 def randomized_experiment_protocol_2(A, n_expts):
     print "saving A"
@@ -79,17 +83,54 @@ def randomized_experiment_protocol_2(A, n_expts):
     save(j)
     print "done."
     
+def score_hist(diffs_over_std_list, nbins):
+    
+    scores = np.array([val for val, pos in diffs_over_std_list])
+    hist(scores, bins=nbins, range=(-20,20))
+    plt.title('Separation of log-partition-probability score from mean score of 100 row-level randomizations')
+    plt.xlabel('standard deviations')
+    plt.ylabel('instances')
+    plt.grid(True)
+    
     
 def dist_hists(logPP, randomized_logPPs, nbins, i,j):
 
     random_hist = np.histogram(np.append(randomized_logPPs[:,i,j], logPP[i,j]), bins=nbins)
     random_hist_bins = random_hist[1]
-    
     hist(randomized_logPPs[:,i,j], bins=random_hist_bins)
     hist(np.array([logPP[i,j]]), bins=random_hist_bins)
     
 
+def draw_hi6(diffs_over_std_list, logPP, randomized_logPPs, nbins):
+    draw6('Log-partition-probability scores for 6 maximal-scoring column pairs, versus scores of 100 randomizations',
+        diffs_over_std_list[-6:],
+        logPP,
+        randomized_logPPs,
+        nbins)
+
+def draw_lo6(diffs_over_std_list, logPP, randomized_logPPs, nbins):
+    draw6('Log-partition-probability scores for 6 minimal-scoring column pairs, versus scores of 100 randomizations',
+        diffs_over_std_list[:6],
+        logPP,
+        randomized_logPPs,
+        nbins)
+
+def draw6(title, diffs, logPP, randomized_logPPs, nbins):
+    plt.suptitle(title)
+    for k in range(6):
+        score, (i,j) = diffs[k]
+        plt.subplot(321+k)
+        dist_hists(logPP, randomized_logPPs, nbins, i, j)
+        plt.grid(True)
+        plt.title('col %d, %d, separation=%f' % (i,j,score))
+        if k % 2 == 1:
+            plt.ylabel('pairs')            
+        if k >= 5:
+            plt.xlabel('log(partition probability)')
+
+
 def load_protocol_2(n_expts, shape):
+
     nrow, ncol = shape
     A = np.fromfile('A.save', dtype='S1').reshape(shape)
     logPP = np.fromfile('logPP.save').reshape(ncol, ncol)
@@ -98,6 +139,7 @@ def load_protocol_2(n_expts, shape):
 
 
 def get_n_nongapped(A):
+
     nrow, ncol = A.shape
     n_nongapped = np.zeros((ncol, ncol),dtype='int')
     nongaps = A != '-'
@@ -108,6 +150,7 @@ def get_n_nongapped(A):
             n_nongapped[i,j] = sum(np.logical_and(lcol, rcol))
     
     return n_nongapped
+
 
 def analyze_protocol_2(A, logPP, randomized_logPPs, n_nongapped):
 
@@ -127,10 +170,6 @@ def analyze_protocol_2(A, logPP, randomized_logPPs, n_nongapped):
     diffs_over_std_list = [(val, pos) for pos, val in diffs_over_std_iter if usable[pos] and not np.isnan(val)  ]
     
     return means, stds, diffs, diffs_over_std, diffs_over_std_list
-
-    
-    
-    
 
 
 def log_partition_prob(lcol, rcol):    
@@ -153,23 +192,6 @@ def make_dicts(lcol, rcol):
 
     nk = dict((k, sum(nkc[k].values())) for k in nkc)
     return nkc, nc, nk
-
-
-def apply_to_randomized_logPPs(randomized_logPPs, f):
-    ncol = randomized_logPPs.shape[1]
-    randomized_logPP_results = np.zeros(randomized_logPPs[0].shape)
-    for j in xrange(ncol):
-        for i in xrange(j):
-            randomized_logPP_results[i,j] = f(randomized_logPPs[:,i,j])
-            
-    return randomized_logPP_results
-
-
-    
-def logPP_chebyshev_bound(logPP, randomized_logPPs, means, vars):
-
-    alpha = np.abs(logPP - means)
-    return vars / alpha ** 2
 
 
 # 
@@ -216,8 +238,6 @@ def load_experiment_files(n_expts,shape):
     return A, randomized_As, logPP, randomized_logPPs
 
 
-
-    
 def randomized_experiment(A, n_expts):
 
     randomized_As = np.zeros((n_expts,) + A.shape, dtype=A.dtype)
@@ -236,6 +256,7 @@ def randomized_experiment(A, n_expts):
         print "saving..."
         randomized_As.tofile('randomized_As.save')
         randomized_logPPs.tofile('randomized_logPPs.save')
+
 
 def rank_logPPs(logPP, randomized_logPPs):
     
