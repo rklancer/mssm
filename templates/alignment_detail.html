@@ -7,7 +7,8 @@
     <h1>Detail of alignment {{ alignment.id }}: {{ alignment.name }}</h1>
    
     <ul>
-        <li><a href="?edit">Edit information</a></li>
+        <li><a href="?view=noraseq">NORASeq view</a> (wicked slow except in Safari)</li>
+		<li><a href="?edit">Edit information</a></li>
         <li><a href="?delete">Delete alignment</a>
         {% if show_delete_form %}
             <table>
@@ -73,7 +74,7 @@
             <td>{{row.row_num}}</td>
             <td><a href="?show-ungapped={{row.row_num}}">ungap</a></td>
             {% for residue in row.filtered_sequence %}
-            <td>{{residue}}</td>
+            <td>{{residue.abbrev}}</td>
             {% endfor %}
         </tr>
         {% endfor %}

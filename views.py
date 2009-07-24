@@ -3,6 +3,7 @@ from django.http import HttpResponseRedirect, HttpResponseNotAllowed
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.http import QueryDict
+from django.template import RequestContext
 
 from models import CreateAlignmentForm, EditAlignmentForm
 from models import Alignment, AlignmentRow, AlignmentCell
@@ -33,6 +34,8 @@ def alignment_list(request):
 
 def alignment_detail(request, alignment_id):
 
+	# okay we're going to have to comment and refactor this sucker!
+	
     method = get_request_method(request)
     request_data = get_request_data(request)
     alignment = get_object_or_404(Alignment, pk=alignment_id)
@@ -49,7 +52,7 @@ def alignment_detail(request, alignment_id):
 
     elif method == 'GET':
         alignment_rows = alignment.alignmentrow_set.all()
-        
+
         if 'sort-by' in request_data and request_data['sort-by']:
             sort_by = int(request_data['sort-by'])
             column_cells = AlignmentCell.objects.filter(row__in=alignment_rows).filter(col=sort_by)
@@ -71,11 +74,17 @@ def alignment_detail(request, alignment_id):
 
         header_row = (t[0] for t in zip(xrange(1,alignment.length+1), to_show) if t[1])
         for row in alignment_rows:
-            row.filtered_sequence = (t[0] for t in zip(row.sequence, to_show) if t[1])
+            row.filtered_sequence = ({'abbrev': t[0], 'is_gap': t[0]=='-'} for t in zip(row.sequence, to_show) if t[1])
 
         context = { 'alignment': alignment, 
                     'alignment_rows': alignment_rows,
                     'header_row': header_row }
+		
+		# the following is before checking for 'edit' and 'delete' because we have no way to 
+		# edit or delete in the noraseq interface yet
+		
+        if 'view' in request_data and request_data['view'] == 'noraseq':
+            return render_to_response('alignment_noraseq_view.html', context, RequestContext(request))
 
         if 'edit' in request_data:
             context['edit_form'] = EditAlignmentForm(instance=alignment)
