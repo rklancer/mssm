@@ -1,6 +1,37 @@
-<html>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN"
+    "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:foaf="http://xmlns.com/foaf/0.1/" version="XHTML+RDFa 1.0" xml:lang="en">
 <head>
     <title>Alignment {{ alignment.id }}: {{ alignment.name }}</title>
+	<script type="text/javascript" src="{{MEDIA_URL}}js/jquery-1.3.2.min.js"></script>
+	<script type="text/javascript" src="{{MEDIA_URL}}js/jquery.rdfquery.rdfa-1.0.js"></script>
+	
+	<script type="text/javascript">
+
+		$(document).ready(function () {
+			$("#hiderdf").click(function() {
+				$("#rdflist").empty();
+			});
+			
+			$("#showrdf").click(function() {
+				$("#rdflist").empty();
+				
+				var h = $('.sequence-alignment thead');
+				var rdf = h.rdf();
+				rdf.prefix('foaf', 'http://xmlns.com/foaf/0.1/')
+					.where('?col foaf:name ?classname')
+					.each(function () {
+						var col = this.col.value;
+						var classname =  this.classname.value;
+						$('#rdflist')
+							.append('<li>' + col + ': ' + classname + '</li>');
+					});							
+			});
+		});
+	</script>
+	
 </head>
 <body>
     <a href="{% url mssm.views.alignment_list %}">Return to MSSM alignment list</a>
@@ -57,28 +88,46 @@
     </ul>
     {% endif %}
 
-    <table>
-    {% spaceless %}
-        <tr>
-            <th>description</th>
-            <th><a href="{{ alignment.get_absolute_url }}">row</a></th>
-            <th></th>
-            {% for col in header_row %}
-            <th><a href="?sort-by={{col}}">{{col}}</a></th>
-            {% endfor %}
-        </tr>
-        
-        {% for row in alignment_rows %}
-        <tr>
-            <td>{{row.name}}</td>
-            <td>{{row.row_num}}</td>
-            <td><a href="?show-ungapped={{row.row_num}}">ungap</a></td>
-            {% for residue in row.filtered_sequence %}
-            <td>{{residue.abbrev}}</td>
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    {% endspaceless %}
+	<button id="showrdf" type="button">Show RDF</button>
+	<button id="hiderdf" type="button">Hide RDF</button>
+	
+	<ul id="rdflist">
+	</ul>
+	
+	<table class="sequence-alignment">
+		<thead>
+			<tr>
+	            <th>description</th>
+	            <th><a href="{{ alignment.get_absolute_url }}">row</a></th>
+	            <th></th>
+				<!-- foaf:name isn't the correct relation, I just needed a 'valid' predicate of some kind for rdfquery to pull out
+					 any triples. Anyway the point is that noraseq viewer needs a way to connect columns that are referenced by 
+					 a different URI to the css class names that are used privately within the html in this page, 
+					 without too much implicit agreement about what column numbers.
+					
+					 Of course, we'll do this the sensible way, with implicit references using column numbers, at least to start -->
+					
+					
+	            {% for col in header_row %}
+	            <th about="{% url mssm.views.alignment_detail alignment.id %}col/{{col}}" property="foaf:name" content="c{{col}}"><a href="?sort-by={{col}}">{{col}}</a></th>
+	            {% endfor %}
+	        </tr>
+    	</thead>
+		<tbody>
+	        {% for row in alignment_rows %}
+	        <tr class="r{{row.row_num}}">
+	            <td>{{row.name}}</td>
+	            <td>{{row.row_num}}</td>
+	            <td><a href="?show-ungapped={{row.row_num}}">ungap</a></td>
+	            {% for residue in row.filtered_sequence %}
+	            <td class="c{{residue.col_num}}">{{residue.abbrev}}</td>
+	            {% endfor %}
+	        </tr>
+	        {% endfor %}
+		</tbody>
     </table>
+
+	<ul>
+	</ul>
 </body>
 </html>

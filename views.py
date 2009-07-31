@@ -72,13 +72,19 @@ def alignment_detail(request, alignment_id):
         else:
             to_show = [True] * alignment.length
 
-        header_row = (t[0] for t in zip(xrange(1,alignment.length+1), to_show) if t[1])
+        col_nums = range(1, alignment.length+1)
+        header_row = [t[0] for t in zip(col_nums, to_show) if t[1]]
         for row in alignment_rows:
-            row.filtered_sequence = ({'abbrev': t[0], 'is_gap': t[0]=='-'} for t in zip(row.sequence, to_show) if t[1])
+            row.filtered_sequence = \
+                ({'abbrev': t[0], 'is_gap': t[0]=='-', 'col_num': t[2]} 
+                    for t in zip(row.sequence, to_show, col_nums)
+                    if t[1])
 
         context = { 'alignment': alignment, 
                     'alignment_rows': alignment_rows,
-                    'header_row': header_row }
+                    'header_row': header_row,
+                    'num_cols': len(header_row),
+                    'table_width': 20*len(header_row) }
 		
 		# the following is before checking for 'edit' and 'delete' because we have no way to 
 		# edit or delete in the noraseq interface yet
@@ -91,7 +97,7 @@ def alignment_detail(request, alignment_id):
         elif 'delete' in request_data:
             context['show_delete_form'] = True
         
-        return render_to_response('alignment_detail.html', context)
+        return render_to_response('alignment_detail.html', context, RequestContext(request))
 
     else:
         return respond_not_allowed(method, permitted_methods=['GET', 'PUT', 'DELETE'])

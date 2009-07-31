@@ -40,6 +40,26 @@
 		/* fixme: fit_elements() when offset changes */
 		/* fixme: fit vrules */
 		
+		
+			$("#onstage").click( function() {
+				$("#sequence-panel table").css("position", "relative").css("left", "0%");
+			});
+			
+			$("#offstage").click( function() {
+				$("#sequence-panel table").css("position", "relative").css("left", "-9999px");
+			});
+			
+			var hidden_col = 1;
+			
+			$("#hide").click( function() {
+				//$("#sequence-panel td:nth-child(" + hidden_col + ")").hide();
+				//hidden_col++;
+				$(".c20, .c21, .c22, .c23, .c24, .c25, .c26, .c27, .c28, .c29, .c30, .c31, .c32, .c33, .c34, .c35, .c36, .c37, .c38, .c39").hide();
+			});
+			
+			$("#show").click( function () {
+				$("#sequence-panel td:hidden, #sequence-panel th:hidden").show();
+			});			
 		});
 	</script>
 	
@@ -93,10 +113,12 @@
 		#column-headings { width: 100%; height: 50px; border-width: 1px; border-style: none none none solid; border-color: #bbbbbb; background-color: #d5ddf3; }
 		#sequence-panel { overflow: auto; width: 100%; height: 10px; border-width: 1px; border-style: none none none solid; border-color: #dcddab; background-color: #efefe0; }
 		
-		#sequence-panel table { table-layout: fixed; border-spacing: 1px; font-family: "Verdana"; font-size: 12px; color: #333333 }
+		/* using table-layout:fixed did not speed rendering at all, according to Firebug Net panel */
+		
+		#sequence-panel table { float: left; table-layout: fixed; border-spacing: 1px; font-family: "Verdana"; font-size: 12px; color: #333333 }
 		#sequence-panel td { background-color: #ebead3; padding-top: 2px; padding-bottom: 0px; text-align: center; }
 		#sequence-panel .gap { background: transparent; color: #A6A6A6; } /* try background: transparent */
-		#sequence-panel	.colheader { width: 10px }
+		#sequence-panel	.colheader { width: 12px; }
 		#sequence-panel	.rowtitle { text-align: left; background-color: #EFEFE0; }
 		#sequence-panel .rownum { text-align: left; background-color: #EFEFE0; }
 		#sequence-panel .rowcontrol { text-align: left; background-color: #EFEFE0; }
@@ -203,6 +225,10 @@
 		
 		<!-- fixme for tiny links: change ui-widget text size to 1em in jquery ui theme; so that body text size can be upsized. -->
 		<p class="option-link">color: <a href="#">conservation</a> | <a href="#">hydrophobicity</a> | <a href="#">size</a></p>
+		<button id="offstage" type="button">offstage</button>
+		<button id="onstage" type="button">onstage</button>
+		<button id="hide" type="button">hide col</button>
+		<button id="show" type="button">show cols</button>
 	</div> <!-- noraseq-admin -->
 	
 	<div id="fitted-panel" style="overflow: hidden;">
@@ -214,24 +240,27 @@
 		<div id="fitted-right">
 			<div id="column-headings" class="fitted-width"> </div>
 			<div id="sequence-panel" class="fitted-width fitted-height">
-				<table>
-			    {% spaceless %}
-			        <tr>
-			            {% for col in header_row %}
-			            <th><div class="colheader"></th>
-			            {% endfor %}
-			        </tr>
 
+				<table>			    
+					{% spaceless %}
+					<thead>
+						<tr>
+				            {% for col in header_row %}
+				        	<th><div class="colheader" /></th>
+				            {% endfor %}
+			        	</tr>
+					</thead>
+					<tbody>
 			        {% for row in alignment_rows %}
-			        <tr>
+			        <tr class="r{{row.row_num}}">
 			            {% for residue in row.filtered_sequence %}
-			            <td {% if residue.is_gap %}class="gap"{% endif %}>{{residue.abbrev}}</td>
+			            <td class="c{{residue.col_num}}{% if residue.is_gap %} gap{% endif %}">{{residue.abbrev}}</td>
 			            {% endfor %}
 			        </tr>
 			        {% endfor %}
-			    {% endspaceless %}
+					</tbody>
+			    	{% endspaceless %}
 			    </table>
-			
 			</div>
 		</div>
 	</div>
