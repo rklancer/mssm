@@ -10,13 +10,13 @@
 	
 	<script type="text/javascript">
 	
-		fit_elements = function () {
+		fit_elements = function () { 
 			$('.fitted-height').each(function () {
 				var h = $(window).height();
-				var top = Math.round($(this).offset().top)
+				var top = Math.round($(this).offset().top);
 				$(this).height(h - top);
 			});
-			$('.fitted-width').each(function () {
+			$('.fitted-width').each(function () { 
 				var w = $(window).width();
 				var left = Math.round($(this).offset().left);
 				$(this).width(w - left);
@@ -26,16 +26,32 @@
 		$(document).ready(function() {
 			$("#stats-panel").tabs();
 			
+			// use this hack until we figure out how to make div *width* larger than window
+			
+		 	var seq_width = $("#sequence-panel table").width();
+			$("#column-headings").width(seq_width);
+			$("#sequence-panel").width(seq_width);
+			$("#sequence-panel-container").width(seq_width);
+			$("#tree-panel").height($("#sequence-panel").height());
+
 			/* wicked slow in Firefox:
 			 $("#sequence-panel table").draggable({ cursor: 'crosshair' });
 			consider using http://maps.gstatic.com/intl/en_us/mapfiles/openhand_8_8.cur for the drag cursor */
 			
 			fit_elements();
-			$(function(){
-			    $(window).resize(function() {
-					fit_elements();
-			    });
-			});
+			$(window).resize(fit_elements);
+			
+			var scroll_func = function () {
+				var sequence_panel_container = $("#sequence-panel-container");
+				var tree_panel_container = $("#tree-panel-container");
+
+				return function () {
+					sequence_panel_container.scrollTop(tree_panel_container.scrollTop());
+				};
+			}();
+			
+			$("#tree-panel-container").scroll(scroll_func);
+			
 			
 		/* fixme: fit_elements() when offset changes */
 		/* fixme: fit vrules */
@@ -54,14 +70,45 @@
 			$("#hide").click( function() {
 				//$("#sequence-panel td:nth-child(" + hidden_col + ")").hide();
 				//hidden_col++;
-				$(".c20, .c21, .c22, .c23, .c24, .c25, .c26, .c27, .c28, .c29, .c30, .c31, .c32, .c33, .c34, .c35, .c36, .c37, .c38, .c39").hide();
+				/*$(".c20, .c21, .c22, .c23, .c24, .c25, .c26, .c27, .c28, .c29, .c30, .c31, .c32, .c33, .c34, .c35, .c36, .c37, .c38, .c39").each( function () {
+					$(this).hide("slow");
+				});*/
+				window.setTimeout(function() {
+					$(".c20").hide();
+						window.setTimeout(function() {
+							$(".c21").hide();
+							window.setTimeout(function() {
+								$(".c22").hide();
+								$(".c23").css("border-width", "0").css("border-left-color", "#ffffff").css("border-left-style", "solid").animate( {"borderLeftWidth": "5px"}, 1000);
+							}, 100);
+						}, 100);
+					}, 100);
+					
+					$
+				
+				//$(".c40").css("border-color", "#ffffff");
 			});
 			
 			$("#show").click( function () {
 				$("#sequence-panel td:hidden, #sequence-panel th:hidden").show();
+				$(".c40").css("border-left", "0");
 			});			
 		});
+		
+		/*$(window).load( function () {
+			$("td").mousedown( function () {
+				$(this).addClass("highlighted");
+				$(this).append("<span class=\"overlay\" style=\"position: relative; left:100%\"><span class=\"ui-icon ui-icon-arrow-1-n\"/></span>");
+				});
+				
+			$("td").mouseup(function () {
+				$("td .overlay").remove();
+				$(this).removeClass("highlighted");
+			});
+		});*/
+		
 	</script>
+	
 	
 	<style type="text/css">
 
@@ -104,21 +151,24 @@
 		.column-by-score { float: left; width: 250px; height: 150px; background-color: #ffffff; }
 		.selected-column-histogram { float: left; width: 200px; height: 150px; background-color: #ffffff; }
 
-		#fitted-panel { }
-		#fitted-left { float: left; width: 200px; }
-		#fitted-right { float: left; width: 100px; }
+		#fitted-panel { position: relative; }
+		#fitted-left { width: 200px; }
+		#fitted-right { position: absolute; left: 200px; top: 0px; overflow-x: auto; overflow-y: hidden; width: 100px; height:100px;}
 		
 		#tree-threshold-chooser { width: 100%; height: 50px; border: 0; background-color: #e8ecf9; }
-		#tree-panel { width: 100%; height: 10px; border: 0; background-color: #ffffff; }
-		#column-headings { width: 100%; height: 50px; border-width: 1px; border-style: none none none solid; border-color: #bbbbbb; background-color: #d5ddf3; }
-		#sequence-panel { overflow: auto; width: 100%; height: 10px; border-width: 1px; border-style: none none none solid; border-color: #dcddab; background-color: #efefe0; }
+		#tree-panel-container { height: 50px; width: 100%; overflow-y: auto; overflow-x: hidden; }
+		#tree-panel { position: relative; width: 100%; height: 1000px; border: 0; background-color: #ffffff; }
+		
+		#column-headings { height: 50px; border-width: 1px; border-style: none none none solid; border-color: #bbbbbb; background-color: #d5ddf3; }
+		#sequence-panel-container { overflow-y: hidden; overflow-x: visible; }
+		#sequence-panel { border-width: 1px; border-style: none none none solid; border-color: #dcddab; background-color: #efefe0; }
 		
 		/* using table-layout:fixed did not speed rendering at all, according to Firebug Net panel */
 		
 		#sequence-panel table { float: left; table-layout: fixed; border-spacing: 1px; font-family: "Verdana"; font-size: 12px; color: #333333 }
 		#sequence-panel td { background-color: #ebead3; padding-top: 2px; padding-bottom: 0px; text-align: center; }
-		#sequence-panel .gap { background: transparent; color: #A6A6A6; } /* try background: transparent */
-		#sequence-panel	.colheader { width: 12px; }
+		#sequence-panel .gap { background: transparent; color: #A6A6A6; }
+		.colheader { width: 12px; }
 		#sequence-panel	.rowtitle { text-align: left; background-color: #EFEFE0; }
 		#sequence-panel .rownum { text-align: left; background-color: #EFEFE0; }
 		#sequence-panel .rowcontrol { text-align: left; background-color: #EFEFE0; }
@@ -229,41 +279,60 @@
 		<button id="onstage" type="button">onstage</button>
 		<button id="hide" type="button">hide col</button>
 		<button id="show" type="button">show cols</button>
+		<button id="scrollit" type="button">scroll</button>
 	</div> <!-- noraseq-admin -->
 	
-	<div id="fitted-panel" style="overflow: hidden;">
+	<div id="fitted-panel">
 		<div id="fitted-left">
 			<div id="tree-threshold-chooser"> </div>
-			<div id="tree-panel" class="fitted-height"> </div>
-		</div>
-		
-		<div id="fitted-right">
-			<div id="column-headings" class="fitted-width"> </div>
-			<div id="sequence-panel" class="fitted-width fitted-height">
-
-				<table>			    
-					{% spaceless %}
-					<thead>
-						<tr>
-				            {% for col in header_row %}
-				        	<th><div class="colheader" /></th>
-				            {% endfor %}
-			        	</tr>
-					</thead>
-					<tbody>
-			        {% for row in alignment_rows %}
-			        <tr class="r{{row.row_num}}">
-			            {% for residue in row.filtered_sequence %}
-			            <td class="c{{residue.col_num}}{% if residue.is_gap %} gap{% endif %}">{{residue.abbrev}}</td>
-			            {% endfor %}
-			        </tr>
-			        {% endfor %}
-					</tbody>
-			    	{% endspaceless %}
-			    </table>
+			<div id="tree-panel-container" class="fitted-height">
+				<div id="tree-panel"> 
+					<div style="position: absolute; width:50px; height: 50px; top:300px; background-color: #cccccc;"></div>
+				</div>
 			</div>
 		</div>
-	</div>
+		
+		<div id="fitted-right" class="fitted-width fitted-height">
+			<!-- consider using a single table with an overflow style on the tbody -->
+			
+			<div id="column-headings"> 
+				<table>
+					<thead>
+						<tr>
+							{% for col in header_row %}
+				        	<th><div class="colheader">*</div></th>
+				            {% endfor %}
+						</tr>
+					</thead>
+				</table>
+			</div>
+			<div id="sequence-panel-container" class="fitted-height">
+				<div id="sequence-panel">
+					<table>	 
+						{% spaceless %}
+						<thead>
+							<tr>
+					            {% for col in header_row %}
+					        	<th><div class="colheader" /></th>
+					            {% endfor %}
+				        	</tr>
+						</thead>
+						<tbody>
+				        {% for row in alignment_rows %}
+				        <tr class="r{{row.row_num}}">
+				            {% for residue in row.filtered_sequence %}
+				            <td class="c{{residue.col_num}}{% if residue.is_gap %} gap{% endif %}">{{residue.abbrev}}</td>
+				            {% endfor %}
+				        </tr>
+				        {% endfor %}
+						</tbody>
+				    	{% endspaceless %}
+				    </table>
+					<div class="noraseq-bottom-anchor"></div>
+				</div> <!-- sequence-panel -->
+			</div> <!-- sequence-panel-container -->
+		</div> <!-- fitted-right -->
+	</div> <!-- fitted-panel -->
 
 </body>
 </html>
