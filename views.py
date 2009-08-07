@@ -83,8 +83,8 @@ def alignment_detail(request, alignment_id):
         context = { 'alignment': alignment, 
                     'alignment_rows': alignment_rows,
                     'header_row': header_row,
-                    'num_cols': len(header_row),
-                    'table_width': 20*len(header_row) }
+                    'num_cols': len(to_show),
+                    'table_width': 15*len(header_row) }
 		
 		# the following is before checking for 'edit' and 'delete' because we have no way to 
 		# edit or delete in the noraseq interface yet
