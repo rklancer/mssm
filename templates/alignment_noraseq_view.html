@@ -4,286 +4,19 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 	<title>NORASeq view of {{ alignment.name }}</title>
 	<link type="text/css" href="{{MEDIA_URL}}mssm/css/noraseq-admin-grey-theme-1/jquery-ui-1.7.2.custom.css" rel="stylesheet" />
+	<link type="text/css" href="{{MEDIA_URL}}mssm/css/noraseq.css" rel="stylesheet" />
 	
 	<script type="text/javascript" src="{{MEDIA_URL}}js/jquery-1.3.2.min.js"></script>
 	<script type="text/javascript" src="{{MEDIA_URL}}mssm/js/jquery-ui-1.7.2.custom.min.js"></script>
-	<script type="text/javascript" src="{{MEDIA_URL}}mssm/js/jquery.timers-1.1.2.js"></script>
-	
-	<script type="text/javascript">
-
-		var timeout = function(t, f) { 
-			window.setTimeout(f, t);
-		};
-		
-		/* Use this function to wrap a event handler function in a delay such that the event handler 
-		   is guaranteed not to execute until after wait_time milliseconds after the the 
-		   *most recent* event
-		
-			In other words, if you use this function to wrap an event handler, and then pass the 
-			wrapped handler as a callback to one or more event functions, the wrapped handler will not 
-			actually execute until wait_time milliseconds have passed without any of those events being triggered.
-			
-			When an event calls the wrapped handler, the wrapper sets a timer for executing the actual handler,
-			*and cancels any pending timer* it may previously have set.
-		*/
-		
-		var delayed_event_handler = function (wait_time, event_handler) {
-			var timer_id = false;
-			
-			return function () {
-				if (timer_id) {
-					// the test above just serves to avoid calling clearTimeout the very first time this function is called.
-					// In the second and subequent calls, we'll just harmlessly clear the previous timer_id, whether
-					// unexpired or not.
-					window.clearTimeout(timer_id);
-				}
-				timer_id = window.setTimeout(event_handler, wait_time);
-			};
-		};
-	
-	
-		/* fit_elements resizes .fitted-width elements to the right edge of the window, and fits .fitted-height elements to the bottom edge of the 
-		   window, as you might want after a window resize. It is modified to do so in a reasonably performant way even when a very large html table is 
-		   present in the DOM. (See the comments in the function body below) */
-		
-		var fit_elements = function () {
-			var time_step = 50;
-			var sequence_table = $("#sequence-table");
-
-			/* what's going on here: although Safari 4 on OS X can resize the .fitted-height and .fitted-width elements in a smooth, interactive way,
-		       Firefox 3.5 on OS X becomes very slow, apparently performing a time-intensive reflow of #sequence-table, whenever the fitted elements
-		       are resized. (If #sequence-table is present and large--even if it is position:fixed way off the screen--Firefox waits for a long delay 
-		       after the user's completion of the window resize before any change triggered by fit_elements() is seen.)
-				
-			   A solution is to set #sequence-table to display: none, then resize the elements (these operations are quick, and provide immediate visual
-			   feedback), and then set the #sequence-table back to display: table. Although the latter operation is somewhat slow, it is not as slow as 
-			   the lockup Firefox experiences if you attempt a resize without first setting display: none.
-					
-			   For some reason, this sequence of operations occurs more quickly (by about 1s in my one test) if there is a small delay between the three steps. 
-			   A 50ms delay seems to be sufficient.
-			
-			   Of course, an additional tip is to avoid calling this function until a reasonable delay has passed since the last window resize event, 
-			   so that this function isn't called multiple times while a user drags the window resize control around.	
-			*/
-			
-			timeout(time_step, function () {
-				sequence_table.css("display", "none");
-				timeout(time_step, function () {
-					fit_inner_elements();
-					timeout(time_step, function () {
-						sequence_table.css("display", "table");
-					});
-				});
-			});
-		};
-		
-		var fit_inner_elements = function () {
-			$('.fitted-height').each(function () {
-				var h = $(window).height();
-				var top = Math.round($(this).offset().top);
-				$(this).height(h - top);
-			});
-			$('.fitted-width').each(function () { 
-				var w = $(window).width();
-				var left = Math.round($(this).offset().left);
-				$(this).width(w - left);
-			});
-		};
-		
-		
-		$(document).ready(function() {
-			$("#stats-panel").tabs();
-			
-			fit_elements();
-			$(window).resize(delayed_event_handler(500, fit_elements));	
-			$("#resize-it").click(fit_elements);
-		
-			// use this hack until we figure out how to make div *width* larger than window
-		 	var sequence_table = $("#sequence-table");
-			sequence_table.css("display", "table");
-			var seq_width = sequence_table.width();	
-			$("#column-headings").width(seq_width);
-			$("#sequence-panel").width(seq_width);
-			$("#sequence-panel").height(sequence_table.height());
-			$("#sequence-panel-container").width(seq_width);
-			$("#tree-panel").height($("#sequence-panel").height());
-
-			/* wicked slow in Firefox:
-			 $("#sequence-panel table").draggable({ cursor: 'crosshair' });
-			consider using http://maps.gstatic.com/intl/en_us/mapfiles/openhand_8_8.cur for the drag cursor */
-			
-
-			var scroll_func = function () {
-				var sequence_panel_container = $("#sequence-panel-container");
-				var tree_panel_container = $("#tree-panel-container");
-
-				return function () {
-					sequence_panel_container.scrollTop(tree_panel_container.scrollTop());
-				};
-			}();
-			$("#tree-panel-container").scroll(scroll_func);
-			
-			
-		/* fixme: fit_elements() when offset changes */
-		/* fixme: fit vrules */
-		
-			$("#display-none").click( function () {
-				$("#sequence-table").css("display", "none");
-			});
-			
-			$("#display-table").click( function () {
-				$("#sequence-table").css("display", "table");
-			});
-			
-			$("#onstage").click( function() {
-				$("#sequence-table").css("position", "relative").css("left", "0");
-			});
-			
-			$("#offstage").click( function() {
-				$("#sequence-table").css("position", "fixed").css("left", "-9999px");
-			});
-			
-			var hidden_col = 1;
-			
-			$("#hide").click( function() {
-				//$("#sequence-panel td:nth-child(" + hidden_col + ")").hide();
-				//hidden_col++;
-				/*$(".c20, .c21, .c22, .c23, .c24, .c25, .c26, .c27, .c28, .c29, .c30, .c31, .c32, .c33, .c34, .c35, .c36, .c37, .c38, .c39").each( function () {
-					$(this).hide("slow");
-				});*/
-				window.setTimeout(function() {
-					$(".c20").hide();
-						window.setTimeout(function() {
-							$(".c21").hide();
-							window.setTimeout(function() {
-								$(".c22").hide();
-								$(".c23").css("border-width", "0").css("border-left-color", "#ffffff").css("border-left-style", "solid").animate( {"borderLeftWidth": "5px"}, 1000);
-							}, 100);
-						}, 100);
-					}, 100);
-					
-					$
-				
-				//$(".c40").css("border-color", "#ffffff");
-			});
-			
-			$("#show").click( function () {
-				$("#sequence-panel td:hidden, #sequence-panel th:hidden").show();
-				$(".c40").css("border-left", "0");
-			});			
-		});
-		
-		
-		/*$(window).load( function () {
-			$("td").mousedown( function () {
-				$(this).addClass("highlighted");
-				$(this).append("<span class=\"overlay\" style=\"position: relative; left:100%\"><span class=\"ui-icon ui-icon-arrow-1-n\"/></span>");
-				});
-				
-			$("td").mouseup(function () {
-				$("td .overlay").remove();
-				$(this).removeClass("highlighted");
-			});
-		});*/
-		
-	</script>
-	
-	
-	<style type="text/css">
-
-		/* here for development convenience */
-		
-		html { overflow: hidden; }
-		body { font-size: small; padding: 0; margin: 0; }
-
-		#offstage-div { position: fixed; top: 0px; left: -9999px; }	
-		#header {}
-		#header h1 { font-weight: normal; color: #888888; font-size: 250%; font-family: Verdana, Arial, sans-serif; margin: 0.2em 0.2em 0.2em 0.2em;}
-		
-		.noraseq-admin { font-size: 11px; margin-left: 1em; }
-
-		/* display h2 inline so that "option links" (e.g., <a>sort</a> | <a>unsort</a>) can be floated right, yet share the same 
-		   text baseline as the h2. However, inline display causes h2 margin to overspill the containing div, causing layout problems;
-		 	therefore style "header-block" divs, instead of h2s, to get margins and padding. */
-		
-		.noraseq-admin h2 { display: inline; padding: 0; margin: 0; font-size: 1.3em;  font-weight: normal; }	
-		.noraseq-admin .header-block { display: block; margin-top: 0.2em; margin-bottom: 0.8em; }
-		.noraseq-admin .header-block .option-link { float: right; }
-		
-		.noraseq-admin p { margin-left: 1em; margin-top: 0.5em; margin-bottom: 0.3em;}
-		.option-link { font-size: 0.9em; }
-		.option-link p { display: inline; }
-		.option-link a { color: #0000ee; text-decoration: none; }
-		.option-link a:visited { color: #0000ee; }
-		.option-link a:hover { text-decoration: underline; }
-		.noraseq-admin .ghosted { color: #aaaaaa; }
-		
-		#stats-panel { background: transparent; border: 0; margin-bottom: 1em; }
-		#stats-panel .ui-tabs-panel { background-color: #eeeeee; border: 1px solid #cccccc; }
-		#stats-panel ul { margin-left: 1em; background: transparent; border: 0; }
-		
-		#column-stats { float: left; }
-		#column-vs-group-stats { float: left; }
-		#column-pair-stats { float: left; }
-		
-		.admin-display-cell { float: left; }
-		.column-score-histogram { float: left; width: 200px; height: 150px; background-color: #ffffff; }
-		.column-by-score { float: left; width: 250px; height: 150px; background-color: #ffffff; }
-		.selected-column-histogram { float: left; width: 200px; height: 150px; background-color: #ffffff; }
-
-		#fitted-panel { position: relative; }
-		#fitted-left { width: 200px; }
-		#fitted-right { position: absolute; left: 200px; top: 0px; overflow-x: auto; overflow-y: hidden; width: 100px; height:100px;}
-		
-		#tree-threshold-chooser { width: 100%; height: 50px; border: 0; background-color: #e8ecf9; }
-		#tree-panel-container { height: 50px; width: 100%; overflow-y: auto; overflow-x: hidden; }
-		#tree-panel { position: relative; width: 100%; height: 1000px; border: 0; background-color: #ffffff; }
-		
-		#column-headings { height: 50px; border-width: 1px; border-style: none none none solid; border-color: #bbbbbb; background-color: #d5ddf3; }
-		#sequence-panel-container { overflow-y: hidden; overflow-x: visible; }
-		#sequence-panel { border-width: 1px; border-style: none none none solid; border-color: #dcddab; background-color: #efefe0; }
-		
-		/* using table-layout:fixed did not speed rendering at all, according to Firebug Net panel */
-		
-		#sequence-table { float: left; border-spacing: 0px; font-family: "Verdana"; font-size: 12px; color: #333333 }
-		.sequence-table-row > td { background-color: #ebead3; padding-top: 2px; padding-bottom: 0px; text-align: center; }
-		.sequence-table-row > .gap { background: transparent; color: #A6A6A6; }
-		#sequence-panel	.rowtitle { text-align: left; background-color: #EFEFE0; }
-		#sequence-panel .rownum { text-align: left; background-color: #EFEFE0; }
-		#sequence-panel .rowcontrol { text-align: left; background-color: #EFEFE0; }
-		#sequence-panel .conserved { background-color: #8b9edd; }
-		#sequence-panel .conserved1 { background-color: #ccd1e2; }
-		#sequence-panel .highlighted { background-color: #d5d3a2; padding-left: 0px; padding-right: 0px; padding-top: 1px; border: 1px solid #a6a46f; }
-		#sequence-panel .highlightedconserved1 { background-color: #adb5d0; padding-left: 0px; padding-right: 0px; padding-top: 1px; border: 1px solid #838baa; }
-		#sequence-panel .rownum { display: none; }
-		#sequence-panel .rowtitle { display: none; }
-		#sequence-panel .rowcontrol { display: none; }
-		
-		/* helpers */
-		
-		/* add this class to remove pesky left margin from leftmost inline element */
-		.noraseq-left-align { margin-left: 0px; }
-		
-		.noraseq-vrule { float: left; margin: 10px 20px 10px 20px; width:1px; height: 150px; background-color: #cccccc; }
-		
-		/* add this class temporarily to visualize the border of a div */
-		.noraseq-border-helper { border: 1px solid #333333; }
-		
-		/* use this class to make non-floated container stretch to height of any floated divs it contains 
-		   (usage: add an empty div with this class after all floated divs) */
-		.noraseq-bottom-anchor { clear: both; }
-
-	</style>
-	
+	<script type="text/javascript" src="{{MEDIA_URL}}mssm/js/noraseq.js"></script> 	
 </head>
 
 <body>
-	
 	<div id="header">
 		<h1>NORA<span style="font-weight: bold">Seq</span></h1>
 	</div>
 	
-	<div class="noraseq-admin">
+	<div id="admin" class="noraseq-admin">
 		<!-- stats-panel must be contained within an element with class noraseq-admin, rather than merely being
 			a *member* of the class, in order for jquery-ui tabs() to style it correctly -->
 		<div id="stats-panel">
@@ -354,67 +87,67 @@
 		
 		<!-- fixme for tiny links: change ui-widget text size to 1em in jquery ui theme; so that body text size can be upsized. -->
 		<p class="option-link">color: <a href="#">conservation</a> | <a href="#">hydrophobicity</a> | <a href="#">size</a></p>
-		<button id="offstage" type="button">offstage</button>
-		<button id="onstage" type="button">onstage</button>
-		<button id="hide" type="button">hide col</button>
-		<button id="show" type="button">show cols</button>
-		<button id="display-none" type="button">set display: none</button>
-		<button id="display-table" type="button">set display: table</button>
-		<button id="resize-it" type="button">resize</button>
-	</div> <!-- noraseq-admin -->
+	</div> <!-- admin -->
 	
-	<div id="fitted-panel">
-		<div id="fitted-left">
-			<div id="tree-threshold-chooser"> </div>
-			<div id="tree-panel-container" class="fitted-height">
-				<div id="tree-panel"> 
-					<div style="position: absolute; width:50px; height: 50px; top:300px; background-color: #cccccc;"></div>
+
+	<!--
+		put test buttons here: 
+		
+		<button id="display-none" type="button">set display: none</button>
+	-->
+	<button id="moveup" type="button">move up</button>
+	<button id="movedown" type="button">move down</button>
+
+	<!-- the ridiculous width of div#sequence-panel is to make sure div#row-label-panel and div#x-overflow-container always float next to each other, no matter how wide x-overflow-container becomes
+		 (and it may become very large with a long sequence alignment... -->
+	
+	<div id="sequence-panel" style="width: 100000px">
+		<div id="row-label-panel" style="float: left; width:200px; height: 500px; background-color: #cccccc">
+			<div id="row-label-control"></div>
+			<div class="y-overflow-container">
+				<div class="scrolling-panel">
+					<div class="scrolling-content">
+						<div id="tree"></div>
+						<div id="row-labels"></div>
+					</div>
 				</div>
 			</div>
 		</div>
-		
-		<div id="fitted-right" class="fitted-width fitted-height">
-			<!-- consider using a single table with an overflow style on the tbody -->
-			
-			<div id="column-headings"> 
-				<table>
-					<thead>
-						<tr>
-							{% for col in header_row %}
-				        	<th><div class="colheader">*</div></th>
-				            {% endfor %}
-						</tr>
-					</thead>
-				</table>
-			</div>
-			<div id="sequence-panel-container" class="fitted-height">
-				<div id="sequence-panel">
-					<table id="sequence-table" style="width:{{table_width}}px; table-layout:fixed; display: none;">	 
-						{% spaceless %}
-						<thead>
-							<tr>
-					            {% for col in header_row %}
-					        	<th style="width:15px"></th>
-					            {% endfor %}
-				        	</tr>
-						</thead>
-						<tbody>
-				        {% for row in alignment_rows %}
-				        <tr class="r{{row.row_num}} sequence-table-row">
-				            {% for residue in row.filtered_sequence %}
-				            <td class="c{{residue.col_num}}{% if residue.is_gap %} gap{% endif %}">{{residue.abbrev}}</td>
-				            {% endfor %}
-				        </tr>
-				        {% endfor %}
-						</tbody>
-				    	{% endspaceless %}
-				    </table>
-					<div class="noraseq-bottom-anchor"></div>
-				</div> <!-- sequence-panel -->
-			</div> <!-- sequence-panel-container -->
-		</div> <!-- fitted-right -->
-	</div> <!-- fitted-panel -->
-
+	
+		<div id="sequence-content-panel" style="float: left">
+			<div class="x-overflow-container">
+				<div class="scrolling-panel">
+					<div id="column-labels" style="height: 50px; width: 100%"></div>
+					<div class="y-overflow-container">
+						<div class="scrolling-panel"> 
+							<div class="scrolling-content">
+								<table id="sequence-table" style="width:{{table_width}}px">	 
+									{% spaceless %}
+									<thead>
+										<tr>
+								            {% for col in header_row %}
+								        	<th></th>
+								            {% endfor %}
+							        	</tr>
+									</thead>
+									<tbody>
+							        {% for row in alignment_rows %}
+							        <tr class="r{{row.row_num}} sequence-table-row">
+							            {% for residue in row.filtered_sequence %}
+							            <td class="c{{residue.col_num}}{% if residue.is_gap %} gap{% endif %}">{{residue.abbrev}}</td>
+							            {% endfor %}
+							        </tr>
+							        {% endfor %}
+									</tbody>
+							    	{% endspaceless %}
+							    </table>
+							</div> <!-- scrolling-content -->
+						</div> <!-- scrolling-panel -->
+					</div> <!-- y-overflow-container -->
+				</div> <!-- scrolling-panel -->
+			</div>  <!-- x-overflow-container -->		
+		</div> <!-- sequence-content-panel -->
+	</div> <!-- sequence-panel -->
 </body>
 </html>
 
