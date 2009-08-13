@@ -2,13 +2,20 @@
 <html lang="en">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+	
 	<title>NORASeq view of {{ alignment.name }}</title>
-	<link type="text/css" href="{{MEDIA_URL}}mssm/css/noraseq-admin-grey-theme-1/jquery-ui-1.7.2.custom.css" rel="stylesheet" />
-	<link type="text/css" href="{{MEDIA_URL}}mssm/css/noraseq.css" rel="stylesheet" />
+	
+	<link type="text/css" 
+		    href="{{MEDIA_URL}}mssm/css/noraseq-admin-grey-theme-1/jquery-ui-1.7.2.custom.css" 
+		    rel="stylesheet" />
+	
+	<link type="text/css" 
+	      href="{{MEDIA_URL}}mssm/css/noraseq.css" 
+	      rel="stylesheet" />
 	
 	<script type="text/javascript" src="{{MEDIA_URL}}js/jquery-1.3.2.min.js"></script>
 	<script type="text/javascript" src="{{MEDIA_URL}}mssm/js/jquery-ui-1.7.2.custom.min.js"></script>
-	<script type="text/javascript" src="{{MEDIA_URL}}mssm/js/noraseq.js"></script> 	
+	<script type="text/javascript" src="{{MEDIA_URL}}mssm/js/noraseq.js"></script>
 </head>
 
 <body>
@@ -30,32 +37,46 @@
 					<div class="header-block">
 						<h2>score columns by</h2>
 					</div>
-					<p><input id="conservation-radio-button" type="radio" class="noraseq-left-align" name="column-rank-statistic" value="conservation">
-					<label for="conservation-radio-button">conservation</label></p>
+					<p>
+					  <input id="conservation-radio-button" type="radio" class="noraseq-left-align" 
+					         name="column-rank-statistic" value="conservation">
+					  <label for="conservation-radio-button">conservation</label>
+					</p>
 		
-					<p><input id="hydrophobicity-radio-button" type="radio" class="noraseq-left-align" name="column-rank-statistic" value="hydrophobicity">
-					<label for="hydrophobicity-radio-button">hydrophobicity</label></p>
+					<p>
+					  <input id="hydrophobicity-radio-button" type="radio" class="noraseq-left-align" 
+					         name="column-rank-statistic" value="hydrophobicity">
+					  <label for="hydrophobicity-radio-button">hydrophobicity</label>
+					</p>
 		
-					<p><input id="size-radio-button" type="radio" class="noraseq-left-align" name="column-rank-statistic" value="size">
-					<label for="size-radio-button">size</label></p>
+					<p>
+					  <input id="size-radio-button" type="radio" class="noraseq-left-align" 
+					         name="column-rank-statistic" value="size">
+					  <label for="size-radio-button">size</label>
+				  </p>
 		
 					<p>approx # residues allowed:</p>
-					<p><input id="one-allowed-radio-button" type="radio" style="margin-left: 1em" name="column-rank-statistic" value="one-allowed">
-					<label for="one-allowed-radio-button">1</label>
+					<p>
+					  <input id="one-allowed-radio-button" type="radio" style="margin-left: 1em" 
+					         name="column-rank-statistic" value="one-allowed">
+				  	<label for="one-allowed-radio-button">1</label>
 		
-					<input id="two-allowed-radio-button" type="radio" name="column-rank-statistic" value="two-allowed">
-					<label for="two-allowed-radio-button">2</label>
+					  <input id="two-allowed-radio-button" type="radio" 
+					         name="column-rank-statistic" value="two-allowed">
+					  <label for="two-allowed-radio-button">2</label>
 		
-					<input id="three-plus-allowed-radio-button" type="radio" name="column-rank-statistic" value="three-plus-allowed">
-					<label for="three-plus-allowed-radio-button">3+</label></p>
-				</div>
+					  <input id="three-plus-allowed-radio-button" type="radio" 
+					         name="column-rank-statistic" value="three-plus-allowed">
+				    <label for="three-plus-allowed-radio-button">3+</label>
+				  </p>
+				</div>  <!-- admin-display-cell -->
 			
 				<div class="noraseq-vrule" id="column-l-rule"></div>
 			
 				<div class="admin-display-cell">
 					<div class="header-block"><h2>summary of scores</h2></div>
 					<div class="column-score-histogram"></div>
-				</div>
+				</div>  <!-- admin-display-cell -->
 			
 				<div class="noraseq-vrule" id="column-mid-rule"></div>
 			
@@ -65,7 +86,7 @@
 						<p class="option-link"><a href="#">sort</a> | <a href="#">unsort</a></p>
 					</div>
 					<div class="column-by-score"></div>
-				</div>
+				</div> <!-- admin-display-cell -->
 			
 				<div class="noraseq-vrule" id="column-r-rule"></div>
 			
@@ -74,19 +95,30 @@
 						<h2 class="ghosted">selected column</h2>
 					</div>
 					<div class="selected-column-histogram"></div>
-				</div>
+				</div>  <!-- admin-display-cell -->
 				
 				<div class="noraseq-bottom-anchor"></div>
 			</div> <!-- column-stats -->
 
-			<div id="column-vs-group-stats">Phasellus mattis tincidunt nibh. Cras orci urna, blandit id, pretium vel, aliquet ornare, felis. Maecenas scelerisque sem non nisl. Fusce sed lorem in enim dictum bibendum.</div>
-			<div id="column-pair-stats">Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis. Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus. Mauris porttitor ullamcorper augue.</div> 
+			<div id="column-vs-group-stats">
+			  Phasellus mattis tincidunt nibh. Cras orci urna, blandit id, pretium vel, aliquet ornare, felis. 
+			  Maecenas scelerisque sem non nisl. Fusce sed lorem in enim dictum bibendum.
+			</div>
+			<div id="column-pair-stats">
+			  Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis. 
+			  Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus.
+			  Mauris porttitor ullamcorper augue.
+			</div> 
 		
-		<div class="noraseq-bottom-anchor"></div>
+		  <div class="noraseq-bottom-anchor"></div>
 		</div> <!--stats-panel -->
 		
-		<!-- fixme for tiny links: change ui-widget text size to 1em in jquery ui theme; so that body text size can be upsized. -->
-		<p class="option-link">color: <a href="#">conservation</a> | <a href="#">hydrophobicity</a> | <a href="#">size</a></p>
+		<!-- fixme for tiny links: 
+		     change ui-widget text size to 1em in jquery ui theme; so that body text size can be upsized. -->
+	
+		<p class="option-link">
+		  color: <a href="#">conservation</a> | <a href="#">hydrophobicity</a> | <a href="#">size</a>
+		</p>
 	</div> <!-- admin -->
 	
 
@@ -98,11 +130,10 @@
 	<button id="moveup" type="button">move up</button>
 	<button id="movedown" type="button">move down</button>
 
-	<!-- the ridiculous width of div#sequence-panel is to make sure div#row-label-panel and div#x-overflow-container always float next to each other, no matter how wide x-overflow-container becomes
-		 (and it may become very large with a long sequence alignment... -->
-	
-	<div id="sequence-panel" style="width: 100000px">
-		<div id="row-label-panel" style="float: left; width:200px; height: 500px; background-color: #cccccc">
+
+
+	<div id="sequence-panel" >
+		<div id="row-label-panel">
 			<div id="row-label-control"></div>
 			<div class="y-overflow-container">
 				<div class="scrolling-panel">
@@ -114,40 +145,40 @@
 			</div>
 		</div>
 	
-		<div id="sequence-content-panel" style="float: left">
+		<div id="sequence-content-panel">
 			<div class="x-overflow-container">
 				<div class="scrolling-panel">
 					<div class="scrolling-content">
-						<div id="column-labels" style="height: 50px; width: 100%"></div>
+						<div id="column-labels"></div>
 						<div class="y-overflow-container">
 							<div class="scrolling-panel"> 
 								<div class="scrolling-content">
-									<table id="sequence-table" style="width:{{table_width}}px">	 
+									<table id="sequence-table">	
 										{% spaceless %}
 										<thead>
-											<tr>
-									            {% for col in header_row %}
-									        	<th></th>
-									            {% endfor %}
-								        	</tr>
+											<tr class="sequence-table-row">
+												{% for col in header_row %}
+												<th></th>
+												{% endfor %}
+											</tr>
 										</thead>
 										<tbody>
-								        {% for row in alignment_rows %}
-								        <tr class="r{{row.row_num}} sequence-table-row">
-								            {% for residue in row.filtered_sequence %}
-								            <td class="c{{residue.col_num}}{% if residue.is_gap %} gap{% endif %}">{{residue.abbrev}}</td>
-								            {% endfor %}
-								        </tr>
-								        {% endfor %}
+										{% for row in alignment_rows %}
+										<tr class="r{{row.row_num}} sequence-table-row">
+											{% for residue in row.filtered_sequence %}
+											<td class="c{{residue.col_num}}{% if residue.is_gap %} gap{% endif %}">{{residue.abbrev}}</td>
+											{% endfor %}
+										</tr>
+										{% endfor %}
 										</tbody>
-								    	{% endspaceless %}
-								    </table>
+										{% endspaceless %}
+									</table>
 								</div> <!-- scrolling-content -->
 							</div> <!-- scrolling-panel -->
 						</div> <!-- y-overflow-container -->
 					</div> <!-- scrolling-content -->
 				</div> <!-- scrolling-panel -->
-			</div>  <!-- x-overflow-container -->		
+			</div>	<!-- x-overflow-container -->		
 		</div> <!-- sequence-content-panel -->
 	</div> <!-- sequence-panel -->
 </body>
