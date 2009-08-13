@@ -13,7 +13,14 @@
   This function resizes the x-scrolling-panel so that it is the width of the contained content plus the width of the container it's in.
   (Similarly, it resizes y-scrolling-panels such that they are the height of the content plus the container.)
   This ensures that the content can be scrolled from the point at which its top is equal to the container top to the point where the content's
-  bottom is right at the container's top */
+  bottom is right at the container's top.
+
+  NOTE the size of the content to be scrolled should never change; this function caches the original height and width of the content.
+  (this is necessary in the case that an x-overflow-container is nested in a y-overflow-container, or vice versa;
+   the function modifies the apparent height/width of the inner container so that there's no longer a good general way to tell the actual
+  height/width of the inner container.)
+  
+*/
   
   
 var size_overflow_containers = function () {
@@ -23,28 +30,35 @@ var size_overflow_containers = function () {
     
     var max_width = 1920;
     var max_height = 1200;
+    var orig_height, orig_width;
     var content, panel;
     
-    $(".y-overflow-container").each( function () {
-        panel = $(this).children(".scrolling-panel");  //relevant scrolling-panel should be a direct child
-        content = panel.find(".scrolling-content");    //content may be a descendant of the panel at any depth
+    $(".y-overflow-container, .x-overflow-container").each( function () {          
+        panel = $(this).children(".scrolling-panel"); 
+        content = panel.children(".scrolling-content");
         
-        panel.height(max_height + content.height());
-        $(this).height(max_height);
+        if (!content.data("orig_height")) {
+            content.data("orig_height", content.height());
+            content.data("orig_width", content.width());
+        }
+                
+        orig_height = content.data("orig_height");
+        orig_width = content.data("orig_width");        
         
-        panel.width(content.width());
-        $(this).width(content.width());
-    });
-    
-    $(".x-overflow-container").each( function () {
-        panel = $(this).children(".scrolling-panel");
-        content = panel.find(".scrolling-content");
+        if ($(this).hasClass(".y-overflow-container")) {
+            panel.height(max_height + orig_height);
+            $(this).height(max_height);
+
+            panel.width(orig_width);
+            $(this).width(orig_width);
+        }
+        else if ($(this).hasClass(".x-overflow-container")) {            
+            panel.height(orig_height);
+            $(this).height(orig_height);
         
-        panel.height(content.height());
-        $(this).height(content.height());
-        
-        panel.width(max_width + content.width());
-        $(this).width(max_width);
+            panel.width(max_width + orig_width);
+            $(this).width(max_width);
+        }
     });
 };
 

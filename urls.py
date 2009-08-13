@@ -5,5 +5,5 @@ urlpatterns = patterns(settings.PROJECT_NAME + '.mssm.views',
     (r'^$', 'index'),
     (r'^deleted/$', 'deleted'),
     (r'^alignments/$','alignment_list'),
-    (r'^alignment/(\d+)/$', 'alignment_detail'),
+    (r'^alignment/(\d+)/$', 'alignment_detail')
 )

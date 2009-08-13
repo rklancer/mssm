@@ -117,33 +117,35 @@
 		<div id="sequence-content-panel" style="float: left">
 			<div class="x-overflow-container">
 				<div class="scrolling-panel">
-					<div id="column-labels" style="height: 50px; width: 100%"></div>
-					<div class="y-overflow-container">
-						<div class="scrolling-panel"> 
-							<div class="scrolling-content">
-								<table id="sequence-table" style="width:{{table_width}}px">	 
-									{% spaceless %}
-									<thead>
-										<tr>
-								            {% for col in header_row %}
-								        	<th></th>
+					<div class="scrolling-content">
+						<div id="column-labels" style="height: 50px; width: 100%"></div>
+						<div class="y-overflow-container">
+							<div class="scrolling-panel"> 
+								<div class="scrolling-content">
+									<table id="sequence-table" style="width:{{table_width}}px">	 
+										{% spaceless %}
+										<thead>
+											<tr>
+									            {% for col in header_row %}
+									        	<th></th>
+									            {% endfor %}
+								        	</tr>
+										</thead>
+										<tbody>
+								        {% for row in alignment_rows %}
+								        <tr class="r{{row.row_num}} sequence-table-row">
+								            {% for residue in row.filtered_sequence %}
+								            <td class="c{{residue.col_num}}{% if residue.is_gap %} gap{% endif %}">{{residue.abbrev}}</td>
 								            {% endfor %}
-							        	</tr>
-									</thead>
-									<tbody>
-							        {% for row in alignment_rows %}
-							        <tr class="r{{row.row_num}} sequence-table-row">
-							            {% for residue in row.filtered_sequence %}
-							            <td class="c{{residue.col_num}}{% if residue.is_gap %} gap{% endif %}">{{residue.abbrev}}</td>
-							            {% endfor %}
-							        </tr>
-							        {% endfor %}
-									</tbody>
-							    	{% endspaceless %}
-							    </table>
-							</div> <!-- scrolling-content -->
-						</div> <!-- scrolling-panel -->
-					</div> <!-- y-overflow-container -->
+								        </tr>
+								        {% endfor %}
+										</tbody>
+								    	{% endspaceless %}
+								    </table>
+								</div> <!-- scrolling-content -->
+							</div> <!-- scrolling-panel -->
+						</div> <!-- y-overflow-container -->
+					</div> <!-- scrolling-content -->
 				</div> <!-- scrolling-panel -->
 			</div>  <!-- x-overflow-container -->		
 		</div> <!-- sequence-content-panel -->
