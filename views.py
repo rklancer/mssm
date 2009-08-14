@@ -79,7 +79,7 @@ def alignment_detail(request, alignment_id):
                 ({'abbrev': t[0], 'is_gap': t[0]=='-', 'col_num': t[2]} 
                     for t in zip(row.sequence, to_show, col_nums)
                     if t[1])
-
+        
         context = { 'alignment': alignment, 
                     'alignment_rows': alignment_rows,
                     'header_row': header_row,

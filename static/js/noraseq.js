@@ -1,6 +1,6 @@
 $(document).ready(function() {
-	$("#stats-panel").tabs();
-	
+    $("#stats-panel").tabs();
+    
     $("#moveup").click( function () {
         $("#sequence-content-panel .y-overflow-container").scrollTop(100);
     });
@@ -8,6 +8,34 @@ $(document).ready(function() {
     $("#movedown").click( function () {
         $("#sequence-content-panel .y-overflow-container").scrollTop(0);
     });
+    
+    /* test speed of interactive responses to click event on table cells (uses event delegation to bind
+        handler once, to #sequence-table.) */
+        
+    $("#sequence-table").mousedown( function (e) {
+        var td = $(e.target).closest("td").not(".gap");
+        if (td) {
+            var old_color = td.css("border-color");
+
+            /* old_color may be empty or undefined, if "border-color" property was not set specifically on this td
+               rather than inherited, and if it was not specifically set using the border-color shorthand. 
+               (rather than by using border-left-color, etc, which should always be defined.) However, setting it 
+               back to empty works correctly to remove the border-color we set on mousedown */           
+
+            var done = function () {
+                td.css("border-color", old_color);
+                td.unbind('mouseleave.test-event-delegation').unbind('mouseup.test-event-delegation');
+            };
+            
+            /* use .test-event-delegation namespace for the events we bind so that later we unbind just the handler
+               below. Another option is for done() to pass a reference to itself to unbind()... */
+            
+            td.css("border-color", "#cccccc").bind("mouseleave.test-event-delegation", done).
+                bind("mouseup.test-event-delegation", done);
+        }
+    });
+    
+    $("#row-label-panel").resizable();
     
     safely_size_overflow_containers();
 });
@@ -26,7 +54,7 @@ $(document).ready(function() {
 var safely_size_overflow_containers = function () {
     var time_step = 50;
     var sequence_table = $("#sequence-table");
-    var table_parent = sequence_table.parent(".scrolling-content");
+    var table_parent = sequence_table.closest(".scrolling-content");
     var table_height = sequence_table.height();
     var table_width = sequence_table.width();
 
@@ -66,8 +94,9 @@ var safely_size_overflow_containers = function () {
   .x-overflow-container it's in. (Similarly, it resizes y-scrolling-panels such that they are the height of the 
   content plus the container.)
   
-  This ensures that the content can be scrolled up from the point at which the content top overlaps the top of the
-  overflow container, to the point at which the content *bottom* overlaps the top of the overflow container.
+  This ensures that the content can be scrolled up from the point at which the content left edge overlaps the left 
+  edge of the overflow container, to the point at which the content's *right edge* overlaps the left edge of the 
+  overflow container. (For y-scrolling case, substitute "top" for "left" and "bottom" for "right".)
 
   NOTE the size of the content to be scrolled should never change; this function examines the original height
   and width of the content and caches them before it modifies the .x(y)-overflow-container sizes; subsequent calls

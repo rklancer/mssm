@@ -5,10 +5,16 @@
 	
 	<title>NORASeq view of {{ alignment.name }}</title>
 	
+	<!-- generic jquery UI theme -->
+	<link type="text/css" 
+  	    href="{{MEDIA_URL}}mssm/css/smoothness/jquery-ui-1.7.2.custom.css" 
+  	    rel="stylesheet" />
+  
+  <!-- jquery UI theme scoped to .noraseq-admin -->
 	<link type="text/css" 
 		    href="{{MEDIA_URL}}mssm/css/noraseq-admin-grey-theme-1/jquery-ui-1.7.2.custom.css" 
 		    rel="stylesheet" />
-	
+  
 	<link type="text/css" 
 	      href="{{MEDIA_URL}}mssm/css/noraseq.css" 
 	      rel="stylesheet" />
@@ -130,9 +136,7 @@
 	<button id="moveup" type="button">move up</button>
 	<button id="movedown" type="button">move down</button>
 
-
-
-	<div id="sequence-panel" >
+	<div id="sequence-panel">
 		<div id="row-label-panel">
 			<div id="row-label-control"></div>
 			<div class="y-overflow-container">
@@ -144,12 +148,29 @@
 				</div>
 			</div>
 		</div>
+
 	
 		<div id="sequence-content-panel">
 			<div class="x-overflow-container">
 				<div class="scrolling-panel">
 					<div class="scrolling-content">
-						<div id="column-labels"></div>
+						<div id="column-labels">
+						  <table id="column-labels-table">
+						    <thead>
+					        <tr class="column-labels-table-row">
+										{% for col_num in header_row %}
+										<th class="c{{col_num}}"></th>
+										{% endfor %}
+					      </thead>
+				      </table>
+						</div>
+						
+						<!-- comment: if it's desirable to have scroll bars to indicate the scroll position of the
+						     sequence table, one solution is to put the sequence table into a programmatically-generated
+						     iframe that is resized when the window resizes. (Using the more obvious strategy of placing the
+						     sequence table in a *div* that gets resized is problematic because resizing a div containing a large
+						     table can be a very slow operation in Firefox. Resizing an iframe is immediate.) -->
+						     
 						<div class="y-overflow-container">
 							<div class="scrolling-panel"> 
 								<div class="scrolling-content">
