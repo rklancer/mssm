@@ -80,7 +80,9 @@
 				<div class="noraseq-vrule" id="column-l-rule"></div>
 			
 				<div class="admin-display-cell">
-					<div class="header-block"><h2>summary of scores</h2></div>
+					<div class="header-block">
+					  <h2>summary of scores</h2>
+					</div>
 					<div class="column-score-histogram"></div>
 				</div>  <!-- admin-display-cell -->
 			
@@ -136,6 +138,7 @@
 	<button id="moveup" type="button">move up</button>
 	<button id="movedown" type="button">move down</button>
 
+
 	<div id="sequence-panel">
 		<div id="row-label-panel">
 			<div id="row-label-control"></div>
@@ -148,8 +151,7 @@
 				</div>
 			</div>
 		</div>
-
-	
+		
 		<div id="sequence-content-panel">
 			<div class="x-overflow-container">
 				<div class="scrolling-panel">
@@ -164,13 +166,15 @@
 					      </thead>
 				      </table>
 						</div>
-						
+
+						{% comment %}
 						<!-- comment: if it's desirable to have scroll bars to indicate the scroll position of the
 						     sequence table, one solution is to put the sequence table into a programmatically-generated
 						     iframe that is resized when the window resizes. (Using the more obvious strategy of placing the
 						     sequence table in a *div* that gets resized is problematic because resizing a div containing a large
 						     table can be a very slow operation in Firefox. Resizing an iframe is immediate.) -->
-						     
+						{% endcomment %}
+
 						<div class="y-overflow-container">
 							<div class="scrolling-panel"> 
 								<div class="scrolling-content">
@@ -204,5 +208,3 @@
 	</div> <!-- sequence-panel -->
 </body>
 </html>
-
-

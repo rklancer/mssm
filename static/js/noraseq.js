@@ -23,19 +23,32 @@ $(document).ready(function() {
                back to empty works correctly to remove the border-color we set on mousedown */           
 
             var done = function () {
-                td.css("border-color", old_color);
-                td.unbind('mouseleave.test-event-delegation').unbind('mouseup.test-event-delegation');
+                td.css("border-color", old_color).unbind('mouseleave.test-event-delegation')
+                    .unbind('mouseup.test-event-delegation');
             };
             
             /* use .test-event-delegation namespace for the events we bind so that later we unbind just the handler
-               below. Another option is for done() to pass a reference to itself to unbind()... */
+               below. Another option is for done() to pass to unbind() a reference to itself... */
             
-            td.css("border-color", "#cccccc").bind("mouseleave.test-event-delegation", done).
-                bind("mouseup.test-event-delegation", done);
+            td.css("border-color", "#cccccc").bind("mouseleave.test-event-delegation", done)
+                .bind("mouseup.test-event-delegation", done);
         }
     });
     
-    $("#row-label-panel").resizable();
+    $("#column-labels-table").click( function (e) {
+        var col_class = $(e.target).attr("className").match(/\b(c\d+)\b/)[1];
+        
+        if ($(e.target).hasClass("selected")) {
+            $("."+col_class).removeClass("selected"); 
+        }
+        else {   
+            $("."+col_class).addClass("selected"); 
+        }
+    });
+    
+        
+    
+    $("#row-label-panel").resizable({'helper': 'ui-state-highlight'});
     
     safely_size_overflow_containers();
 });

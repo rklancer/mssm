@@ -63,18 +63,34 @@ body { font-size: small; padding: 0; margin: 0; }
                                 border-width: 1px;
                                 -moz-border-radius-topleft: 5px;
                                 -webkit-border-top-left-radius: 5px;
+                                border-top-left-radius: 5px;
                                 -moz-border-radius-topright: 5px;
                                 -webkit-border-top-right-radius: 5px;
+                                border-top-right-radius: 5px;                                
                               }
+.column-labels-table-row > th:hover {
+                            background-color:#F3F2DA;
+                            border-color:#A8ADBB;
+                            }
 
-/*.column-labels-table-row > .above-gap { background-color: #efefe0; }*/
+
+.column-labels-table-row > .selected {
+    background-color: #CFBD87;
+}
+
+.sequence-table-row > .selected {
+    background-color: #CFBD87;
+    color: white;
+    font-weight: bold;
+    border-color: #CFBD87 #aaaaaa;
+}
 
 /* the ridiculous width of #sequence-panel is necessary to make sure #row-label-panel and #sequence-content-panel
      always float next to each other, no matter how wide #sequence-content-panel becomes (and it may become very 
      wide when it contains a long sequence alignment...) */
      
 #sequence-panel { width: 100000px; }
-#row-label-panel { float: left; width:200px; height: 500px; background: transparent; color: black;}
+#row-label-panel { float: left; width:200px; height: 500px; background-color: #cccccc; color: black;}
 #sequence-content-panel { float: left; }
 
 #sequence-table { table-layout: fixed;
@@ -84,17 +100,19 @@ body { font-size: small; padding: 0; margin: 0; }
                   font-family: "Verdana"; 
                   font-size: 12px; 
                   color: #333333; }
-
-/* should probably be an embedded style tag in the noraseq view template */
+                  
 
 .sequence-table-row > th { padding: 0px 1px; width: 15px; }
+                  
                   
 .sequence-table-row > td { text-align: center; 
                            background-color: #ebead3; 
                            border: 1px solid #ebead3; 
                            padding: 0; }
                            
-.sequence-table-row > .gap { background: transparent; color: #A6A6A6; border: 1px solid #efefe0; }
+.sequence-table-row > .gap { background: transparent; 
+                             color: #efefe0;            /* invisible, but selectable and 'web-scrapable' */
+                             border: 1px solid #efefe0; }
 
 
 /* helpers */
