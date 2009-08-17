@@ -90,6 +90,18 @@ body { font-size: small; padding: 0; margin: 0; }
     background-color: #EBE9B8;
 }
 
+.sequence-table-row > .hovered.gap {
+    border-color: #efefe0 #CFBD87;
+}
+
+.sequence-table-row > .hovered.selected {
+    background-color: #dfd2ab;
+    border-color: #dfd2ab #CFBD87;
+}
+
+.column-labels-table-row > .hovered.selected {
+    background-color: #dfd2ab;
+}
 
 /* the ridiculous width of #sequence-panel is necessary to make sure #row-label-panel and #sequence-content-panel
      always float next to each other, no matter how wide #sequence-content-panel becomes (and it may become very 
