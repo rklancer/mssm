@@ -68,12 +68,7 @@ body { font-size: small; padding: 0; margin: 0; }
                                 -webkit-border-top-right-radius: 5px;
                                 border-top-right-radius: 5px;                                
                               }
-.column-labels-table-row > th:hover {
-                            background-color:#F3F2DA;
-                            border-color:#A8ADBB;
-                            }
-
-
+                              
 .column-labels-table-row > .selected {
     background-color: #CFBD87;
 }
@@ -82,8 +77,19 @@ body { font-size: small; padding: 0; margin: 0; }
     background-color: #CFBD87;
     color: white;
     font-weight: bold;
-    border-color: #CFBD87 #aaaaaa;
+    border-color: #CFBD87;
 }
+
+.column-labels-table-row > .hovered {
+    border-color: #aaaaaa;
+    background-color: #EBE9B8;
+}
+
+.sequence-table-row > .hovered {
+    border-color: #EBE9B8 #CFBD87;
+    background-color: #EBE9B8;
+}
+
 
 /* the ridiculous width of #sequence-panel is necessary to make sure #row-label-panel and #sequence-content-panel
      always float next to each other, no matter how wide #sequence-content-panel becomes (and it may become very 

@@ -18,7 +18,7 @@ $(document).ready(function() {
             var old_color = td.css("border-color");
 
             /* old_color may be empty or undefined, if "border-color" property was not set specifically on this td
-               rather than inherited, and if it was not specifically set using the border-color shorthand. 
+               rather than inherited, and if it was  not specifically set using the border-color shorthand. 
                (rather than by using border-left-color, etc, which should always be defined.) However, setting it 
                back to empty works correctly to remove the border-color we set on mousedown */           
 
@@ -35,19 +35,30 @@ $(document).ready(function() {
         }
     });
     
-    $("#column-labels-table").click( function (e) {
-        var col_class = $(e.target).attr("className").match(/\b(c\d+)\b/)[1];
+    $("#column-labels-table").mouseover( function (e) {
+        var th = $(e.target).closest("th");
+        var col_class_selector = "."+th.attr("className").match(/\b(c\d+)\b/)[1];
+        var col = $(col_class_selector);
         
-        if ($(e.target).hasClass("selected")) {
-            $("."+col_class).removeClass("selected"); 
-        }
-        else {   
-            $("."+col_class).addClass("selected"); 
-        }
+        col.addClass("hovered");
+        th.mouseout( function () {
+            col.removeClass("hovered");
+        });
     });
     
-        
     
+    $("#column-labels-table").click( function (e) {
+        var col_class_selector = "."+$(e.target).attr("className").match(/\b(c\d+)\b/)[1];
+        var col = $(col_class_selector);
+        
+        if ($(e.target).hasClass("selected")) {
+            col.removeClass("selected"); 
+        }
+        else {   
+            col.addClass("selected"); 
+        }
+    });
+        
     $("#row-label-panel").resizable({'helper': 'ui-state-highlight'});
     
     safely_size_overflow_containers();
