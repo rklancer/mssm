@@ -1,0 +1,34 @@
+NORASeq colors:
+
+light highlight for nonempty cells and 
+#ebead3: hsv(41, 26, 235)
+
+goes well with the contrastier background color for selected cells
+
+#cfbd87: hsv(32, 89, 207)
+
+I propose this color ramp for blue conservation highlighting:
+
+#d0dcff: hsv(159, 47, 255)
+to
+#90abff: hsv(160, 111, 255)
+
+(note difference is all in the saturation)
+
+for selected + highlighted try:
+#919cbe: hsv(160, 60, 190)
+to
+#6875a0: hsv(160, 90, 160)
+
+or for a little more range try
+
+#a9b3d2: hsv(160, 50, 210)
+to
+#6875a0: hsv(160, 90, 160)
+
+(note we've adjusted both saturation and value to make a ramp
+from light, but still constrasty, blue-grey to dark blue-grey.
+This seems to play nicely with the light highlight -> contrasty, "selected" highlight,
+and the colors play nicely with a bold, white lettering)
+
+
