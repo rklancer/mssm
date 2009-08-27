@@ -2,38 +2,47 @@ $(document).ready(function() {
     $("#stats-panel").tabs();
     
     $("#moveup").click( function () {
-        $("#sequence-content-panel .y-overflow-container").scrollTop(100);
+        $("#sequence-content-panel .y-overflow-container").animate({scrollTop: 300}, 1000);
     });
     
     $("#movedown").click( function () {
-        $("#sequence-content-panel .y-overflow-container").scrollTop(0);
+        $("#sequence-content-panel .y-overflow-container").animate({scrollTop: 0}, 1000);
     });
     
     /* test speed of interactive responses to click event on table cells (uses event delegation to bind
         handler once, to #sequence-table.) */
         
     $("#sequence-table").mousedown( function (e) {
-        var td = $(e.target).closest("td").not(".gap");
+        var td = $(e.target).closest("td").not(".gap");        
+        
+        td.addClass("commented");
+        
+        /*
         if (td) {
-            var old_color = td.css("border-color");
-
-            /* old_color may be empty or undefined, if "border-color" property was not set specifically on this td
-               rather than inherited, and if it was  not specifically set using the border-color shorthand. 
-               (rather than by using border-left-color, etc, which should always be defined.) However, setting it 
-               back to empty works correctly to remove the border-color we set on mousedown */           
-
             var done = function () {
-                td.css("border-color", old_color).unbind('mouseleave.test-event-delegation')
+                td.removeClass("commented").unbind('mouseleave.test-event-delegation')
                     .unbind('mouseup.test-event-delegation');
             };
             
-            /* use .test-event-delegation namespace for the events we bind so that later we unbind just the handler
-               below. Another option is for done() to pass to unbind() a reference to itself... */
+            // use .test-event-delegation namespace for the events we bind so that later we unbind just the handler
+            // below. Another option is for done() to pass to unbind() a reference to itself...
             
-            td.css("border-color", "#cccccc").bind("mouseleave.test-event-delegation", done)
-                .bind("mouseup.test-event-delegation", done);
+            td.addClass("commented").bind("mouseleave.test-event-delegation", done).bind("mouseup.test-event-delegation", done);
         }
+        */
+        
     });
+    
+    
+    $("#sequence-table").mouseover( function (e) {
+        var td = $(e.target).closest("td").not(".gap");
+        
+        td.addClass("hovered-cell").bind("mouseout.noraseq-hover", function () {
+            td.removeClass("hovered-cell").unbind("mouseout.noraseq-hover");
+        });                
+    });
+    
+    
     
     $("#column-labels-table").mouseover( function (e) {
         var th = $(e.target).closest("th");
@@ -41,8 +50,9 @@ $(document).ready(function() {
         var col = $(col_class_selector);
         
         col.addClass("hovered");
-        th.mouseout( function () {
+        th.bind("mouseout.noraseq-hover", function () {
             col.removeClass("hovered");
+            th.unbind("mouseout.noraseq-hover");
         });
     });
     

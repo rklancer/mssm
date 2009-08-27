@@ -26,17 +26,19 @@
 
 <body>
 	<div id="header">
-		<h1>NORA<span style="font-weight: bold">Seq</span></h1>
+		<h1>NORA<span style="font-weight: bold">Seq</span> 
+		  <div style="width: 500px; display: inline; font-size: 75%; margin-left: 3em; color: #666666;">Analyzing: <span style="background-color: #eeeeaa; font-style: italic">Serpins</span></div>
+	  </h1>
 	</div>
-	
+	<hr>
 	<div id="admin" class="noraseq-admin">
 		<!-- stats-panel must be contained within an element with class noraseq-admin, rather than merely being
 			a *member* of the class, in order for jquery-ui tabs() to style it correctly -->
 		<div id="stats-panel">
 			<ul>
-				<li><a href="#column-stats">Just Columns</a></li>
-				<li><a href="#column-vs-group-stats">Columns vs. Groups</a></li>
-				<li><a href="#column-pair-stats">Pairs of Columns</a></li>
+				<li><a href="#column-stats">Columns scored individually</a></li>
+				<li><a href="#column-pair-stats">Pairs of columns scored for relatedness</a></li>
+				<li><a href="#column-vs-selected-column-stats">Columns scored for relatedness to...</a></li>
 			</ul>
 			<div id="column-stats">
 				<div class="admin-display-cell">
@@ -58,7 +60,7 @@
 					<p>
 					  <input id="size-radio-button" type="radio" class="noraseq-left-align" 
 					         name="column-rank-statistic" value="size">
-					  <label for="size-radio-button">size</label>
+					  <label for="size-radio-button">residue size</label>
 				  </p>
 		
 					<p>approx # residues allowed:</p>
@@ -73,7 +75,7 @@
 		
 					  <input id="three-plus-allowed-radio-button" type="radio" 
 					         name="column-rank-statistic" value="three-plus-allowed">
-				    <label for="three-plus-allowed-radio-button">3+</label>
+				    <label for="three-plus-allowed-radio-button">many</label>
 				  </p>
 				</div>  <!-- admin-display-cell -->
 			
@@ -108,17 +110,20 @@
 				<div class="noraseq-bottom-anchor"></div>
 			</div> <!-- column-stats -->
 
-			<div id="column-vs-group-stats">
-			  Phasellus mattis tincidunt nibh. Cras orci urna, blandit id, pretium vel, aliquet ornare, felis. 
-			  Maecenas scelerisque sem non nisl. Fusce sed lorem in enim dictum bibendum.
-			</div>
+			
 			<div id="column-pair-stats">
 			  Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis. 
 			  Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus.
 			  Mauris porttitor ullamcorper augue.
 			</div> 
-		
-		  <div class="noraseq-bottom-anchor"></div>
+			
+			<div id="column-vs-selected-column-stats">
+			  Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis. 
+			  Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus.
+			  Mauris porttitor ullamcorper augue.
+			</div>
+			
+		  <div style="float: none; clear: both" class="noraseq-bottom-anchor"></div>
 		</div> <!--stats-panel -->
 		
 		<!-- fixme for tiny links: 

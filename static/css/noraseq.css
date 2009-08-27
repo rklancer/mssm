@@ -31,9 +31,7 @@ body { font-size: small; padding: 0; margin: 0; }
 #stats-panel .ui-tabs-panel { background-color: #eeeeee; border: 1px solid #cccccc; }
 #stats-panel ul { margin-left: 1em; background: transparent; border: 0; }
 
-#column-stats { float: left; }
-#column-vs-group-stats { float: left; }
-#column-pair-stats { float: left; }
+#stats-panel > div { float: left; }
 
 .admin-display-cell { float: left; }
 .column-score-histogram { float: left; width: 200px; height: 150px; background-color: #ffffff; }
@@ -52,7 +50,9 @@ body { font-size: small; padding: 0; margin: 0; }
                   border-collapse: separate; 
                   position: absolute; 
                   bottom: 0px;  
-                  left: 0px; }
+                  left: 0px;
+                  cursor: pointer; 
+                    }
                   
 .column-labels-table-row { height: 12px; }
 .column-labels-table-row > th { width: 16px; 
@@ -90,6 +90,11 @@ body { font-size: small; padding: 0; margin: 0; }
     background-color: #EBE9B8;
 }
 
+.sequence-table-row > .hovered-cell {
+    border-color: #CFBD87;
+    background-color: #EBE9B8;
+}
+
 .sequence-table-row > .hovered.gap {
     border-color: #efefe0 #CFBD87;
 }
@@ -117,7 +122,8 @@ body { font-size: small; padding: 0; margin: 0; }
                   border-collapse: separate; 
                   font-family: "Verdana"; 
                   font-size: 12px; 
-                  color: #333333; }
+                  color: #333333;
+                  cursor: pointer;  }
                   
 
 .sequence-table-row > th { padding: 0px 1px; width: 15px; }
@@ -130,7 +136,19 @@ body { font-size: small; padding: 0; margin: 0; }
                            
 .sequence-table-row > .gap { background: transparent; 
                              color: #efefe0;            /* invisible, but selectable and 'web-scrapable' */
-                             border: 1px solid #efefe0; }
+                             border-color: #E7E6CB #efefe0 #efefe0 #efefe0; 
+                             cursor: default; }
+
+.sequence-table-row > .selected.commented { 
+                         /*background-color: #CFBD87; color: yellow; */
+                         background-color: yellow; color: #666666;
+}
+                             
+.sequence-table-row > .commented { /*border-width: 2px 1px 1px 1px; border-color: yellow #cccccc #cccccc #cccccc; */
+                            background-color: yellow;
+}
+
+
 
 
 /* helpers */
@@ -145,4 +163,4 @@ body { font-size: small; padding: 0; margin: 0; }
 
 /* use this class to make non-floated container stretch to height of any floated divs it contains 
    (usage: add an empty div with this class after all floated divs) */
-.noraseq-bottom-anchor { clear: both; }
+.noraseq-bottom-anchor { float: none; clear: both; }
