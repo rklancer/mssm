@@ -136,7 +136,7 @@ body { font-size: small; padding: 0; margin: 0; }
                            
 .sequence-table-row > .gap { background: transparent; 
                              color: #efefe0;            /* invisible, but selectable and 'web-scrapable' */
-                             border-color: #E7E6CB #efefe0 #efefe0 #efefe0; 
+							 border-color: #E6E5C6 #efefe0 #efefe0 #efefe0; /* alternately #EBE9B8*/
                              cursor: default; }
 
 .sequence-table-row > .selected.commented { 
@@ -147,9 +147,6 @@ body { font-size: small; padding: 0; margin: 0; }
 .sequence-table-row > .commented { /*border-width: 2px 1px 1px 1px; border-color: yellow #cccccc #cccccc #cccccc; */
                             background-color: yellow;
 }
-
-
-
 
 /* helpers */
 
