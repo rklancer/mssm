@@ -1,0 +1,145 @@
+hover over cell
+mouseout from hovered cell (** or other hover-cancelling event, like loading a newly sorted alignment **)
+hover over row header
+mouseout from hovered row header
+hover over column header
+mouseout from hovered column header
+hover over tag in tag list
+mouseout from hovered tag
+
+click on column header
+click on row header
+click on cell
+click tree node
+click group handle
+
+double click column header
+double click row header
+double click cell
+double click reference-row header
+
+click highlighting option for sequence properties
+click highlighting option for sequence annotation
+click "hide columns" option
+click "unhide columns" option
+click "tag columns" option
+click "tag cells" option
+click "tag rows" option
+click a column-scope tag
+click a cell-scope tag
+click a row-scope tag
+click hidden-columns handle
+click forward or back link in a tag list
+click define-grouping option
+click edit-grouping option
+click remove-grouping option
+click remove-sort-columns option
+
+drag and drop column onto tree panel
+drag and drop column onto sort panel
+drag and drop to rearrange columns in sort panel
+
+drag tree pointer
+
+scroll alignment panel
+
+switch tab
+
+tabs:
+    just-columns tab:
+        select new statistic
+        click "sort" option for column-by-score display
+        click "sort by frequency" option for detail-histogram
+        hover a score-histogram bar
+        mouseout from hovered score-histogram bar
+        click a score-histogram bar
+        click forward or back link in column-by-score display
+        hover a column-by-score bar
+        mouseout from hovered column-by-score bar
+        click a column-by-score bar
+        hover a detail-histogram bar
+        mouseout from hovered detail-histogram bar
+        click a detail-histogram bar
+        
+    
+    pairs-of-columns tab:
+        select "weight scores by presence on multiple branches" option
+        click on "limit to visible columns" option
+        
+        click a bar in the score histogram
+        click a bar in the zoomed score histogram
+        dismiss the zoomed score histogram
+        click forward or back link in pair-by-score display
+        hover a bar in pair-by-score display
+        mouseout from hovered pair-by-score bar
+        click a bar in pair-by-score display
+        hover a box in the 2d histogram
+        mouseout from hovered box in 2d histogram
+        click a box in the 2d histogram
+        
+        
+    columns-related-to tab:
+        select one of "column", "rows tagged", "clade", or "group" in left column
+        select a column from menu
+        select a tag from menu
+        
+        click "sort" option for column-by-score display
+        hover a score-histogram bar
+        mouseout from hovered score-histogram bar
+        click a score-histogram bar
+        click forward or back link in column-by-score display
+        hover a column-by-score bar
+        mouseout from hovered column-by-score bar
+        click a column-by-score bar
+        
+        hover bar in side-by-side histogram
+        mouseout from hovered side-by-side histogram bar
+        click bar in side-by-side histogram
+        hover area in 2d histogram
+        mouseout from hovered 2d-histogram area
+        click area in 2d histogram
+        
+        
+popup menus:
+
+    open-column:
+        click link to rank in just-columns view
+        click link to rank to high-scoring pairs involving this column
+        click "find related columns" rank
+        click link to edit tags
+        click link to edit annotation  
+        click dismiss-popup button      
+        
+        
+    open-row:
+        click link to edit tags
+        click link to edit annotation
+        click link to "make this the reference sequence"
+        click dismiss-popup button
+        
+        
+    open-cell:
+        click link to edit tags
+        click link to edit annotation
+        click link to open whole row
+        click link to open whole column
+        click dismiss-popup button
+        
+        
+    open-pair:
+        click link to select columns
+        click link to examine other columns related to left column
+        click link to examine other columns related to right column
+        click dismiss-popup button
+        
+        
+    double-clicked reference row:
+        click link to remove as reference row
+        click link to hide gap columns
+        click dismiss-popup button
+        
+        
+    tagging menu:
+        click a tag
+        click submit or hit enter
+        click dismiss-popup button
