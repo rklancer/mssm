@@ -2,63 +2,62 @@ what set of properties completely define the application state?
 what properties must be persisted in the hash?
 --- 
 
-which tag is hovered (1 option)
-which items are hovered (set) - remember hovering a detail histogram can "hover" multiple cells
-which columns are selected (set)
-which rows are selected (set)
-which cells are selected (set)
-which clade was most recently clicked (1 option)
-which group was most recently clicked (1 option)
-which item or pair is open (1 option)
+tag-hovered         which tag is hovered (1 option)
+items-hovered (?)   which items are hovered (set) - remember hovering a detail histogram can "hover" multiple cells
+columns-selected    which columns are selected (set)
+rows-selected       which rows are selected (set)
+cells-selected      which cells are selected (set)
 
-which annotation-highlighting option is current (1 option)
-which sequence-property-highlighting option is current (1 option)
-which columns are hidden (set)
-whether tagging menu is open on selected columns, selected rows, selected cells, or not at all (1 option)
+recent-clade        which clade was most recently clicked (1 option)
+recent-group        which group was most recently clicked (1 option)
+item-open           which item or pair is open (1 option)
+
+annotation-highlight-option     which annotation-highlighting option is current (1 option)
+sequence-highlight-option       which sequence-property-highlighting option is current (1 option)
+columns-hidden                  which columns are hidden (set)
+tagging-menu-open               whether tagging menu is open on selected columns, selected rows, selected cells, or not at all (1 option)
     (consider this derived property: for each tag, whether it is not, partially. or completely selected)
-scroll position of column-scoped tag list
-scroll position of row-scoped tag list
-scroll position of cell-scoped tag list
+column-tags-list-scroll         scroll position of column-scoped tag list
+row-tags-list-scroll            scroll position of row-scoped tag list
+cell-tags-list-scroll           scroll position of cell-scoped tag list
 
-which grouping is currently active (1 option) - note that grouping is stored on server
-which row is the reference sequence (1 option)
-which columns are sort columns (ordered list)
+current-grouping        which grouping is currently active (1 option) - note that grouping is stored on server
+reference-row           which row is the reference sequence (1 option)
+sort-columns            which columns are sort columns (ordered list)
 
-position of tree grouping threshold
-scroll position of alignment
+tree-threshold          position of tree grouping threshold
+alignment-scroll        scroll position of alignment
 
-which tab is open
+open-tab                which tab is open
+
+sort-by-score-option    whether to sort column-by-score view (make this apply across tabs)
 
 just-columns tab:
-    which statistic is selected in just-columns view
-    whether to sort column-by-score view (make this apply across tabs)
-    whether to sort detail histogram by residue frequency
+    score-option                which statistic is selected in just-columns view
+    sort-by-frequency-option    whether to sort detail histogram by residue frequency
 
-    which score-histogram bar is hovered
-    which score-histogram bar is selected
-    scroll position of column-by-score display
-    (note there's a 1:1 relationship between bars hovered in column-by-score display and columns hovered in alignment panel, so don't keep separate state?)
-    which bar in detail histogram is hovered (there's a many-to-one relationship between bars hovered and cells hovered, so this is a separate item of state)
+    scores-bar-hovered          which score-histogram bar is hovered. Remember grey segments represent hidden columns.
+    (there is no "scores-bar-selected". Bars are selected if the corresponding columns are selected.)
+    column-by-score-scroll      scroll position of column-by-score display
+    detail-bar-hovered          which bar in detail histogram is hovered (there's a many-to-one relationship between bars hovered and cells hovered, so this is a separate item of state)
 
 
 column-pairs tab:
-    whether to weight relatedness scores by presence of relationship on multiple branches
-    whether to limit to visible columns
-    which bar in score histogram is hovered
-    which bar in score histogram is selected
-    which bar in zoomed-in score histogram is hovered
-    which bar in zoomed-in score histogram is selected
-    which bar in pairs-by-score histogram is hovered
-    which bar in pairs-by-score histogram is selected
-    which area in 2d histogram is hovered
+    weight-by-branches-option       whether to weight relatedness scores relationship on multiple branches
+    limit-to-visible-option         whether to limit to visible columns
+    zoomed-scores-bar-hovered       which bar in zoomed-in score histogram is hovered
+    zoomed-scores-bar-selected      which bar in zoomed-in score histogram is hovered
+    pairs-by-score-bar-hovered      which bar in pairs-by-score histogram is hovered
+    2d-histogram-area-hovered       which area in 2d histogram is hovered
     
 columns-related-to tab:
-    which context we're relating (column, tag, clade, group)
-    which row-scoped tag we're relating, if "tag" context is selected and a tag has been chosen
+    comparison-type-option  which context we're relating (column, tag, clade, group)
+    comparison-tag          which row-scoped tag we're relating, if we're relating to row tags
+
     (which column? This is not a separate item of state -- it's the open one, if any; if pair is open, choosing one results in a single column being open. Which clade? The most recently clicked. Which group? The most recently clicked.)
     
-    which bar in side-by-side histogram is hovered
-    which area in 2d histogram is hovered
+    side-by-side-histogram-bar-hovered      which bar in side-by-side histogram is hovered
+
 
     
 
