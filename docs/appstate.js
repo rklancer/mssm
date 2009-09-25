@@ -22,7 +22,7 @@ var new_base_resource = function () {
 			   Note that we *could* go crazy adding indirection.
 			   E.g., we could define a URI for GETing a column URI from a form, and then we could POST comments from the 
 			   page at the column URI. I think this would be silly. Just form-encode the comment and the 
-			  column/cell/row identifier -->
+			   column/cell/row identifier -->
 			
 			<form class="commentform" action=/alignment/1/comments" method="POST">...</form> 
 			<!-- redirect to comment resource, which includes 1. link to whole mapping 2. new hash-->
@@ -48,8 +48,6 @@ var new_base_resource = function () {
 		
 			
 	*/	
-				
-				
 }
 
 
