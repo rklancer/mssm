@@ -163,6 +163,7 @@ class CreateAlignmentForm(BaseAlignmentForm):
             return cleaned_data     # field validation will have already supplied required error messages
 
         if local_file:
+	
             # workaround ticket 7712: local_file may be an InMemoryUploadedFile, which doesn't implement readlines()
             # (see http://code.djangoproject.com/ticket/7712)
             

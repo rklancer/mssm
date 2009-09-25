@@ -1,12 +1,19 @@
+(This will need to be updated)
+
 what set of properties completely define the application state?
 what properties must be persisted in the hash?
 --- 
+
+Since we *have* a propagation step, we won't have "query" properties whose value is calculated when the getter is called 
+
 
 tag-hovered         which tag is hovered (1 option)
 items-hovered (?)   which items are hovered (set) - remember hovering a detail histogram can "hover" multiple cells
 columns-selected    which columns are selected (set)
 rows-selected       which rows are selected (set)
 cells-selected      which cells are selected (set)
+
+columns-temp-hidden which columns are temporarily hidden for purposes of comparing two columns. Always a single contiguous range
 
 recent-clade        which clade was most recently clicked (1 option)
 recent-group        which group was most recently clicked (1 option)
@@ -16,7 +23,6 @@ annotation-highlight-option     which annotation-highlighting option is current 
 sequence-highlight-option       which sequence-property-highlighting option is current (1 option)
 columns-hidden                  which columns are hidden (set)
 tagging-menu-open               whether tagging menu is open on selected columns, selected rows, selected cells, or not at all (1 option)
-    (consider this derived property: for each tag, whether it is not, partially. or completely selected)
 column-tags-list-scroll         scroll position of column-scoped tag list
 row-tags-list-scroll            scroll position of row-scoped tag list
 cell-tags-list-scroll           scroll position of cell-scoped tag list
@@ -24,6 +30,7 @@ cell-tags-list-scroll           scroll position of cell-scoped tag list
 current-grouping        which grouping is currently active (1 option) - note that grouping is stored on server
 reference-row           which row is the reference sequence (1 option)
 sort-columns            which columns are sort columns (ordered list)
+tree-panel-visible      whether to show the tree panel or the sort columns panel
 
 tree-threshold          position of tree grouping threshold
 alignment-scroll        scroll position of alignment
@@ -31,20 +38,20 @@ alignment-scroll        scroll position of alignment
 open-tab                which tab is open
 
 sort-by-score-option    whether to sort column-by-score view (make this apply across tabs)
+item-by-score-scroll          scroll position of column-by-score display
 
 just-columns tab:
     score-option                which statistic is selected in just-columns view
     sort-by-frequency-option    whether to sort detail histogram by residue frequency
-
     scores-bar-hovered          which score-histogram bar is hovered. Remember grey segments represent hidden columns.
-    (there is no "scores-bar-selected". Bars are selected if the corresponding columns are selected.)
-    column-by-score-scroll      scroll position of column-by-score display
+    
     detail-bar-hovered          which bar in detail histogram is hovered (there's a many-to-one relationship between bars hovered and cells hovered, so this is a separate item of state)
 
 
 column-pairs tab:
     weight-by-branches-option       whether to weight relatedness scores relationship on multiple branches
     limit-to-visible-option         whether to limit to visible columns
+    scores-bar-selected             which bar in the score histogram is selected (-> which portion is zoomed in on)
     zoomed-scores-bar-hovered       which bar in zoomed-in score histogram is hovered
     zoomed-scores-bar-selected      which bar in zoomed-in score histogram is hovered
     pairs-by-score-bar-hovered      which bar in pairs-by-score histogram is hovered
@@ -53,11 +60,5 @@ column-pairs tab:
 columns-related-to tab:
     comparison-type-option  which context we're relating (column, tag, clade, group)
     comparison-tag          which row-scoped tag we're relating, if we're relating to row tags
-
-    (which column? This is not a separate item of state -- it's the open one, if any; if pair is open, choosing one results in a single column being open. Which clade? The most recently clicked. Which group? The most recently clicked.)
-    
     side-by-side-histogram-bar-hovered      which bar in side-by-side histogram is hovered
-
-
     
-

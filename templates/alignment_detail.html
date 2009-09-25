@@ -100,14 +100,13 @@
 	            <th>description</th>
 	            <th><a href="{{ alignment.get_absolute_url }}">row</a></th>
 	            <th></th>
-				<!-- foaf:name isn't the correct relation, I just needed a 'valid' predicate of some kind for rdfquery to pull out
-					 any triples. Anyway the point is that noraseq viewer needs a way to connect columns that are referenced by 
-					 a different URI to the css class names that are used privately within the html in this page, 
-					 without too much implicit agreement about what column numbers.
-					
-					 Of course, we'll do this the sensible way, with implicit references using column numbers, at least to start -->
-					
-					
+				<!-- foaf:name isn't the correct relation, I just needed a 'valid' predicate of some kind for rdfquery
+                to pull out any triples. Anyway the point is that noraseq viewer needs a way to connect columns that are
+                referenced by a different URI to the css class names that are used privately within the html in this
+                page, without too much implicit agreement about what column numbers.
+				
+				 Of course, we'll do this the sensible way, with implicit references using column numbers, at least to
+                start -->
 	            {% for col in header_row %}
 	            <th about="{% url mssm.views.alignment_detail alignment.id %}col/{{col}}" property="foaf:name" content="c{{col}}"><a href="?sort-by={{col}}">{{col}}</a></th>
 	            {% endfor %}

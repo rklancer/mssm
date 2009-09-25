@@ -1,145 +1,138 @@
-hover over cell
-mouseout from hovered cell (** or other hover-cancelling event, like loading a newly sorted alignment **)
-hover over row header
-mouseout from hovered row header
-hover over column header
-mouseout from hovered column header
-hover over tag in tag list
-mouseout from hovered tag
+(this will need to be updated)
 
-click on column header
-click on row header
-click on cell
-click tree node
-click group handle
+cell_mouseenter(cell_id)    hover over cell
+cell_mouseleave(cell_id)    mouseout from hovered cell 
 
-double click column header
-double click row header
-double click cell
-double click reference-row header
+row_mouseenter(row_id)      hover over row header
+row_mouseleave(row_id)      mouseout from hovered row header
 
-click highlighting option for sequence properties
-click highlighting option for sequence annotation
-click "hide columns" option
-click "unhide columns" option
-click "tag columns" option
-click "tag cells" option
-click "tag rows" option
-click a column-scope tag
-click a cell-scope tag
-click a row-scope tag
-click hidden-columns handle
-click forward or back link in a tag list
-click define-grouping option
-click edit-grouping option
-click remove-grouping option
-click remove-sort-columns option
+col_mouseenter(col_id)      hover over column header
+col_mouseleave(col_id)      mouseout from hovered column header
 
-drag and drop column onto tree panel
-drag and drop column onto sort panel
-drag and drop to rearrange columns in sort panel
+tag_mouseenter(tag)         hover over tag in tag list
+tag_mouseleave(tag)         mouseout from hovered tag
 
-drag tree pointer
+col_click(col_id)           click on column header
+col_shiftclick(col_id)      shift-click on column header
 
-scroll alignment panel
+row_click(row_id)           click on row header
+row_shiftclick(row_id)
 
-switch tab
+cell_click(cell_id)         click on cell
+
+node_click(node_id)         click tree node
+group_click(group_id)       click group handle
+
+col_dblclick(col_id)        double click column header
+row_dblclick(row_id)        double click row header
+cell_dblclick(cell_id)      double click cell
+reference_row_dblclick()    double click reference-row header
+
+sequence_highlight_option_choose(option_val)    click highlighting option for sequence properties
+annotation_highlight_option_choose(option_val)  click highlighting option for sequence annotation
+hide_columns_click()                            click "hide columns" option
+unhide_columns_click()                          click "unhide columns" option
+tag_columns_click()                             click "tag columns" option
+tag_cells_click()                               click "tag cells" option
+tag_rows_click()                                click "tag rows" option
+tag_click(tag_id)                               click column-, row-, or cell-scope tag
+hidden_columns_click(handle_id)                 click hidden-columns handle
+tag_list_forward(list_scope)                    click "forward" link in tag list (list_scope is one of "column", "row", "cell")
+tag_list_backward(list_scope)                   click "backward" link in tag list
+
+/* note the different styles mixed up here -- tag_columns_click vs. tag_forward_click(list_scope) */
+
+remove_grouping_click()                         click option to remove grouping
+remove_sort_columns_click()                     click remove-sort-columns option
+
+tree_panel_drop(col_id)                                 column drag-dropped onto tree panel
+sort_panel_drop(col_id, index)                          column drag-dropped onto sort_panel at index
+sort_panel_rearrange(col_id, old_index, new_index)      column drag-dropped in sort_panel from old to new index
+
+tree_threshold_change(threshold)          tree pointer dragged to change tree threshold
+alignment_scroll(x, y)                    scroll alignment panel
+
+tab_select(tab_id)                        switch tab
 
 tabs:
+    sort_by_score_option_choose(option_val)         select new value of sort-by-score option
+    score_bar_mouseenter(bar_id)                    hover a score-histogram bar
+    score_bar_mouseleave(bar_id)                    mouseout from hovered score-histogram bar
+    score_bar_click(bar_id)                         click on a score-histogram bar
+    item_by_score_forward()                         click forward link in column-by-score/pair-by-score display
+    item_by_score_backward()                        click backward link in column-by-score/pair-by-score display
+    
     just-columns tab:
-        select new statistic
-        click "sort" option for column-by-score display
-        click "sort by frequency" option for detail-histogram
-        hover a score-histogram bar
-        mouseout from hovered score-histogram bar
-        click a score-histogram bar
-        click forward or back link in column-by-score display
-        hover a column-by-score bar
-        mouseout from hovered column-by-score bar
-        click a column-by-score bar
-        hover a detail-histogram bar
-        mouseout from hovered detail-histogram bar
-        click a detail-histogram bar
+        score_option_choose(option_val)                 select new statistic
+        sort_by_frequency_option_choose(option_val)     select new sort-by-frequency-option for detail-histogram
+
+        column_by_score_bar_mouseenter(col_id)          hover a column-by-score bar
+        column_by_score_bar_mouseleave(col_id)          mouseout from hovered column-by-score bar       
+        column_by_score_bar_click(col_id)               click a column-by-score bar
+        
+        detail_histogram_bar_mouseenter(bar_id)         hover a detail-histogram bar  
+        detail_histogram_bar_mouseleave(bar_id)         mouseout from hovered detail-histogram bar            
+        detail_histogram_bar_click(bar_id)              click a detail-histogram bar
         
     
     pairs-of-columns tab:
-        select "weight scores by presence on multiple branches" option
-        click on "limit to visible columns" option
+        weight_by_branches_option_choose(option_val)    select "weight scores by presence on multiple branches" option
+        limit_to_visible_option_choose(option_val)      click on "limit to visible columns" option
         
-        click a bar in the score histogram
-        click a bar in the zoomed score histogram
-        dismiss the zoomed score histogram
-        click forward or back link in pair-by-score display
-        hover a bar in pair-by-score display
-        mouseout from hovered pair-by-score bar
-        click a bar in pair-by-score display
-        hover a box in the 2d histogram
-        mouseout from hovered box in 2d histogram
-        click a box in the 2d histogram
+        zoomed_scores_bar_click(bar_id)                 click a bar in the zoomed score histogram
+        zoomed_scores_bar_dismiss()                     dismiss the zoomed score histogram
         
+        pair_by_score_mouseenter(pair_id)               hover a bar in pair-by-score display
+        pair_by_score_mouseleave(pair_id)               mouseout from hovered pair-by-score bar
+        pair_by_score_click(pair_id)                    click a bar in pair-by-score display
         
+        2d_histogram_area_mouseenter(area_id)           hover a box in the 2d histogram
+        2d_histogram_area_mouseleave(area_id)           mouseout from hovered box in 2d histogram
+        2d_histogram_area_click()                       click a box in the 2d histogram
+   
+    
     columns-related-to tab:
-        select one of "column", "rows tagged", "clade", or "group" in left column
-        select a column from menu
-        select a tag from menu
+        comparison_type_option_choose(option_val)       select one of "column", "rows tagged", "clade", or "group"
+        comparison_column_choose(option_val)            whether "left" or "right" column chosen in dropdown
+        comparison_tag_choose(tag_id)                   select a row-scoped tag from menu
         
-        click "sort" option for column-by-score display
-        hover a score-histogram bar
-        mouseout from hovered score-histogram bar
-        click a score-histogram bar
-        click forward or back link in column-by-score display
-        hover a column-by-score bar
-        mouseout from hovered column-by-score bar
-        click a column-by-score bar
-        
-        hover bar in side-by-side histogram
-        mouseout from hovered side-by-side histogram bar
-        click bar in side-by-side histogram
-        hover area in 2d histogram
-        mouseout from hovered 2d-histogram area
-        click area in 2d histogram
-        
+        side_by_side_histogram_bar_mouseenter(bar_id)   hover bar in side-by-side histogram
+        side_by_side_histogram_bar_mouseleave(bar_id)   mouseout from hovered side-by-side histogram bar
+        side_by_side_histogram_bar_click(bar_id)        click bar in side-by-side histogram
+
         
 popup menus:
-
+    popup_dismiss()
+    
     open-column:
-        click link to rank in just-columns view
-        click link to rank to high-scoring pairs involving this column
-        click "find related columns" rank
-        click link to edit tags
-        click link to edit annotation  
-        click dismiss-popup button      
+        just_columns_view_open(statistic)         click link to show the open column just-columns view
+        pairs_view_open(col_id)                   click link to show (col_id, open column) pair in pairs view
+        related_columns_open()                    click "find related columns" link
+        
+        edit_tags_on_open_item()                  click link to edit tags
+        edit_comment_on_open_item()               click link to edit annotation  
         
         
     open-row:
-        click link to edit tags
-        click link to edit annotation
-        click link to "make this the reference sequence"
-        click dismiss-popup button
+        set_reference_row()        click link to "make this the reference sequence"
         
         
     open-cell:
-        click link to edit tags
-        click link to edit annotation
-        click link to open whole row
-        click link to open whole column
-        click dismiss-popup button
+        containing_row_open()                click link to open whole row
+        containing_col_open()                click link to open whole column
         
         
     open-pair:
-        click link to select columns
-        click link to examine other columns related to left column
-        click link to examine other columns related to right column
-        click dismiss-popup button
-        
+        columns_in_open_pair_select()        click link to select columns
+        left_column_open()                   click link to examine other columns related to left column
+        right_column_open()                  click link to examine other columns related to right column
+
         
     double-clicked reference row:
-        click link to remove as reference row
-        click link to hide gap columns
-        click dismiss-popup button
+        reference_row_dismiss()              click link to remove as reference row
+        reference_row_gaps_hide()            click link to hide gap columns
         
         
     tagging menu:
-        click a tag
-        click submit or hit enter
-        click dismiss-popup button
+        tagging_menu_tag_click(tag_id)       click a tag in tagging menu
+        tagging_menu_submit(list_of_tags)    hit enter or submit after modifying tags in tagging menu
