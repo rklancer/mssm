@@ -1,9 +1,12 @@
-/* appstate. js - application state objects-for handling complex display logic */
+// This is slightly wrong. You should model the "master controller" which knows how to sort the alignment, etc, from the 
+// alignment-data object. I think.
+
+// and, of course, these go into "noraseq" module
 
 
 var new_base_resource = function () {
 
-	// representation of the single point for updating alignment info, requesting sorted versions of the alignment...
+	// representation of the single point for updating alignment info, requesting sorted versions of the alignment, etc.
 	// like a "main menu". Linked from the resources that actually contain alignment data.
 	
 	./* base resource works like this:
@@ -18,10 +21,11 @@ var new_base_resource = function () {
 				etc.
 			</dl>
 			
-			<!-- semantically identify form type with class attribute. Note that we *could* go crazy adding
-                 indirection. E.g., we could define a URI for GETing a column URI from a form, and then we could POST
-                  comments from the page at the column URI. I think this would be silly. Just form-encode the comment
-                  and the column/cell/row identifier -->
+			<!-- semantically identify form type with class attribute.
+			   Note that we *could* go crazy adding indirection.
+			   E.g., we could define a URI for GETing a column URI from a form, and then we could POST comments from the 
+			   page at the column URI. I think this would be silly. Just form-encode the comment and the 
+			  column/cell/row identifier -->
 			
 			<form class="commentform" action=/alignment/1/comments" method="POST">...</form> 
 			<!-- redirect to comment resource, which includes 1. link to whole mapping 2. new hash-->
@@ -42,11 +46,13 @@ var new_base_resource = function () {
 		/aligment/1/sorted/c17/table . This latter representation would contain a link to the base resource, 
 		/alignment/1/sorted
 		
-		This way, when the frontend wants to sort an alignment, it just needs to perform one request to get and
-        display the sorted table; it would then send a second request to get the
+		This way, when the frontend wants to sort an alignment, it just needs to perform one request to get and display
+		the sorted table; it would then send a second request to get the 
 		
 			
 	*/	
+				
+				
 }
 
 
