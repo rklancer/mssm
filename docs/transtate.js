@@ -42,11 +42,11 @@ $(document).ready(function () {
 	// 2. for properties of those objects, bind history listeners, custom events, and so on
 		
 	tst('selected_items')
-		.hist('sel', function (prop) { prop.serialize(); }, function (val) { this.set(v) } )
+		.hist('sel', function (prop) { prop.serialize(); }, function (val) { this.set(val) } )
 		.bind('col_click', function (col) { this.toggle(col) }
 		.bind('col_ctlclick', ...);
 		
-	tst('last_clicked').bind('col_click', function (e) {this.set(e) });
+	tst('last_clicked').bind('col_click', function (e) { this.set(e) });
 	
 	//etc.
 }
