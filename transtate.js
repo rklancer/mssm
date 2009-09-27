@@ -4,9 +4,9 @@ var tst = function () {
 	return {
 		/* propertize: mixin get, set, and get_props() functionality */
 		
-		propertize: function (that) {
+		propertize: function (that, proplist) {
 			// private store for properties goes here
-			var ...
+			var props = proplist.slice();
 			
 			that.getprops = function () {
 				;
@@ -16,7 +16,8 @@ var tst = function () {
 				;
 			}
 			
-			that.set = function (prop, val){
+			// setter function is private
+			return function (prop, val) {
 				;
 			}	
 		}
