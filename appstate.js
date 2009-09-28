@@ -6,7 +6,6 @@
     base_resource
         url
         loaded
-
         seturl()
     
     tree
@@ -53,7 +52,106 @@
 
 */
 
+
+
+/* new_ajax_loader: 
+
+Each display object keeps an ajax_loader object to handle requesting that display object's data from a corresponding server-side url. The ajax_loader handles the details of:
+
+    * ignoring requests if the url being requested is the same one already backing the display object
+    * canceling requests if the display object requests a different backing url before the first one has been
+      processed
+    * (eventually) of retrying timed-out requests and distinguishing "retriable" requests from
+      permanently-erroneous requests for which it must call the supplied error callback (e.g., in the case of
+      a 404 response)
+*/
+
+var new_ajax_loader = function (opts) {
+    var success_callback = opts.success;
+    var error_callback = opts.error;
+    var set_loaded = opts.set_loaded;
+    var is_loaded = opts.is_loaded;
+    var cur_url = opts.cur_url;
+    var set_cur_url = opts.set_cur_url;
     
+    var that = {};
+    
+    /* cur_request.url represents the url of the *most recent* ajax request by the client object
+       cur_request.xhr is the xhr object of the *currently outstanding* request, if any; is null otherwise */
+    
+    var cur_request = {url: "", xhr: null};
+    
+    /* handle_success: passed to $.ajax as the success handler. Sets loader and client-object state & calls   
+       client success_callback -- UNLESS the request that led to this callback has been superseded by
+       cur_request */
+       
+    var handle_success = function (this_request_url, response, status) {
+        // ignore the callback if it's for an obsolete request
+        if (this_request_url === cur_request.url) {
+            cur_request.xhr = null;
+            set_cur_url(this_request_url);
+            set_loaded(true);           // should this be set before or after success_callback?
+            success_callback(response, status);
+        }
+    };
+    
+    /* handle_error: passed to $.ajax as the error handler; (eventually) will handle retry logic; 
+       calls client error_callback if it can't figure out what to do (and UNLESS, as above, the request
+       that led to this callback has been superseded by cur_request anyway) */
+       
+    var handle_error = function (this_request_xhr, status, err) {
+        // ignore the callback if it's for an obsolete request
+        if (this_request_xhr === cur_request.xhr) {
+            cur_request.xhr = null;     // keep cur_request for reload
+            error_callback(this_request_xhr, status, err);
+        }
+	};
+    
+    /* doxhr: Use jquery's $.ajax to initiate the request; sets loader and client-object state */
+    
+    var doxhr = function(url) {
+        set_loaded(false);
+        cur_request.url = url;
+        cur_request.xhr = $.ajax({
+			url: url,
+			/* Create a new callback closure to remember what url this callback is for -- this should 
+			   prevent us from responding to superseded requests. (I don't yet trust xhr.abort() to
+			   always prevent the callback from being called -- what if it's already on a queue when 
+			   abort is called?) */
+			success: function (response, status) {
+			        handle_success(url, response, status);
+			    },
+			error: handle_error
+		});
+    };
+    
+    /* ajax_loader.load(url): Initiate ajax request to set client object's backing url, unless the object is
+       already backed by that url or we have issued a still-outstanding request for that url */
+      
+    that.load = function (url) {      
+	    if (is_loaded()) {
+	        if (url !== cur_url()) {
+	            // object is loaded from some url, but request is for a different url
+	            doxhr(url);
+	        }
+	    }
+	    else if (!cur_request.xhr) {
+            // object is not loaded, and there is no outstanding request
+            doxhr(url);
+        }
+        else if (url !== cur_request.url) {
+            // object is not loaded, there is an outstanding request, but it's for a different url
+            cur_request.xhr.abort();
+            doxhr(url);
+        } 
+        /* ignore the two remaining cases:
+            1. object is loaded, but request was to load the same url
+            2. object is not loaded, and there is an outstanding request, but it's for the same url anyway */
+    };
+    
+    return that;    
+}
+
 
 var new_base_resource = function (state) {
 
@@ -107,43 +205,28 @@ var new_base_resource = function (state) {
 	*/
 
 	var that = {};
-	// probably want to include defaults
 	var set = tst.propertize(that, ["url", "loaded", "error", "html"]);
 	
-	// when the object is not loaded, these provide a hook to the ongoing request, if any
-	var requested_url, request_xhr;
-	set("loaded", false);
-
-	var error_callback = function (requrl, errxhr, status, err) {
-
-	    if (errxhr !== request_xhr) {
-	        // never mind..
-	        return; 
-	    }
-	    request_xhr = null;
-	    
-	    // how to set automatic retry with limit?
-	    	    
+	var loader = new_ajax_loader({
+	    success: seturl_callback, 
+	    error: error_callback, 
+	    set_loaded: function (s) { set("loaded", s); },
+	    is_loaded: function () { that.get("loaded"); },
+	    cur_url: function () { that.get("url"); },
+	    set_cur_url: function (url) { set("url", url); }
+	});	
+	
+	var error_callback = function (xhr, status, err) {
 	    set("error", ...);          // let the ui know to do something
 	    console.log(...)            // and log it.
 	}
 	
 	// unclear if you want to process x(ht)ml response, or just as html
-	var seturl_callback = function (requrl, html, status) {
-	    
-	    // ignore a callback for a different url (assuming we can't rely on xhr.abort() always working?)
-	    if (requrl !== requested_url) {
-	        return;
-	    }
-
-	    set("html", html);              // is this really necessary?
-	    set("url", url);
-	    
-	    
+	var seturl_callback = function (html, status) {
 	    var base = $(html);
 	    
-	    state.tree.seturl($("a[rel='tree']", base).attr("href"));
-        state.seqtable.seturl("a[rel='seqtable']", base).attr("href"));
+	    state.tree.seturl( $("a[rel='tree']", base).attr("href") );
+        state.seqtable.seturl( $("a[rel='seqtable']", base).attr("href") );
         
         /* If the server provides a *link* to a groupsdef, that means it has determined the grouping to use,
            and we should pass the url to the groupsdef object. If the server provides a *form* (with class
@@ -152,49 +235,19 @@ var new_base_resource = function (state) {
         
         var grplink = $("a[rel='groupsdef']", base);
         if (grplink) {
-            state.groupsdef.seturl(grplink.attr("href"));
+            state.groupsdef.seturl( grplink.attr("href") );
         }
         else {
-            state.groupsdef.setreqform(grplink.attr("form.groupsdef-req"));
-        }
-	    set("loaded", true);
-	}
-
-	that.seturl = function (newurl) {
-	    var doxhr = function() {
-            // turn caching off?
-
-	        request_xhr = $.ajax({
-    			url: newurl,
-    			success: function (html, status) {
-    			    success_callback(newurl, html, status);
-    			},
-    			error: function (xhr, status, err) {
-    			    error_callback(newurl, errxhr, status, err);
-    			}
-    		});
-    		set("loaded", false);
-	    };
-	    
-	    if (get("loaded")) {
-	        if (newurl !== get("url")) {
-	            // a base resource is loaded, but the request is for a base resource at a different url
-	            doxhr();
-	        }
-	    }
-	    else if (!request_xhr) {
-            // base resource is not loaded AND there is no outstanding xhr request
-            doxhr();
-        }
-        else if (newurl !== request_url) {
-            // base resource is not loaded, there is an outstanding xhr request, BUT it's for a different url
-            request_xhr.abort();
-            doxhr();
+            state.groupsdef.setreqform( grplink.find("form.groupsdef-req") );
         }
 	}
+
+	that.seturl = function (url) {
+	    loader.load(url);
+    }
+    
+    return that;
 }
-
-keep track of
 
 
 
@@ -207,67 +260,7 @@ var new_seqtable = function () {
 	var that = {};
 	
 	tst.propertize(that);
-	
-	that.set("html", "");
-	that.set("loaded", false);
-	that.set("url", "");
-	
-	that.seturl = function (url) {
-	    if (url !== that.get("url")) {
-    		$.ajax({
-    			url: url,
-    			success: seturl_callback(html, status),
-    			error: error_callback(xhr, status, err)
-    		});
-    	}
-	}
-	
-	var seturl_callback = function(url) {
-	    set("url", url);
-	}
-	
-	
-	
-	
-	
-	var success_callback = function (html) {
-		that.set("html", html);
-		that.set("loaded", true);
-	}
-	
-	var ajaxload = function (url) {
-		$.ajax({
-			url: url,
-			success: success_callback(html),
-			error: error_callback(html),
-		});
-		that.set("loaded", false);
-		that.set("html", null);
-	}
-	
-	that.sort = function () {
-		// fill in form
-		
-		ajaxload(url);
-	}
-	
-	that.seturl = function (url) {
-		ajaxload(url);
-	}
-	
-	that.getcol
-	
-	that.getcolname
-	
-	that.getrow
-	
-	that.getrowname
-	
-	that.getcell
-	
-	that.getcellname
-	
-	return that;
+
 }
 
 
