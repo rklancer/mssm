@@ -68,14 +68,15 @@ var appstate = (function () {
           of a 404 response)
     */
 
-    var new_ajax_loader = function (opts) {
-        var success_callback = opts.success;
-        var error_callback = opts.error;
-        var set_loaded = opts.set_loaded;
-        var is_loaded = opts.is_loaded;
-        var cur_url = opts.cur_url;
-        var set_cur_url = opts.set_cur_url;
-
+    var new_ajax_loader = function (args) {
+        var success_callback = args.success;
+        var error_callback = args.error;
+        var set_loaded = args.set_loaded;
+        var is_loaded = args.is_loaded;
+        var cur_url = args.cur_url;
+        var set_cur_url = args.set_cur_url;
+        var dataType = args.dataType || {};
+        
         var that = {};
 
         /* cur_request.url represents the url of the *most recent* ajax request by the client object
@@ -104,7 +105,7 @@ var appstate = (function () {
         var handle_error = function (this_request_xhr, status, err) {
             // ignore the callback if it's for an obsolete request
             if (this_request_xhr === cur_request.xhr) {
-                cur_request.xhr = null;     // keep cur_request for reload
+                cur_request.xhr = null;
                 error_callback(this_request_xhr, status, err);
             }
         };
@@ -123,7 +124,8 @@ var appstate = (function () {
                 success: function (response, status) {
                         handle_success(url, response, status);
                     },
-                error: handle_error
+                error: handle_error,
+                dataType: dataType
             });
         };
 
@@ -156,15 +158,16 @@ var appstate = (function () {
     };
 
 
-    var add_url_backed_capability(obj, secrets) {
-
-        var set = secrets.set;
+    var add_url_backed_capability(obj, args) {
+        
+        var set = args.set;
         var get = obj.get;
-        var add_properties = secrets.add_properties;
+        var add_properties = args.add_properties;
 
         add_properties("url", "loaded");
 
         loader = new_ajax_loader({
+            dataType: args.dataType;
             success: secrets.seturl_success,
             error: secrets.seturl_error,
             set_loaded: function (s) { set("loaded", s); },
@@ -240,32 +243,30 @@ var appstate = (function () {
 
         add_url_backed_capability(that, {
             set: set,
-
             add_properties: add_properties,
-
             seturl_success: function (html, status) {
                 var base = $(html);
 
                 app.tree.seturl( $("a[rel='tree']", base).attr("href") );
-                app.seqtable.seturl( $("a[rel='seqtable']", base).attr("href") );
+                app.seqtable.seturl( $("a[rel='seq-table']", base).attr("href") );
 
                 /* If the server provides a *link* to a groupsdef, that means it has determined the grouping
                    to use, and we should pass the url to the groupsdef object. If the server provides a *form*
                    (with class "groupsdef-req"), the server is providing a facility for requesting a groupsdef
                    based on some parameter(s) -- so pass the form along to the groupsdef object. */
 
-                var grplink = $("a[rel='groupsdef']", base);
+                var grplink = $("a[rel='groups-def']", base);
                 if (grplink) {
                     app.groupsdef.seturl( grplink.attr("href") );
                 }
                 else {
-                    app.groupsdef.setreqform( base.find("form.groupsdef-req") );
+                    app.groupsdef.setreqform( base.find("form.groups-def-req") );
                 }
             },
-
+            
             seturl_error: function (xhr, status, err) {
                 set("error", true);          // let the ui know to do something
-                console.log("Error")            // and log it.
+                console.log("Error")         // and log it.
             }
         });
 
@@ -274,7 +275,7 @@ var appstate = (function () {
 
 
     var new_tree = function (app) {
-
+        
         var that = {};
         var secrets = {};
 
@@ -287,14 +288,12 @@ var appstate = (function () {
 
         add_url_backed_capability(that, {
             set: set,
-
             add_properties: add_properties,
-
-            seturl_success: function (response, status) {
-                // remember we expect json
-                set("data", response);
+            dataType: "json"
+            seturl_success: function (json_obj, status) {
+                set("data", json_obj);
             },
-
+            
             seturl_error: function (xhr, status, err) {
                 set("error", true);
                 console.log("error: new_tree.seturl ajax call returned error.")
@@ -319,7 +318,6 @@ var appstate = (function () {
                   user requests a sort on the sort_cols.
         */
 
-
         var that = {};
         var secrets = {};
 
@@ -328,25 +326,52 @@ var appstate = (function () {
         var set = secrets.set;
         var add_properties = secrets.add_properties;
 
-        add_properties("error", "html");
+        add_properties("error", "table", "nrows");
+
+        var sort_form;
 
         add_url_backed_capability(that, {
             set: set,
-
             add_properties: add_properties,
-
             seturl_success: function (response, status) {
-                set("html", response);
-            },
 
+                var jq_doc = $(response)
+                var jq_table = jq_doc.find("table#seq-table");
+                
+                set("table", { 
+                    html: jq_table.html();
+                    jquery_obj: jq_table;
+                });
+
+                // each table representation links to a "base resource" that points to it. Keep
+                // these in sync.
+                app.base_resource.seturl( jq_doc.find("a[rel='base-resource]").attr("href") );
+                
+                // also keep the sort form
+                sort_form = jq_doc.find("form.sort-form");
+                            
+            },
             seturl_error: function (xhr, status, err) {
                 set("error", true);
                 console.log("error: new_tree.seturl ajax call returned error.")
             }
         });
+        
 
-        that.coldata = function (colnum) {
-            ;
+        /* seq_table.sort(): request a version of this table sorted (by the server) on sort_cols */
+        
+        that.sort = function (sort_cols) {
+            sort_form.find("input[name=sort-cols]").val(sort_cols.serialize());
+            that.seturl( [sort_form.attr("action"), "?", sort_form.serialize()].join() );
+        };
+
+        
+        that.coldata = function (col) {
+            var tbl = that.get("table").jquery_obj;
+            var col_class = col[0] === 'c' ? col : "c" + col;
+
+            tbl = array
+            
         };
 
         that.rowdata = function (rownum) {
@@ -357,11 +382,17 @@ var appstate = (function () {
             ;
         };
 
+        var that.colname = function (colnum) {
+            // Depends on ref_row. See spec for details
+        }
+        
+        
         return that;
     }
 
 
     var new_sort_cols = function () {
+
         var that = {};
         var set = tst.propertize(that, ["cols"]);
 
@@ -420,7 +451,7 @@ var appstate = (function () {
             set("cols", []);
         }
 
-        that.aslist = function () {
+        that.serialized = function () {
             // return a list suitable for use in form-encoded GET to server
         }
 
