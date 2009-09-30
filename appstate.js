@@ -66,8 +66,8 @@ var appstate = (function () {
           permanently-erroneous requests for which it must call the supplied error callback (e.g., in the case
           of a 404 response)
     */
-    
-    // guarantees: "url" property refers to most recent request. If "loaded" is true, the data is available.
+
+    // guarantees: "url" property refers to most recent request. The data are available iff "loaded" is true.
 
     var new_ajax_loader = function (args) {
         var success_callback = args.success;
@@ -77,7 +77,7 @@ var appstate = (function () {
         var cur_url = args.cur_url;
         var set_cur_url = args.set_cur_url;
         var data_type = args.data_type || {};
-        
+
         var that = {};
 
         /* cur_request.url represents the url of the *most recent* ajax request by the client object
@@ -161,7 +161,7 @@ var appstate = (function () {
 
 
     var add_url_backed_capability = function(obj, args) {
-        
+
         var set = args.set;
         var get = obj.get;
         var add_properties = args.add_properties;
@@ -260,13 +260,15 @@ var appstate = (function () {
 
                 var grplink = jq_base.find("a[rel='groups-def']");
                 if (grplink) {
-                    app.groups_def.seturl(grplink.attr("href"));
+                    app.groups_def.set_source("url", grplink.attr("href"));
                 }
                 else {
-                    app.groups_def.set_request_form(jq_base.find("form.groups-def-request"));
+                    // note the use of 2 classes: groups-def-request AND the refinement "threshold-request"
+                    var jq_req_form = jq_base.find("form.groups-def-request.threshold-request");
+                    app.groups_def.set_source("threshold", jq_req_form);
                 }
             },
-            
+
             seturl_error: function (xhr, status, err) {
                 set("error", true);          // let the ui know to do something
                 console.log("Error");        // and log it.
@@ -278,7 +280,7 @@ var appstate = (function () {
 
 
     var new_tree = function (app) {
-        
+
         var that = {};
         var secrets = {};
 
@@ -294,14 +296,23 @@ var appstate = (function () {
             add_properties: add_properties,
             data_type: "json",
             seturl_success: function (json_obj, status) {
+                // The tree object should also maintain the request form? No...
                 set("data", json_obj);
             },
-            
+
             seturl_error: function (xhr, status, err) {
                 set("error", true);
                 console.log("error: new_tree.seturl ajax call returned error.");
             }
         });
+
+        that.set_threshold = function(t) {
+            set("threshold", t);
+            // I'm having tree object manually ping the groups-def object, but is that right? Should
+            // groups-def use tstate to register as a listener on "tree.threshold"?
+
+            app.groups_def.on_threshold_change(t);
+        };
 
         return that;
     };
@@ -331,7 +342,7 @@ var appstate = (function () {
 
         add_properties("error", "table", "nrows");
 
-        var sort_form, num_rows;
+        var sort_form;
 
         add_url_backed_capability(that, {
             set: set,
@@ -340,13 +351,11 @@ var appstate = (function () {
 
                 var jq_doc = $(response);
                 var jq_table = jq_doc.find("table#seq-table");
-                
+
                 set("table", {
                     html: jq_table.html(),
                     jquery_obj: jq_table
                 });
-
-                num_rows = jq_table.find("tr").length;      // necessary?
 
                 // also keep the sort form
                 sort_form = jq_doc.find("form.sort-form");
@@ -356,7 +365,7 @@ var appstate = (function () {
                    corresponding base_resource MUST:
                       1. correspond to *this* version of the seq_table
                    OR 2. have "loaded" property == false */
-                
+
                 app.base_resource.seturl( jq_doc.find("a[rel='base-resource]").attr("href") );
             },
             seturl_error: function (xhr, status, err) {
@@ -367,48 +376,48 @@ var appstate = (function () {
 
 
         /* seq_table.sort(): request a version of this table sorted (by the server) on sort_cols */
-        
+
         that.sort = function (sort_cols) {
             sort_form.find("input[name=sort-cols]").val(sort_cols.serialize());
             that.seturl( sort_form.attr("action") + "?" + sort_form.serialize() );
         };
 
-        
+
         that.coldata = function (col_id) {
 
             var selector = col_id[0] === 'c' ? col_id : "c" + col_id;
             selector = "." + selector + ".r";
-            
+
             var jq_rows = that.get("table").jquery_obj.find("tr");
 
             var col = [];
             for (var i = 0; i < jq_rows.length; i++) {
                col[i] = jq_rows.find(selector + (i+1)).text();
             }
-            
+
             return col;
         };
-        
+
 
         that.rowdata = function (row_id) {
 
             var row_selector = row_id[0] === 'r' ? row_id : "r" + row_id;
             var selector = "." + row_selector + ".c";
-            
+
             var jq_tds = that.get("table").jquery_obj.find("td."+row_selector);
-            
+
             var row = [];
             for (var i = 0; i < jq_tds.length; i++) {
                 row[i] = jq_tds.filter(selector + (i+1)).text();
             }
-            
+
             return row;
         };
 
 
         that.celldata = function (row_id, col_id) {
-            var row_selector = row_id[0] === 'r' ? row_id : "r" + row_id; 
-            var col_selector = col_id[0] === 'c' ? col_id : "c" + col_id;          
+            var row_selector = row_id[0] === 'r' ? row_id : "r" + row_id;
+            var col_selector = col_id[0] === 'c' ? col_id : "c" + col_id;
 
             return that.get("table").find("."+ row_selector + "." + col_selector).text();
         };
@@ -418,17 +427,17 @@ var appstate = (function () {
             // Depends on ref_row. See spec for details
             return ("(" + col_id + " name here)");
         };
-        
-        
+
+
         that.rowname = function (row_id) {
             return ("(" + row_id + " name here)");
         };
-        
-        
+
+
         that.cellname = function (row_id, col_id) {
             return ("(["+ row_id + "," + col_id + "] name here)");
         };
-        
+
 
         return that;
     };
@@ -438,7 +447,7 @@ var appstate = (function () {
 
         var that = {};
         var secrets = {};
-        
+
         tst.add_property_capability(that, secrets);
         var set = secrets.set;
         secrets.add_properties("cols");
@@ -507,90 +516,66 @@ var appstate = (function () {
         that.serialized = function () {
             return that.get("cols").join(",");
         };
-        
+
 
         return that;
     };
 
+
     var new_groups_def = function () {
-        
+
         var that = {};
-        var req_forms = {};
+        var jq_request_form;
         var secrets = {};
 
         tst.add_property_capability(that, secrets);
         var set = secrets.set;
         var add_properties = secrets.add_properties;
 
-        add_properties("error");
+        add_properties("source", "error");
 
         add_url_backed_capability(that, {
             set: set,
             add_properties: add_properties,
             seturl_success: function (response) {
-                // Ah. Do we need to remember which base resource we correspond to? Sure, let's make
-                // sure the server sends that...
-
-
+                // ...
             },
-            
+
             seturl_error: function () {
+                // ...
             }
         });
 
 
-        that.set_request_form = function(jq_form) {
-            // This allows the base resource to specify a *function* from the current sorted table to the
-            // grouping defintion that we need.
-            
-            if (jq_form) {
-                if (jq_form.hasClass("from-threshold")) {
-                    req_forms.from_threshold = jq_form;
-                }
-                else {
-                    req_forms.threshold = null;
+        var set_from_threshold = function (t) {
+            if (that.get("source") === "threshold") {
+                that.seturl(jq_request_form.attr("action") + "?" + jq_request_form.serialize());
+            }
+        };
+
+
+        that.set_source = function (type) {
+            if (type === "threshold") {
+                that.set("source", "threshold");
+                jq_request_form = arguments[1];
+
+                var t = tst("tree.threshold");
+                if (t) {
+                    set_from_threshold(t);
                 }
             }
-            else {
-                req_forms = {};
+            else if (type === "url") {
+                that.set("source", "url");
+                that.seturl(arguments[1]);
             }
-
         };
 
 
-        that.from_threshold = function (t) {
-            // this is incoherent.
-            
-            set("source", "threshold");
-            set("threshold", t);
-            
-            tst.when("seq_table.loaded", function () {
-                if (t === that.get("threshold")) {
-                    var form = req_forms.threshold;
-                    if (form) {
-                        form.find("input[name='threshold-value']").val(t);
-                        that.set_from_request_url("threshold", form.attr("action") + "?" + form.serialize());
-                    }
-                }
-            });
+        that.on_threshold_change = function(t) {
+            set_from_threshold(t);
         };
-        
-    
-        // rename seturl
-        
-        var base_seturl = that.seturl;
-        that.seturl = function () {
-            set("source", "url");
-            base_seturl(arguments);
-        };
-        
-        
-        var set_from_request_url = function(source, url) {
-            set("source", source);
-            base_seturl(url);
-        };
-        
-              
+
+
         return that;
     };
 
