@@ -77,6 +77,7 @@ var appstate = (function () {
         var cur_url = args.cur_url;
         var set_cur_url = args.set_cur_url;
         var data_type = args.data_type || {};
+        var on_url_change = args.on_url_change || function () {};
 
         var that = {};
 
@@ -115,6 +116,8 @@ var appstate = (function () {
         var doxhr = function(url) {
             set_loaded(false);
             set_cur_url(url);
+            on_url_change();
+            
             cur_request.url = url;
             cur_request.xhr = $.ajax({
                 url: url,
@@ -295,6 +298,9 @@ var appstate = (function () {
             set: set,
             add_properties: add_properties,
             data_type: "json",
+            on_url_change: function () {
+                that.set_threshold(null);
+            },
             seturl_success: function (json_obj, status) {
                 // The tree object should also maintain the request form? No...
                 set("data", json_obj);
@@ -522,7 +528,7 @@ var appstate = (function () {
     };
 
 
-    var new_groups_def = function () {
+    var new_groups_def = function (app) {
 
         var that = {};
         var jq_request_form;
@@ -533,12 +539,17 @@ var appstate = (function () {
         var add_properties = secrets.add_properties;
 
         add_properties("source", "error");
+        
+        var clear = function () {
+            // set the groups-def to null
+        };
+
 
         add_url_backed_capability(that, {
             set: set,
             add_properties: add_properties,
             seturl_success: function (response) {
-                // ...
+                // set the groups-def to whatever the server says
             },
 
             seturl_error: function () {
@@ -547,9 +558,16 @@ var appstate = (function () {
         });
 
 
-        var set_from_threshold = function (t) {
+
+        var set_from_threshold = function () {
             if (that.get("source") === "threshold") {
-                that.seturl(jq_request_form.attr("action") + "?" + jq_request_form.serialize());
+                var t = app.tree.get("threshold");
+                if (t) {
+                    that.seturl(jq_request_form.attr("action") + "?" + jq_request_form.serialize());
+                }
+                else {
+                    clear();
+                }
             }
         };
 
@@ -558,11 +576,7 @@ var appstate = (function () {
             if (type === "threshold") {
                 that.set("source", "threshold");
                 jq_request_form = arguments[1];
-
-                var t = tst("tree.threshold");
-                if (t) {
-                    set_from_threshold(t);
-                }
+                set_from_threshold();
             }
             else if (type === "url") {
                 that.set("source", "url");
@@ -571,8 +585,8 @@ var appstate = (function () {
         };
 
 
-        that.on_threshold_change = function(t) {
-            set_from_threshold(t);
+        that.on_threshold_change = function() {
+            set_from_threshold();
         };
 
 
