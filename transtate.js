@@ -25,6 +25,9 @@ var tst = function () {
             secrets.add_property = function () {
                 // read the property list from that arguments array-like object
             }
+            
+        when: function(fqprop, action) {
+            // call action() when fqprop ('fully qualified property') is true
         }
     };
 }();

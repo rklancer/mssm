@@ -43,7 +43,6 @@
 
     refcols
         cols
-        dosort()
 
     refrow
 
@@ -75,7 +74,7 @@ var appstate = (function () {
         var is_loaded = args.is_loaded;
         var cur_url = args.cur_url;
         var set_cur_url = args.set_cur_url;
-        var dataType = args.dataType || {};
+        var data_type = args.data_type || {};
         
         var that = {};
 
@@ -122,10 +121,10 @@ var appstate = (function () {
                    always prevent the callback from being called -- what if it's already on a queue when
                    abort is called?) */
                 success: function (response, status) {
-                        handle_success(url, response, status);
-                    },
+                    handle_success(url, response, status);
+                },
                 error: handle_error,
-                dataType: dataType
+                dataType: data_type
             });
         };
 
@@ -167,9 +166,9 @@ var appstate = (function () {
         add_properties("url", "loaded");
 
         loader = new_ajax_loader({
-            dataType: args.dataType;
-            success: secrets.seturl_success,
-            error: secrets.seturl_error,
+            data_type: args.data_type;
+            success: args.seturl_success,
+            error: args.seturl_error,
             set_loaded: function (s) { set("loaded", s); },
             is_loaded: function () { get("loaded"); },
             cur_url: function () { get("url"); },
@@ -245,22 +244,23 @@ var appstate = (function () {
             set: set,
             add_properties: add_properties,
             seturl_success: function (html, status) {
-                var base = $(html);
+                var jq_base = $(html);
 
-                app.tree.seturl( $("a[rel='tree']", base).attr("href") );
-                app.seqtable.seturl( $("a[rel='seq-table']", base).attr("href") );
+                app.tree.seturl( jq_base.find("a[rel='tree']").attr("href") );
+                app.seq_table.seturl( jq_base.find("a[rel='seq-table']").attr("href") );
 
-                /* If the server provides a *link* to a groupsdef, that means it has determined the grouping
-                   to use, and we should pass the url to the groupsdef object. If the server provides a *form*
-                   (with class "groupsdef-req"), the server is providing a facility for requesting a groupsdef
-                   based on some parameter(s) -- so pass the form along to the groupsdef object. */
+                /* If the server provides a *link* to a groups_def, that means it has determined the grouping
+                   to use, and we should pass the url to the groups_def object. If the server provides a
+                   *form* (with class "form.groups-def-request"), the server is providing a facility for
+                   requesting a groups_def based on some parameter(s) (specified by an additional class)-- so
+                   pass the form along to the groups_def object.*/
 
-                var grplink = $("a[rel='groups-def']", base);
+                var grplink = jq_base.find("a[rel='groups-def']");
                 if (grplink) {
-                    app.groupsdef.seturl( grplink.attr("href") );
+                    app.groups_def.seturl(grplink.attr("href"));
                 }
                 else {
-                    app.groupsdef.setreqform( base.find("form.groups-def-req") );
+                    app.groups_def.set_request_form(jq_base.find("form.groups-def-request"));
                 }
             },
             
@@ -289,7 +289,7 @@ var appstate = (function () {
         add_url_backed_capability(that, {
             set: set,
             add_properties: add_properties,
-            dataType: "json"
+            data_type: "json"
             seturl_success: function (json_obj, status) {
                 set("data", json_obj);
             },
@@ -304,7 +304,7 @@ var appstate = (function () {
     };
 
 
-    var new_seqtable = function () {
+    var new_seq_table = function () {
 
         /* Some quick Firebug experimentation suggests passing a ~1M string around between javascript
            methods/functions is no problem at all. So we'll stick to always building the new table on the
@@ -328,7 +328,7 @@ var appstate = (function () {
 
         add_properties("error", "table", "nrows");
 
-        var sort_form;
+        var sort_form, num_rows;
 
         add_url_backed_capability(that, {
             set: set,
@@ -338,55 +338,95 @@ var appstate = (function () {
                 var jq_doc = $(response)
                 var jq_table = jq_doc.find("table#seq-table");
                 
-                set("table", { 
+                set("table", {
                     html: jq_table.html();
                     jquery_obj: jq_table;
                 });
 
-                // each table representation links to a "base resource" that points to it. Keep
-                // these in sync.
-                app.base_resource.seturl( jq_doc.find("a[rel='base-resource]").attr("href") );
-                
+                num_rows = jq_table.find("tr").length;      // necessary?
+
                 // also keep the sort form
                 sort_form = jq_doc.find("form.sort-form");
-                            
+
+                /* each table representation links to a "base resource" that points to it. This keeps
+                   these in sync. Note this implies a guarantee: if seq_table "loaded" state is true, then the
+                   corresponding base_resource MUST:
+                      1. correspond to *this* version of the seq_table
+                   OR 2. have "loaded" property == false */
+                
+                app.base_resource.seturl( jq_doc.find("a[rel='base-resource]").attr("href") );
             },
             seturl_error: function (xhr, status, err) {
                 set("error", true);
-                console.log("error: new_tree.seturl ajax call returned error.")
+                console.log("error: new_tree.seturl ajax call returned error.");
             }
         });
-        
+
 
         /* seq_table.sort(): request a version of this table sorted (by the server) on sort_cols */
         
         that.sort = function (sort_cols) {
             sort_form.find("input[name=sort-cols]").val(sort_cols.serialize());
-            that.seturl( [sort_form.attr("action"), "?", sort_form.serialize()].join() );
+            that.seturl( sort_form.attr("action") + "?" + sort_form.serialize() );
         };
 
         
-        that.coldata = function (col) {
-            var tbl = that.get("table").jquery_obj;
-            var col_class = col[0] === 'c' ? col : "c" + col;
+        that.coldata = function (col_id) {
 
-            tbl = array
+            var selector = col_id[0] === 'c' ? col_id : "c" + col_id;
+            selector = "." + selector + ".r";
             
+            var jq_table = that.get("table").jquery_obj;
+
+            var col = [];
+            for (var i = 0; i < jq_rows.length; i++) {
+               col[i] = jq_table.find(selector + (i+1)).text();
+            }
+            
+            return col;
+        };
+        
+
+        that.rowdata = function (row_id) {
+
+            var row_selector = row_id[0] === 'r' ? row_id : "r" + row_id;
+            var selector = "." + row_selector + ".c";
+            
+            var jq_tds = that.get("table").jquery_obj.find("td."+row_selector);
+            
+            var row = [];
+            for (var i = 0; i < jq_tds.length; i++) {
+                row[i] = jq_tds.filter(selector + (i+1)).text();
+            }
+            
+            return row;
         };
 
-        that.rowdata = function (rownum) {
-            ;
+
+        that.celldata = function (row_id, col_id) {
+            var row_selector = row_id[0] === 'r' ? row_id : "r" + row_id; 
+            var col_selector = col_id[0] === 'c' ? col_id : "c" + col_id;          
+
+            return that.get("table").find("."+ row_selector + "." + col_selector).text();
         };
 
-        that.celldata = {
-            ;
-        };
 
-        var that.colname = function (colnum) {
+        var that.colname = function (col_id) {
             // Depends on ref_row. See spec for details
-        }
+            return ("(" + col_id + " name here)");
+        };
         
         
+        var that.rowname = function (row_id) {
+            return ("(" + row_id + " name here)");
+        };
+        
+        
+        var that.cellname = function (row_id, cell_id) {
+            return ("(["+ row_id + "," + col_id + "] name here)");
+        };
+        
+
         return that;
     }
 
@@ -394,9 +434,13 @@ var appstate = (function () {
     var new_sort_cols = function () {
 
         var that = {};
-        var set = tst.propertize(that, ["cols"]);
-
+        var secrets = {};
+        
+        tst.add_property_capability(that, secrets);
+        var set = secrets.set;
+        secrets.add_properties("cols");
         set("cols", []);
+
 
         var add = function (cols, col, idx) {
             var newcols = cols.slice(0, idx);
@@ -406,12 +450,14 @@ var appstate = (function () {
             return newcols;
         }
 
+
         var remove = function (cols, idx) {
             var newcols = cols.slice(0,idx);
             newcols.concat(cols.slice(idx+1, cols.length));
 
             return newcols;
         }
+
 
         that.add = function (col, idx) {
             if (idx > array.length) {
@@ -421,6 +467,7 @@ var appstate = (function () {
             set("cols", add(that.get("cols"), col, idx));
         }
 
+
         that.remove = function (idx) {
             if (idx >= array.length) {
                 console.log("sort_cols.removecol: idx >= array.length");
@@ -428,6 +475,7 @@ var appstate = (function () {
             }
             set("cols", remove(that.get("cols"), idx));
         }
+
 
         that.move = function (oldidx, newidx) {
             // doing this "the lazy way" (add then remove) shouldn't affect performance in any meaningful way
@@ -437,7 +485,7 @@ var appstate = (function () {
 
             cols = remove(cols, oldidx);
             if (oldidx < newidx) {
-                //account for shift of indexes caused by removing
+                // account for shift of indexes caused by removing
                 cols = add(cols, col, newidx-1);
             }
             else {
@@ -447,23 +495,57 @@ var appstate = (function () {
             set("cols", cols);
         }
 
-        that.removeall = function () {
+
+        that.remove_all = function () {
             set("cols", []);
         }
 
+
         that.serialized = function () {
-            // return a list suitable for use in form-encoded GET to server
+            return that.get("cols").join(",");
         }
+
 
         return that;
     }
 
-    var new_ref_row = function () {
+    var new_groups_def = function () {
+        
+        var req_forms = {};
+        
+        that.set_request_form = function(jq_form) {
+            // This allows the base resource to specify a *function* from the current sorted table to the
+            // grouping defintion that we need.
+            
+            if (jq_form) {
+                if (jq_form.hasClass("from-threshold")) {
+                    req_forms.from_threshold = jq_form;
+                }
+                else
+                    req_forms.threshold = null;
+                }
+            }
+            else {
+                req_forms = {};
+            }
 
+        }
+        
+        that.from_threshold = function (t) {
+            tst.when("seq_table.loaded", function () {
+                if (req_forms.threshold) {
+                    // 1. fill out form and seturl in the callback.
+                    
+                    jq_form.find("
+                   
+                }
+            });
+        }
     }
 
 
-    var new_groups_def = function () {
+    var new_ref_row = function () {
+
     }
 
     return {
