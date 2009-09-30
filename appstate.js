@@ -66,6 +66,8 @@ var appstate = (function () {
           permanently-erroneous requests for which it must call the supplied error callback (e.g., in the case
           of a 404 response)
     */
+    
+    // guarantees: "url" property refers to most recent request. If "loaded" is true, the data is available.
 
     var new_ajax_loader = function (args) {
         var success_callback = args.success;
@@ -91,7 +93,6 @@ var appstate = (function () {
             // ignore the callback if it's for an obsolete request
             if (this_request_url === cur_request.url) {
                 cur_request.xhr = null;
-                set_cur_url(this_request_url);
                 set_loaded(true);           // should this be set before or after success_callback?
                 success_callback(response, status);
             }
@@ -113,6 +114,7 @@ var appstate = (function () {
 
         var doxhr = function(url) {
             set_loaded(false);
+            set_cur_url(url);
             cur_request.url = url;
             cur_request.xhr = $.ajax({
                 url: url,
@@ -123,6 +125,7 @@ var appstate = (function () {
                 success: function (response, status) {
                     handle_success(url, response, status);
                 },
+                // no need for closure -- error handler can just check xhr object that $.ajax() passes in
                 error: handle_error,
                 dataType: data_type
             });
@@ -157,7 +160,7 @@ var appstate = (function () {
     };
 
 
-    var add_url_backed_capability(obj, args) {
+    var add_url_backed_capability = function(obj, args) {
         
         var set = args.set;
         var get = obj.get;
@@ -165,8 +168,8 @@ var appstate = (function () {
 
         add_properties("url", "loaded");
 
-        loader = new_ajax_loader({
-            data_type: args.data_type;
+        var loader = new_ajax_loader({
+            data_type: args.data_type,
             success: args.seturl_success,
             error: args.seturl_error,
             set_loaded: function (s) { set("loaded", s); },
@@ -178,7 +181,7 @@ var appstate = (function () {
         obj.seturl = function (url) {
             loader.load(url);
         };
-    }
+    };
 
 
     var new_base_resource = function (app) {
@@ -186,7 +189,7 @@ var appstate = (function () {
         // Representation of the single point for updating alignment info, requesting sorted versions
         // Like a "main menu". Linked from the resources that actually contain alignment data.
 
-        ./* base resource works like this:
+        /* base resource works like this:
 
             /alignment/1/ -> contains list of links and forms
 
@@ -266,7 +269,7 @@ var appstate = (function () {
             
             seturl_error: function (xhr, status, err) {
                 set("error", true);          // let the ui know to do something
-                console.log("Error")         // and log it.
+                console.log("Error");        // and log it.
             }
         });
 
@@ -289,14 +292,14 @@ var appstate = (function () {
         add_url_backed_capability(that, {
             set: set,
             add_properties: add_properties,
-            data_type: "json"
+            data_type: "json",
             seturl_success: function (json_obj, status) {
                 set("data", json_obj);
             },
             
             seturl_error: function (xhr, status, err) {
                 set("error", true);
-                console.log("error: new_tree.seturl ajax call returned error.")
+                console.log("error: new_tree.seturl ajax call returned error.");
             }
         });
 
@@ -304,7 +307,7 @@ var appstate = (function () {
     };
 
 
-    var new_seq_table = function () {
+    var new_seq_table = function (app) {
 
         /* Some quick Firebug experimentation suggests passing a ~1M string around between javascript
            methods/functions is no problem at all. So we'll stick to always building the new table on the
@@ -335,12 +338,12 @@ var appstate = (function () {
             add_properties: add_properties,
             seturl_success: function (response, status) {
 
-                var jq_doc = $(response)
+                var jq_doc = $(response);
                 var jq_table = jq_doc.find("table#seq-table");
                 
                 set("table", {
-                    html: jq_table.html();
-                    jquery_obj: jq_table;
+                    html: jq_table.html(),
+                    jquery_obj: jq_table
                 });
 
                 num_rows = jq_table.find("tr").length;      // necessary?
@@ -376,11 +379,11 @@ var appstate = (function () {
             var selector = col_id[0] === 'c' ? col_id : "c" + col_id;
             selector = "." + selector + ".r";
             
-            var jq_table = that.get("table").jquery_obj;
+            var jq_rows = that.get("table").jquery_obj.find("tr");
 
             var col = [];
             for (var i = 0; i < jq_rows.length; i++) {
-               col[i] = jq_table.find(selector + (i+1)).text();
+               col[i] = jq_rows.find(selector + (i+1)).text();
             }
             
             return col;
@@ -411,24 +414,24 @@ var appstate = (function () {
         };
 
 
-        var that.colname = function (col_id) {
+        that.colname = function (col_id) {
             // Depends on ref_row. See spec for details
             return ("(" + col_id + " name here)");
         };
         
         
-        var that.rowname = function (row_id) {
+        that.rowname = function (row_id) {
             return ("(" + row_id + " name here)");
         };
         
         
-        var that.cellname = function (row_id, cell_id) {
+        that.cellname = function (row_id, col_id) {
             return ("(["+ row_id + "," + col_id + "] name here)");
         };
         
 
         return that;
-    }
+    };
 
 
     var new_sort_cols = function () {
@@ -448,7 +451,7 @@ var appstate = (function () {
             newcols.concat(cols.slice(idx, cols.length));
 
             return newcols;
-        }
+        };
 
 
         var remove = function (cols, idx) {
@@ -456,25 +459,25 @@ var appstate = (function () {
             newcols.concat(cols.slice(idx+1, cols.length));
 
             return newcols;
-        }
+        };
 
 
         that.add = function (col, idx) {
-            if (idx > array.length) {
+            if (idx > that.get("cols").length) {
                 console.log("sort_cols.addcol: idx > array.length");
                 return;
             }
             set("cols", add(that.get("cols"), col, idx));
-        }
+        };
 
 
         that.remove = function (idx) {
-            if (idx >= array.length) {
+            if (idx >= that.get("cols").length) {
                 console.log("sort_cols.removecol: idx >= array.length");
                 return;
             }
             set("cols", remove(that.get("cols"), idx));
-        }
+        };
 
 
         that.move = function (oldidx, newidx) {
@@ -493,26 +496,49 @@ var appstate = (function () {
             }
 
             set("cols", cols);
-        }
+        };
 
 
         that.remove_all = function () {
             set("cols", []);
-        }
+        };
 
 
         that.serialized = function () {
             return that.get("cols").join(",");
-        }
-
+        };
+        
 
         return that;
-    }
+    };
 
     var new_groups_def = function () {
         
+        var that = {};
         var req_forms = {};
-        
+        var secrets = {};
+
+        tst.add_property_capability(that, secrets);
+        var set = secrets.set;
+        var add_properties = secrets.add_properties;
+
+        add_properties("error");
+
+        add_url_backed_capability(that, {
+            set: set,
+            add_properties: add_properties,
+            seturl_success: function (response) {
+                // Ah. Do we need to remember which base resource we correspond to? Sure, let's make
+                // sure the server sends that...
+
+
+            },
+            
+            seturl_error: function () {
+            }
+        });
+
+
         that.set_request_form = function(jq_form) {
             // This allows the base resource to specify a *function* from the current sorted table to the
             // grouping defintion that we need.
@@ -521,7 +547,7 @@ var appstate = (function () {
                 if (jq_form.hasClass("from-threshold")) {
                     req_forms.from_threshold = jq_form;
                 }
-                else
+                else {
                     req_forms.threshold = null;
                 }
             }
@@ -529,26 +555,51 @@ var appstate = (function () {
                 req_forms = {};
             }
 
-        }
-        
+        };
+
+
         that.from_threshold = function (t) {
+            // this is incoherent.
+            
+            set("source", "threshold");
+            set("threshold", t);
+            
             tst.when("seq_table.loaded", function () {
-                if (req_forms.threshold) {
-                    // 1. fill out form and seturl in the callback.
-                    
-                    jq_form.find("
-                   
+                if (t === that.get("threshold")) {
+                    var form = req_forms.threshold;
+                    if (form) {
+                        form.find("input[name='threshold-value']").val(t);
+                        that.set_from_request_url("threshold", form.attr("action") + "?" + form.serialize());
+                    }
                 }
             });
-        }
-    }
+        };
+        
+    
+        // rename seturl
+        
+        var base_seturl = that.seturl;
+        that.seturl = function () {
+            set("source", "url");
+            base_seturl(arguments);
+        };
+        
+        
+        var set_from_request_url = function(source, url) {
+            set("source", source);
+            base_seturl(url);
+        };
+        
+              
+        return that;
+    };
 
 
     var new_ref_row = function () {
 
-    }
+    };
 
     return {
         // either setup app object here, or use "that" convention and replace this with "return that;"
-    }
-})();
+    };
+}());
