@@ -525,22 +525,33 @@ var appstate = (function () {
         var propmgr = tstate.add_property_capability(that);
         var set = propmgr.set;
 
-        var proplist = ["rows", "cols", "cells"];
-
-        propmgr.add(proplist);
+        var elt_types = ["rows", "cols", "cells"];
+        propmgr.add(elt_types);
 
         var new_element_set = function (list) {
             var that = {};
 
             var elements = {};
 
+            var possibly_split = function (poss_str) {
+                if (typeof poss_str === "string") {
+                    poss_str = poss_str.split(',');
+                }
+                return poss_str;
+            };
+
+
             that.add = function (new_elts) {
+                new_elts = possibly_split(new_elts);
+
                 for (var i = 0; i < new_elts.length; i++) {
                     elements[new_elts[i]] = true;
                 }
             };
 
             that.remove = function (old_elts) {
+                old_elts = possibly_split(old_elts);
+
                 for (var i = 0; i < old_elts.length; i++) {
                     delete elements[old_elts[i]];
                 }
@@ -556,6 +567,8 @@ var appstate = (function () {
                 return vals.splice(",");
             };
 
+            that.add(list);
+
             return that;
         };
 
@@ -566,17 +579,29 @@ var appstate = (function () {
             };
         };
 
-        for (var i = 0; i < proplist.length; i++) {
-            propmgr.setter(proplist[i], setter_for(proplist[i]));
+        for (var i = 0; i < elt_types.length; i++) {
+            propmgr.setter(elt_types[i], setter_for(elt_types[i]));
         }
 
 
         that.serialize = function () {
             var vals = [];
-            for (var i = 0; i < proplist.length; i++) {
-                vals.push(proplist[i] + ":" + that.get(proplist[i]).serialize());
+            for (var i = 0; i < elt_types.length; i++) {
+                vals.push(elt_types[i] + ":" + that.get(elt_types[i]).serialize());
             }
-            return vals.splice(",");
+            return vals.splice(";");
+        };
+
+
+        that.deserialize = function (s) {
+            var rows = s.match("rows:([,r0-9]*)")[1];
+            set("rows", new_element_set(rows));
+
+            var cols = s.match("cols:([,c0-9]*)")[1];
+            set("cols", new_element_set(cols));
+
+            var cells = s.match("cells:([,rc0-9]*)")[1];
+            set("cells", new_element_set(cells));
         };
 
 
