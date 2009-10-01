@@ -1,57 +1,6 @@
 /* appstate.js - application state objects-for handling complex display logic */
 
 
-/*
-
-    base_resource
-        url
-        loaded
-        seturl()
-
-    tree
-        data
-        loaded
-        url
-
-        seturl()
-
-    seqtable
-        loaded
-        html
-
-        coldata()
-        rowdata()
-        celldata()
-
-        colname()
-        rowname()
-        cellname()
-
-    groupsdef
-
-        source: tree, sortcols, sortid
-
-        set_threshold_service(url, param)
-        set_from_threshold(t)
-        set_from_server(url)
-
-        OK: if source == tree, then groupsdef needs to told a function from threshold to grouping
-
-            if source == sortcols, groupsdef needs to be told a url
-
-            if source == sortid, groupsdef needs to be told a url
-
-    refcols
-        cols
-
-    refrow
-
-    opts
-        property_highlight
-
-*/
-
-
 var appstate = (function () {
 
     /* new_ajax_loader:
@@ -70,30 +19,36 @@ var appstate = (function () {
     // guarantees: "url" property refers to most recent request. The data are available iff "loaded" is true.
 
     var new_ajax_loader = function (args) {
+        
+        var data_type = args.data_type || {};
         var success_callback = args.success;
         var error_callback = args.error;
-        var set_loaded = args.set_loaded;
         var is_loaded = args.is_loaded;
+        var set_loaded = args.set_loaded;
         var cur_url = args.cur_url;
-        var set_cur_url = args.set_cur_url;
-        var data_type = args.data_type || {};
-        var on_url_change = args.on_url_change || function () {};
+        var on_url_change = args.on_url_change;
+        var set_cur_url = function (url) {
+            args.set_cur_url(url);
+            if (on_url_change) {
+                on_url_change();
+            }
+        };
 
         var that = {};
 
-        /* cur_request.url represents the url of the *most recent* ajax request by the client object
-           cur_request.xhr is the xhr object of the *currently outstanding* request, if any; null otherwise */
+        /* "url" property represents the url of the most recent (and thus only valid) request;
+           cur_xhr is the xhr object of the *currently outstanding* request, if any; null otherwise */
 
-        var cur_request = {url: "", xhr: null};
+        var cur_xhr = null;
 
         /* handle_success: passed to $.ajax as the success handler. Sets loader and client-object state &
            calls client success_callback -- UNLESS the request that led to this callback has been superseded
            by cur_request */
 
         var handle_success = function (this_request_url, response, status) {
-            // ignore the callback if it's for an obsolete request
-            if (this_request_url === cur_request.url) {
-                cur_request.xhr = null;
+
+            if (this_request_url === cur_url()) {
+                cur_xhr = null;
                 set_loaded(true);           // should this be set before or after success_callback?
                 success_callback(response, status);
             }
@@ -105,21 +60,18 @@ var appstate = (function () {
 
         var handle_error = function (this_request_xhr, status, err) {
             // ignore the callback if it's for an obsolete request
-            if (this_request_xhr === cur_request.xhr) {
-                cur_request.xhr = null;
+            if (this_request_xhr === cur_xhr) {
+                cur_xhr = null;
                 error_callback(this_request_xhr, status, err);
             }
         };
 
         /* doxhr: Use jquery's $.ajax to initiate the request; sets loader and client-object state */
 
-        var doxhr = function(url) {
+        var doxhr = function (url) {
             set_loaded(false);
             set_cur_url(url);
-            on_url_change();
-            
-            cur_request.url = url;
-            cur_request.xhr = $.ajax({
+            cur_xhr = $.ajax({
                 url: url,
                 /* Create a new callback closure to remember what url this callback is for -- this should
                    prevent us from responding to superseded requests. (I don't yet trust xhr.abort() to
@@ -138,19 +90,31 @@ var appstate = (function () {
            is already backed by that url or we have issued a still-outstanding request for that url */
 
         that.load = function (url) {
+
+            if (!url) {
+                // null (or other falsy) values mean "cancel the request and set current request to null"
+                set_cur_url(null);
+                if (cur_xhr) {
+                    cur_xhr.abort();
+                }
+                cur_xhr = null;
+
+                return;
+            }
+
             if (is_loaded()) {
                 if (url !== cur_url()) {
                     // object is loaded from some url, but request is for a different url
                     doxhr(url);
                 }
             }
-            else if (!cur_request.xhr) {
+            else if (!cur_xhr) {
                 // object is not loaded, and there is no outstanding request
                 doxhr(url);
             }
-            else if (url !== cur_request.url) {
+            else if (url !== cur_url()) {
                 // object is not loaded, there is an outstanding request, but it's for a different url
-                cur_request.xhr.abort();
+                cur_xhr.abort();
                 doxhr(url);
             }
             /* ignore the two remaining cases:
@@ -163,7 +127,7 @@ var appstate = (function () {
     };
 
 
-    var add_url_backed_capability = function(obj, args) {
+    var add_url_backed_capability = function (obj, args) {
 
         var set = args.set;
         var get = obj.get;
@@ -173,6 +137,7 @@ var appstate = (function () {
 
         var loader = new_ajax_loader({
             data_type: args.data_type,
+            on_url_change: args.on_url_change,
             success: args.seturl_success,
             error: args.seturl_error,
             set_loaded: function (s) { set("loaded", s); },
@@ -192,54 +157,9 @@ var appstate = (function () {
         // Representation of the single point for updating alignment info, requesting sorted versions
         // Like a "main menu". Linked from the resources that actually contain alignment data.
 
-        /* base resource works like this:
-
-            /alignment/1/ -> contains list of links and forms
-
-                <dl>
-                    <dd> base resource </dd> : <dt><a rel="baseresource" href="alignment/1/"></dt>
-                    <dd> tree </dd> : <dt><a rel="tree" href="alignment/1/tree"</dt>
-                    <dd> comments </dd> : <dt><a rel="comments" href="/alignment/1/comments/"</dt>
-                    <dd> alignment contents </dd> : <dt><a rel= "alignment-table" href="/alignment/1/table"></dt>
-                    etc.
-                </dl>
-
-                <!-- semantically identify form type with class attribute. Note that we *could* go crazy adding
-                     indirection. E.g., we could define a URI for GETing a column URI from a form, and then we
-                     could POST comments from the page at the column URI. I think this would be silly. Just
-                     form-encode the comment and the column/cell/row identifier -->
-
-                <form class="commentform" action=/alignment/1/comments" method="POST">...</form>
-                <!-- redirect to comment resource, which includes 1. link to whole mapping 2. new hash-->
-                etc.
-
-            /alignment/1/table should contain
-
-                1. a link to /alignment/1/
-                2. a form for requesting a sorted alignment (semantically identified with class, as above)
-                3. the table containing the function alignment
-                4. a link to the grouping definition
-
-            so after sorting you would have
-
-                a *base resource* at /alignment/1/sorted/c17
-
-            NOTE a sort request to the alignment *table* resource /alignment/1/table?sortBy=c17 would redirect to
-            /aligment/1/sorted/c17/table . This latter representation would contain a link to the base resource,
-            /alignment/1/sorted/c17/
-
-            This way, when the frontend wants to sort an alignment, it just needs to perform one request to get
-            and display the sorted table; it could then send a second request to get the new representation at the
-            base URL (i.e., /alignment/1/sorted/c17/, which contains a reference to /alignment/1/sorted/c17/table)
-            What gets stored in the browser history is URL of the base resource for the sorted alignment.
-            This base resource will point to all the subsidiary resources the app needs to go and get in order to
-            display the sorted alignment correctly.
-
-        */
-
         var that = {};
+        
         var secrets = {};
-
         tst.add_property_capability(that, secrets);
         var set = secrets.set;
         var add_properties = secrets.add_properties;
@@ -267,8 +187,10 @@ var appstate = (function () {
                 }
                 else {
                     // note the use of 2 classes: groups-def-request AND the refinement "threshold-request"
-                    var jq_req_form = jq_base.find("form.groups-def-request.threshold-request");
-                    app.groups_def.set_source("threshold", jq_req_form);
+                    app.groups_def.set_source(
+                        "threshold",
+                        jq_base.find("form.groups-def-request.threshold-request")
+                    );
                 }
             },
 
@@ -312,13 +234,94 @@ var appstate = (function () {
             }
         });
 
-        that.set_threshold = function(t) {
+        that.set_threshold = function (t) {
             set("threshold", t);
             // I'm having tree object manually ping the groups-def object, but is that right? Should
             // groups-def use tstate to register as a listener on "tree.threshold"?
 
-            app.groups_def.on_threshold_change(t);
+            app.groups_def.on_threshold_change();
         };
+
+        return that;
+    };
+
+
+    var new_groups_def = function (app) {
+
+        var that = {};
+        // jq_request_form: jquery object wrapping the form which should be used to reference the
+
+        var jq_request_form;
+        var seq_table_url;
+
+        var secrets = {};
+
+        tst.add_property_capability(that, secrets);
+        var set = secrets.set;
+        var add_properties = secrets.add_properties;
+        add_properties("source", "error", "tree");
+
+        var clear = function () {
+            // in case there are any outstanding requests, this will cancel them.
+            that.seturl(null);
+
+            // set the groups-def to null
+        };
+
+
+        add_url_backed_capability(that, {
+            set: set,
+            add_properties: add_properties,
+            seturl_success: function (response) {
+                // set the groups-def to whatever the server says
+            },
+
+            seturl_error: function () {
+                // ...
+            }
+        });
+
+
+        var set_from_threshold = function () {
+            if (that.get("source") === "threshold") {
+                var t = app.tree.get("threshold");
+                if (t) {
+                    jq_request_form.find("input[name='threshold-value']").val(t);
+                    that.seturl(jq_request_form.attr("action") + "?" + jq_request_form.serialize());
+                }
+                else {
+                    clear();
+                }
+            }
+        };
+
+
+        that.set_source = function (type) {
+            seq_table_url = app.seq_table.get("urL");
+
+            if (type === "threshold") {
+                that.set("source", "threshold");
+                jq_request_form = arguments[1];
+                set_from_threshold();
+            }
+            else if (type === "url") {
+                that.set("source", "url");
+                that.seturl(arguments[1]);
+            }
+        };
+
+
+        that.on_threshold_change = function () {
+            set_from_threshold();
+        };
+
+
+        that.on_table_change = function () {
+            if (app.seq_table.get("url") !== seq_table_url) {
+                clear();
+            }
+        };
+
 
         return that;
     };
@@ -353,6 +356,9 @@ var appstate = (function () {
         add_url_backed_capability(that, {
             set: set,
             add_properties: add_properties,
+            on_url_change: function () {
+                app.groups_def.on_table_change();
+            },
             seturl_success: function (response, status) {
 
                 var jq_doc = $(response);
@@ -398,7 +404,7 @@ var appstate = (function () {
 
             var col = [];
             for (var i = 0; i < jq_rows.length; i++) {
-               col[i] = jq_rows.find(selector + (i+1)).text();
+                col[i] = jq_rows.find(selector + (i+1)).text();
             }
 
             return col;
@@ -410,7 +416,7 @@ var appstate = (function () {
             var row_selector = row_id[0] === 'r' ? row_id : "r" + row_id;
             var selector = "." + row_selector + ".c";
 
-            var jq_tds = that.get("table").jquery_obj.find("td."+row_selector);
+            var jq_tds = that.get("table").jquery_obj.find("td." + row_selector);
 
             var row = [];
             for (var i = 0; i < jq_tds.length; i++) {
@@ -425,7 +431,7 @@ var appstate = (function () {
             var row_selector = row_id[0] === 'r' ? row_id : "r" + row_id;
             var col_selector = col_id[0] === 'c' ? col_id : "c" + col_id;
 
-            return that.get("table").find("."+ row_selector + "." + col_selector).text();
+            return that.get("table").find("." + row_selector + "." + col_selector).text();
         };
 
 
@@ -470,7 +476,7 @@ var appstate = (function () {
 
 
         var remove = function (cols, idx) {
-            var newcols = cols.slice(0,idx);
+            var newcols = cols.slice(0, idx);
             newcols.concat(cols.slice(idx+1, cols.length));
 
             return newcols;
@@ -528,77 +534,105 @@ var appstate = (function () {
     };
 
 
-    var new_groups_def = function (app) {
-
-        var that = {};
-        var jq_request_form;
-        var secrets = {};
-
-        tst.add_property_capability(that, secrets);
-        var set = secrets.set;
-        var add_properties = secrets.add_properties;
-
-        add_properties("source", "error");
-        
-        var clear = function () {
-            // set the groups-def to null
-        };
-
-
-        add_url_backed_capability(that, {
-            set: set,
-            add_properties: add_properties,
-            seturl_success: function (response) {
-                // set the groups-def to whatever the server says
-            },
-
-            seturl_error: function () {
-                // ...
-            }
-        });
-
-
-
-        var set_from_threshold = function () {
-            if (that.get("source") === "threshold") {
-                var t = app.tree.get("threshold");
-                if (t) {
-                    that.seturl(jq_request_form.attr("action") + "?" + jq_request_form.serialize());
-                }
-                else {
-                    clear();
-                }
-            }
-        };
-
-
-        that.set_source = function (type) {
-            if (type === "threshold") {
-                that.set("source", "threshold");
-                jq_request_form = arguments[1];
-                set_from_threshold();
-            }
-            else if (type === "url") {
-                that.set("source", "url");
-                that.seturl(arguments[1]);
-            }
-        };
-
-
-        that.on_threshold_change = function() {
-            set_from_threshold();
-        };
-
-
-        return that;
-    };
-
-
-    var new_ref_row = function () {
-
-    };
-
     return {
         // either setup app object here, or use "that" convention and replace this with "return that;"
     };
 }());
+
+
+/* base resource works like this:
+
+    /alignment/1/ -> contains list of links and forms
+
+        <dl>
+            <dd> base resource </dd> : <dt><a rel="baseresource" href="alignment/1/"></dt>
+            <dd> tree </dd> : <dt><a rel="tree" href="alignment/1/tree"</dt>
+            <dd> comments </dd> : <dt><a rel="comments" href="/alignment/1/comments/"</dt>
+            <dd> alignment contents </dd> : <dt><a rel= "alignment-table" href="/alignment/1/table"></dt>
+            etc.
+        </dl>
+
+        <!-- semantically identify form type with class attribute. Note that we *could* go crazy adding
+             indirection. E.g., we could define a URI for GETing a column URI from a form, and then we
+             could POST comments from the page at the column URI. I think this would be silly. Just
+             form-encode the comment and the column/cell/row identifier -->
+
+        <form class="commentform" action=/alignment/1/comments" method="POST">...</form>
+        <!-- redirect to comment resource, which includes 1. link to whole mapping 2. new hash-->
+        etc.
+
+    /alignment/1/table should contain
+
+        1. a link to /alignment/1/
+        2. a form for requesting a sorted alignment (semantically identified with class, as above)
+        3. the table containing the function alignment
+        4. a link to the grouping definition
+
+    so after sorting you would have
+
+        a *base resource* at /alignment/1/sorted/c17
+
+    NOTE a sort request to the alignment *table* resource /alignment/1/table?sortBy=c17 would redirect to
+    /aligment/1/sorted/c17/table . This latter representation would contain a link to the base resource,
+    /alignment/1/sorted/c17/
+
+    This way, when the frontend wants to sort an alignment, it just needs to perform one request to get
+    and display the sorted table; it could then send a second request to get the new representation at the
+    base URL (i.e., /alignment/1/sorted/c17/, which contains a reference to /alignment/1/sorted/c17/table)
+    What gets stored in the browser history is URL of the base resource for the sorted alignment.
+    This base resource will point to all the subsidiary resources the app needs to go and get in order to
+    display the sorted alignment correctly.
+
+*/
+
+/*
+
+    base_resource
+        url
+        loaded
+        seturl()
+
+    tree
+        data
+        loaded
+        url
+
+        seturl()
+
+    seqtable
+        loaded
+        html
+
+        coldata()
+        rowdata()
+        celldata()
+
+        colname()
+        rowname()
+        cellname()
+
+    groupsdef
+
+        source: tree, sortcols, sortid
+
+        set_threshold_service(url, param)
+        set_from_threshold(t)
+        set_from_server(url)
+
+        OK: if source == tree, then groupsdef needs to told a function from threshold to grouping
+
+            if source == sortcols, groupsdef needs to be told a url
+
+            if source == sortid, groupsdef needs to be told a url
+
+    refcols
+        cols
+
+    refrow
+
+    opts
+        property_highlight
+
+*/
+
+
