@@ -19,20 +19,14 @@ var appstate = (function () {
     // guarantees: "url" property refers to most recent request. The data are available iff "loaded" is true.
 
     var new_ajax_loader = function (args) {
-        
+
         var data_type = args.data_type || {};
         var success_callback = args.success;
         var error_callback = args.error;
         var is_loaded = args.is_loaded;
         var set_loaded = args.set_loaded;
         var cur_url = args.cur_url;
-        var on_url_change = args.on_url_change;
-        var set_cur_url = function (url) {
-            args.set_cur_url(url);
-            if (on_url_change) {
-                on_url_change();
-            }
-        };
+        var set_cur_url = args.set_cur_url;
 
         var that = {};
 
@@ -46,7 +40,6 @@ var appstate = (function () {
            by cur_request */
 
         var handle_success = function (this_request_url, response, status) {
-
             if (this_request_url === cur_url()) {
                 cur_xhr = null;
                 set_loaded(true);           // should this be set before or after success_callback?
@@ -59,7 +52,6 @@ var appstate = (function () {
            that led to this callback has been superseded by cur_request anyway) */
 
         var handle_error = function (this_request_xhr, status, err) {
-            // ignore the callback if it's for an obsolete request
             if (this_request_xhr === cur_xhr) {
                 cur_xhr = null;
                 error_callback(this_request_xhr, status, err);
@@ -93,10 +85,11 @@ var appstate = (function () {
 
             if (!url) {
                 // null (or other falsy) values mean "cancel the request and set current request to null"
-                set_cur_url(null);
                 if (cur_xhr) {
                     cur_xhr.abort();
                 }
+
+                set_cur_url(null);
                 cur_xhr = null;
 
                 return;
@@ -129,51 +122,47 @@ var appstate = (function () {
 
     var add_url_backed_capability = function (obj, args) {
 
-        var set = args.set;
-        var get = obj.get;
-        var add_properties = args.add_properties;
-
-        add_properties("url", "loaded");
+        var propmgr = args.property_manager;
+        propmgr.add("url", "loaded");
 
         var loader = new_ajax_loader({
             data_type: args.data_type,
-            on_url_change: args.on_url_change,
             success: args.seturl_success,
             error: args.seturl_error,
-            set_loaded: function (s) { set("loaded", s); },
-            is_loaded: function () { get("loaded"); },
-            cur_url: function () { get("url"); },
-            set_cur_url: function (url) { set("url", url); }
+            set_loaded: function (s) { propmgr.set("loaded", s); },
+            is_loaded: function () { obj.get("loaded"); },
+            cur_url: function () { obj.get("url"); },
+            set_cur_url: function (url) { propmgr.set("url", url); }
         });
+
 
         obj.seturl = function (url) {
             loader.load(url);
         };
+
+        propmgr.setter("url", obj.seturl);
     };
 
 
-    var new_base_resource = function (app) {
+    var new_base_resource = function () {
 
         // Representation of the single point for updating alignment info, requesting sorted versions
         // Like a "main menu". Linked from the resources that actually contain alignment data.
 
         var that = {};
-        
-        var secrets = {};
-        tst.add_property_capability(that, secrets);
-        var set = secrets.set;
-        var add_properties = secrets.add_properties;
 
-        add_properties("error");
+        var propmgr = tstate.add_property_capability(that);
+        var set = propmgr.set;
+
+        propmgr.add("error");
 
         add_url_backed_capability(that, {
-            set: set,
-            add_properties: add_properties,
+            property_manager: propmgr,
             seturl_success: function (html, status) {
                 var jq_base = $(html);
 
-                app.tree.seturl( jq_base.find("a[rel='tree']").attr("href") );
-                app.seq_table.seturl( jq_base.find("a[rel='seq-table']").attr("href") );
+                tstate("tree.url").set( jq_base.find("a[rel='tree']").attr("href") );
+                tstate("seq_table.url").set( jq_base.find("a[rel='seq-table']").attr("href") );
 
                 /* If the server provides a *link* to a groups_def, that means it has determined the grouping
                    to use, and we should pass the url to the groups_def object. If the server provides a
@@ -183,11 +172,11 @@ var appstate = (function () {
 
                 var grplink = jq_base.find("a[rel='groups-def']");
                 if (grplink) {
-                    app.groups_def.set_source("url", grplink.attr("href"));
+                    tstate("groups_def").set_source("url", grplink.attr("href"));
                 }
                 else {
                     // note the use of 2 classes: groups-def-request AND the refinement "threshold-request"
-                    app.groups_def.set_source(
+                    tstate("groups_def.source").set_source(
                         "threshold",
                         jq_base.find("form.groups-def-request.threshold-request")
                     );
@@ -204,27 +193,20 @@ var appstate = (function () {
     };
 
 
-    var new_tree = function (app) {
+    var new_tree = function () {
 
         var that = {};
-        var secrets = {};
 
-        tst.add_property_capability(that, secrets);
+        var propmgr = tstate.add_property_capability(that);
+        var set = propmgr.set;
 
-        var set = secrets.set;
-        var add_properties = secrets.add_properties;
-
-        add_properties("error", "data");
+        propmgr.add("error", "data");
+        propmgr.settable("threshold");
 
         add_url_backed_capability(that, {
-            set: set,
-            add_properties: add_properties,
+            property_manager: propmgr,
             data_type: "json",
-            on_url_change: function () {
-                that.set_threshold(null);
-            },
             seturl_success: function (json_obj, status) {
-                // The tree object should also maintain the request form? No...
                 set("data", json_obj);
             },
 
@@ -234,44 +216,33 @@ var appstate = (function () {
             }
         });
 
-        that.set_threshold = function (t) {
-            set("threshold", t);
-            // I'm having tree object manually ping the groups-def object, but is that right? Should
-            // groups-def use tstate to register as a listener on "tree.threshold"?
-
-            app.groups_def.on_threshold_change();
-        };
+        tstate("tree.url").on_change(function (url) {
+            set("threshold", null);
+        });
 
         return that;
     };
 
 
-    var new_groups_def = function (app) {
+    var new_groups_def = function () {
 
         var that = {};
-        // jq_request_form: jquery object wrapping the form which should be used to reference the
 
         var jq_request_form;
         var seq_table_url;
 
-        var secrets = {};
-
-        tst.add_property_capability(that, secrets);
-        var set = secrets.set;
-        var add_properties = secrets.add_properties;
-        add_properties("source", "error", "tree");
+        var propmgr = tstate.add_property_capability(that);
+        var set = propmgr.set;
+        propmgr.add("source", "error");
 
         var clear = function () {
-            // in case there are any outstanding requests, this will cancel them.
             that.seturl(null);
-
-            // set the groups-def to null
+            // set the groups-def to null...
         };
 
 
         add_url_backed_capability(that, {
-            set: set,
-            add_properties: add_properties,
+            property_manager: propmgr,
             seturl_success: function (response) {
                 // set the groups-def to whatever the server says
             },
@@ -284,7 +255,7 @@ var appstate = (function () {
 
         var set_from_threshold = function () {
             if (that.get("source") === "threshold") {
-                var t = app.tree.get("threshold");
+                var t = tstate("tree.threshold").val();
                 if (t) {
                     jq_request_form.find("input[name='threshold-value']").val(t);
                     that.seturl(jq_request_form.attr("action") + "?" + jq_request_form.serialize());
@@ -297,37 +268,37 @@ var appstate = (function () {
 
 
         that.set_source = function (type) {
-            seq_table_url = app.seq_table.get("urL");
+            seq_table_url = tstate("seq_table.url").val();
 
             if (type === "threshold") {
-                that.set("source", "threshold");
+                set("source", "threshold");
                 jq_request_form = arguments[1];
                 set_from_threshold();
             }
             else if (type === "url") {
-                that.set("source", "url");
+                set("source", "url");
                 that.seturl(arguments[1]);
             }
         };
 
 
-        that.on_threshold_change = function () {
+        tstate("tree.threshold").on_change( function () {
             set_from_threshold();
-        };
+        });
 
 
-        that.on_table_change = function () {
-            if (app.seq_table.get("url") !== seq_table_url) {
+        tstate("seq_table.url").on_change( function (url) {
+            if (url !== seq_table_url) {
                 clear();
             }
-        };
+        });
 
 
         return that;
     };
 
 
-    var new_seq_table = function (app) {
+    var new_seq_table = function () {
 
         /* Some quick Firebug experimentation suggests passing a ~1M string around between javascript
            methods/functions is no problem at all. So we'll stick to always building the new table on the
@@ -342,23 +313,16 @@ var appstate = (function () {
         */
 
         var that = {};
-        var secrets = {};
 
-        tst.add_property_capability(that, secrets);
+        var propmgr = tstate.add_property_capability(that);
+        var set = propmgr.set;
 
-        var set = secrets.set;
-        var add_properties = secrets.add_properties;
-
-        add_properties("error", "table", "nrows");
+        propmgr.add("error", "table");
 
         var sort_form;
 
         add_url_backed_capability(that, {
-            set: set,
-            add_properties: add_properties,
-            on_url_change: function () {
-                app.groups_def.on_table_change();
-            },
+            property_manager: propmgr,
             seturl_success: function (response, status) {
 
                 var jq_doc = $(response);
@@ -378,8 +342,9 @@ var appstate = (function () {
                       1. correspond to *this* version of the seq_table
                    OR 2. have "loaded" property == false */
 
-                app.base_resource.seturl( jq_doc.find("a[rel='base-resource]").attr("href") );
+                tstate("base.url").set( jq_doc.find("a[rel='base-resource]").attr("href") );
             },
+
             seturl_error: function (xhr, status, err) {
                 set("error", true);
                 console.log("error: new_tree.seturl ajax call returned error.");
@@ -458,11 +423,10 @@ var appstate = (function () {
     var new_sort_cols = function () {
 
         var that = {};
-        var secrets = {};
 
-        tst.add_property_capability(that, secrets);
-        var set = secrets.set;
-        secrets.add_properties("cols");
+        var propmgr = tstate.add_property_capability(that);
+        var set = propmgr.set;
+        propmgr.add("cols");
         set("cols", []);
 
 
