@@ -16,8 +16,6 @@ var appstate = (function () {
           of a 404 response)
     */
 
-
-
     var new_ajax_loader = function (args) {
 
         var data_type = args.data_type || {};
@@ -78,47 +76,48 @@ var appstate = (function () {
 
         /* ajax_loader.load(url): Initiate ajax request to set client object's backing url, unless the object
            is already backed by that url or we have issued a still-outstanding request for that url.
-           
+
            If request url is null, terminate requests and set url to null */
 
         that.load = function (url) {
 
             url = url || null;                      // normalize falsy values to "null"
             var url_change = (url !== cur_url());
-            
+
             if (url_change) {
-                
+
                 // abort any outstanding requests & issue a new one (unless requested url is "null")
                 if (cur_xhr) {
-                    cur_xhr.abort();    
+                    cur_xhr.abort();
                 }
-                cur_xhr = url ? do_xhr(url) : null;     
+                cur_xhr = url ? do_xhr(url) : null;
             }
-            else if (url && !is_loaded() && !cur_xhr) {   
-                
+            else if (url && !is_loaded() && !cur_xhr) {
+
                 // even though desired url hasn't changed, object isn't loaded & there isn't an active request
-                cur_xhr = do_xhr(url);            
+                cur_xhr = do_xhr(url);
             }
 
             return url_change;
         };
-        
-        
+
+
         return that;
     };
-    
-    
-    /* add_url_backed_capability: 
-    
+
+
+    /* add_url_backed_capability:
+
        Endow client object obj with an ajax_loader object, "url" and "loaded" properties, and seturl method. A
        Call to seturl sets "url" parameter, invoked ajax_loader's load(url) method, and sets "loaded" property
        appropriately.
-       
+
        Guarantees: "url" property refers to most recent request. The data are available iff "loaded" is true.
     */
-    
+
     var add_url_backed_capability = function (obj, args) {
 
+        var on_url_change = args.on_url_change || function () {};
         var propmgr = args.property_manager;
         propmgr.add("url", "loaded");
 
@@ -132,17 +131,17 @@ var appstate = (function () {
         });
 
         propmgr.set("url", null);           // initial value; no listeners yet!
-        
+
         obj.seturl = function (url) {
             if (loader.load(url)) {
-                args.on_url_change(url);
+                on_url_change(url);
                 propmgr.set("url", url);
             }
         };
 
         propmgr.setter("url", obj.seturl);
     };
-    
+
 
     var new_base_resource = function () {
 
@@ -162,7 +161,7 @@ var appstate = (function () {
                 var jq_base = $(html);
 
                 tstate("tree.url").set( jq_base.find("a[rel='tree']").attr("href") );
-                tstate("seq_table.url").set( jq_base.find("a[rel='seq-table']").attr("href") );
+                tstate("seq-table.url").set( jq_base.find("a[rel='seq-table']").attr("href") );
 
                 /* If the server provides a *link* to a groups_def, that means it has determined the grouping
                    to use, and we should pass the url to the groups_def object. If the server provides a
@@ -172,14 +171,17 @@ var appstate = (function () {
 
                 var grplink = jq_base.find("a[rel='groups-def']");
                 if (grplink) {
-                    tstate("groups_def").set_source("url", grplink.attr("href"));
+                    tstate("groups_def").set_source({
+                        type: "url",
+                        url: grplink.attr("href")
+                    });
                 }
                 else {
                     // note the use of 2 classes: groups-def-request AND the refinement "threshold-request"
-                    tstate("groups_def.source").set_source(
-                        "threshold",
-                        jq_base.find("form.groups-def-request.threshold-request")
-                    );
+                    tstate("groups-def").set_source({
+                        type: "threshold",
+                        form: jq_base.find("form.groups-def-request.threshold-request")
+                    });
                 }
             },
 
@@ -209,7 +211,7 @@ var appstate = (function () {
             seturl_success: function (json_obj, status) {
                 set("data", json_obj);
             },
-            
+
             on_url_change: function () {
                 set("threshold", null);
             },
@@ -219,8 +221,8 @@ var appstate = (function () {
                 console.log("error: new_tree.seturl ajax call returned error.");
             }
         });
-        
-        
+
+
         return that;
     };
 
@@ -234,12 +236,7 @@ var appstate = (function () {
 
         var propmgr = tstate.add_property_capability(that);
         var set = propmgr.set;
-        propmgr.add("source", "error");
-
-        var clear = function () {
-            that.seturl(null);
-            // set the groups-def to null...
-        };
+        propmgr.add("source-type", "error");
 
 
         add_url_backed_capability(that, {
@@ -254,8 +251,14 @@ var appstate = (function () {
         });
 
 
+        var clear = function () {
+            that.seturl(null);
+            // set the groups-def to null...
+        };
+
+
         var set_from_threshold = function () {
-            if (that.get("source") === "threshold") {
+            if (that.get("source_type") === "threshold") {
                 var t = tstate("tree.threshold").val();
                 if (t) {
                     jq_request_form.find("input[name='threshold-value']").val(t);
@@ -268,17 +271,17 @@ var appstate = (function () {
         };
 
 
-        that.set_source = function (type) {
-            seq_table_url = tstate("seq_table.url").val();
+        that.set_source = function (args) {
+            seq_table_url = tstate("seq-table.url").val();
 
-            if (type === "threshold") {
-                set("source", "threshold");
-                jq_request_form = arguments[1];
+            if (args.type === "threshold") {
+                set("source_type", "threshold");
+                jq_request_form = args.form;
                 set_from_threshold();
             }
-            else if (type === "url") {
-                set("source", "url");
-                that.seturl(arguments[1]);
+            else if (args.type === "url") {
+                set("source_type", "url");
+                that.seturl(args.url);
             }
         };
 
@@ -288,7 +291,7 @@ var appstate = (function () {
         });
 
 
-        tstate("seq_table.url").on_change( function (url) {
+        tstate("seq-table.url").on_change( function (url) {
             if (url !== seq_table_url) {
                 clear();
             }
@@ -499,11 +502,125 @@ var appstate = (function () {
     };
 
 
+    var new_just_columns_tab = function () {
+
+        var that = {};
+
+        var propmgr = tstate.add_property_capability(that);
+        var set = propmgr.set;
+
+        propmgr.add("score-option", "name");
+        propmgr.settable("score-option");
+
+        set("name", "just-columns");
+
+        return that;
+    };
+
+
+    var new_selected_elements = function () {
+
+        var that = {};
+
+        var propmgr = tstate.add_property_capability(that);
+        var set = propmgr.set;
+
+        var proplist = ["rows", "cols", "cells"];
+
+        propmgr.add(proplist);
+
+        var new_element_set = function (list) {
+            var that = {};
+
+            var elements = {};
+
+            that.add = function (new_elts) {
+                for (var i = 0; i < new_elts.length; i++) {
+                    elements[new_elts[i]] = true;
+                }
+            };
+
+            that.remove = function (old_elts) {
+                for (var i = 0; i < old_elts.length; i++) {
+                    delete elements[old_elts[i]];
+                }
+            };
+
+            that.serialize = function () {
+                var vals = [];
+                for (var item in elements) {
+                    if (elements.hasOwnProperty(item)) {
+                        vals.push(item);
+                    }
+                }
+                return vals.splice(",");
+            };
+
+            return that;
+        };
+
+
+        var setter_for = function (pname) {
+            return function (list) {
+                set(pname, new_element_set(list))   ;
+            };
+        };
+
+        for (var i = 0; i < proplist.length; i++) {
+            propmgr.setter(proplist[i], setter_for(proplist[i]));
+        }
+
+
+        that.serialize = function () {
+            var vals = [];
+            for (var i = 0; i < proplist.length; i++) {
+                vals.push(proplist[i] + ":" + that.get(proplist[i]).serialize());
+            }
+            return vals.splice(",");
+        };
+
+
+        return that;
+    };
+
+
     return {
         // either setup app object here, or use "that" convention and replace this with "return that;"
     };
 }());
 
+
+/*
+    What else needs to be remembered:
+
+    selected elements (set, add, remove, add all between 2 rows or all between 2 columns?
+    hovered elements (this is "set-only", with no add or remove semantics)
+    selected tab
+
+    just-columns option that is selected.
+
+    just_columns_tab
+        "score-option"
+
+    hovered_elements is another "just a property"
+
+    selected_elements
+        set
+        add
+        remove
+        (need seq_table method to get all cols between x and y)
+
+    selected tab => some way to register "just a property" at the base of the hierarchy
+
+    tstate("selected.rows").add(<list>);
+    tstate("selected.rows").set(<list>);
+
+
+    tstate("hovered").set({type: row, <list>});
+
+    does this mean "set the root property "hovered to this object"? (Sure, why not?)
+
+*/
 
 /* base resource works like this:
 

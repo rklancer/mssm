@@ -23,6 +23,8 @@ var tstate = function () {
 
             mgr.add = function () {
                 // read the property list from that arguments array-like object
+
+                // *** must handle lists, objects (w/default values), and long argument list transparently
             }
 
             // accepts a function that will be passed the value whenever tstate is called on to set property
