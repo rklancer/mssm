@@ -16,7 +16,7 @@ var appstate = (function () {
           of a 404 response)
     */
 
-    // guarantees: "url" property refers to most recent request. The data are available iff "loaded" is true.
+
 
     var new_ajax_loader = function (args) {
 
@@ -26,7 +26,6 @@ var appstate = (function () {
         var is_loaded = args.is_loaded;
         var set_loaded = args.set_loaded;
         var cur_url = args.cur_url;
-        var set_cur_url = args.set_cur_url;
 
         var that = {};
 
@@ -58,12 +57,11 @@ var appstate = (function () {
             }
         };
 
-        /* doxhr: Use jquery's $.ajax to initiate the request; sets loader and client-object state */
+        /* do_xhr: Use jquery's $.ajax to initiate the request; sets loader and client-object state */
 
-        var doxhr = function (url) {
+        var do_xhr = function (url) {
             set_loaded(false);
-            set_cur_url(url);
-            cur_xhr = $.ajax({
+            return $.ajax({
                 url: url,
                 /* Create a new callback closure to remember what url this callback is for -- this should
                    prevent us from responding to superseded requests. (I don't yet trust xhr.abort() to
@@ -79,47 +77,46 @@ var appstate = (function () {
         };
 
         /* ajax_loader.load(url): Initiate ajax request to set client object's backing url, unless the object
-           is already backed by that url or we have issued a still-outstanding request for that url */
+           is already backed by that url or we have issued a still-outstanding request for that url.
+           
+           If request url is null, terminate requests and set url to null */
 
         that.load = function (url) {
 
-            if (!url) {
-                // null (or other falsy) values mean "cancel the request and set current request to null"
+            url = url || null;                      // normalize falsy values to "null"
+            var url_change = (url !== cur_url());
+            
+            if (url_change) {
+                
+                // abort any outstanding requests & issue a new one (unless requested url is "null")
                 if (cur_xhr) {
-                    cur_xhr.abort();
+                    cur_xhr.abort();    
                 }
-
-                set_cur_url(null);
-                cur_xhr = null;
-
-                return;
+                cur_xhr = url ? do_xhr(url) : null;     
+            }
+            else if (url && !is_loaded() && !cur_xhr) {   
+                
+                // even though desired url hasn't changed, object isn't loaded & there isn't an active request
+                cur_xhr = do_xhr(url);            
             }
 
-            if (is_loaded()) {
-                if (url !== cur_url()) {
-                    // object is loaded from some url, but request is for a different url
-                    doxhr(url);
-                }
-            }
-            else if (!cur_xhr) {
-                // object is not loaded, and there is no outstanding request
-                doxhr(url);
-            }
-            else if (url !== cur_url()) {
-                // object is not loaded, there is an outstanding request, but it's for a different url
-                cur_xhr.abort();
-                doxhr(url);
-            }
-            /* ignore the two remaining cases:
-                1. object is loaded, but request was to load the same url
-                2. object is not loaded, and there is an outstanding request, but it's for the same url anyway
-            */
+            return url_change;
         };
-
+        
+        
         return that;
     };
-
-
+    
+    
+    /* add_url_backed_capability: 
+    
+       Endow client object obj with an ajax_loader object, "url" and "loaded" properties, and seturl method. A
+       Call to seturl sets "url" parameter, invoked ajax_loader's load(url) method, and sets "loaded" property
+       appropriately.
+       
+       Guarantees: "url" property refers to most recent request. The data are available iff "loaded" is true.
+    */
+    
     var add_url_backed_capability = function (obj, args) {
 
         var propmgr = args.property_manager;
@@ -131,18 +128,21 @@ var appstate = (function () {
             error: args.seturl_error,
             set_loaded: function (s) { propmgr.set("loaded", s); },
             is_loaded: function () { obj.get("loaded"); },
-            cur_url: function () { obj.get("url"); },
-            set_cur_url: function (url) { propmgr.set("url", url); }
+            cur_url: function () { obj.get("url"); }
         });
 
-
+        propmgr.set("url", null);           // initial value; no listeners yet!
+        
         obj.seturl = function (url) {
-            loader.load(url);
+            if (loader.load(url)) {
+                args.on_url_change(url);
+                propmgr.set("url", url);
+            }
         };
 
         propmgr.setter("url", obj.seturl);
     };
-
+    
 
     var new_base_resource = function () {
 
@@ -209,17 +209,18 @@ var appstate = (function () {
             seturl_success: function (json_obj, status) {
                 set("data", json_obj);
             },
+            
+            on_url_change: function () {
+                set("threshold", null);
+            },
 
             seturl_error: function (xhr, status, err) {
                 set("error", true);
                 console.log("error: new_tree.seturl ajax call returned error.");
             }
         });
-
-        tstate("tree.url").on_change(function (url) {
-            set("threshold", null);
-        });
-
+        
+        
         return that;
     };
 
