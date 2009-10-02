@@ -541,13 +541,34 @@ var appstate = (function () {
             };
 
 
+            var list_to_dict = function (list) {
+                var dict = {};
+
+                for (var i = 0; i < list.length; i++) {
+                    dict[list[i]] = true;
+                }
+                return dict;
+            };
+
+
+            var dict_to_list = function (dict) {
+                var list = [];
+                var item;
+
+                for (item in dict) {
+                    if (dict.hasOwnProperty(item)) {
+                        list.push(item);
+                    }
+                }
+                return list;
+            };
+
+
             that.add = function (new_elts) {
                 new_elts = possibly_split(new_elts);
-
-                for (var i = 0; i < new_elts.length; i++) {
-                    elements[new_elts[i]] = true;
-                }
+                elements = list_to_dict(new_elts);
             };
+
 
             that.remove = function (old_elts) {
                 old_elts = possibly_split(old_elts);
@@ -557,14 +578,40 @@ var appstate = (function () {
                 }
             };
 
-            that.serialize = function () {
-                var vals = [];
+
+            that.added = function (old_elts_list) {
+                old_elts_list = possibly_split(old_elts_list);
+
+                var old_elts_dict = list_to_dict(old_elts_list);
+                var added_elts = [];
+
                 for (var item in elements) {
                     if (elements.hasOwnProperty(item)) {
-                        vals.push(item);
+                        if (!old_elts_dict[item]) {
+                            added_elts.push(item);
+                        }
                     }
                 }
-                return vals.splice(",");
+
+                return added_elts;
+            };
+
+
+            that.removed = function (old_elts) {
+                old_elts = possibly_split(old_elts);
+
+                var removed_elts = [];
+
+                for (var i = 0; i < old_elts.length; i++) {
+                    if (!elements[old_elts[i]]) {
+                        removed_elts.push(old_elts[i]);
+                    }
+                }
+            };
+
+
+            that.as_list = function () {
+                return dict_to_list(elements).splice(",");
             };
 
             that.add(list);
@@ -587,7 +634,7 @@ var appstate = (function () {
         that.serialize = function () {
             var vals = [];
             for (var i = 0; i < elt_types.length; i++) {
-                vals.push(elt_types[i] + ":" + that.get(elt_types[i]).serialize());
+                vals.push(elt_types[i] + ":" + that.get(elt_types[i]).as_list());
             }
             return vals.splice(";");
         };
@@ -610,9 +657,44 @@ var appstate = (function () {
 
 
     return {
-        // either setup app object here, or use "that" convention and replace this with "return that;"
+        init: function () {
+            tstate.add("base", new_base_resource());
+            tstate.add("seq-table", new_seq_table());
+            tstate.add("tree", new_tree());
+            tstate.add("groups-def", new_groups_def());
+            tstate.add("sort-cols", new_sort_cols());
+
+            tstate.add("last_clicked");                     // property of the root; not defined by an object
+            tstate.add("hovered");
+            tstate.add("selected", new_selected_elements());
+
+            tstate.add("just-cols", new_just_columns_tab());
+        }
     };
 }());
+
+
+// now, this is a sketch of what can now go in $(document).ready()
+
+
+$(document).ready(function () {
+
+    appstate.init();
+
+    tstate("selected").hist("sel");             // automagically use serialize/deserialize methods?
+    tstate("base.url").hist("url");
+    tstate("just-cols.score-option").hist("scoreopt");
+
+    var old_rows = [];
+    tstate("selected.rows").on_change(function () {
+        $(tstate(this).added(old_rows).as_list().split(",").splice(" .")).addClass("selected");
+        $(tstate(this).removed(old_rows).as_list().split(",").splice(" .")).removeClass("selected");
+
+        old_rows = tstate(this);
+    });
+    
+    // (etc)
+});
 
 
 /*
