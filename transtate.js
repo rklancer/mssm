@@ -4,7 +4,7 @@ var tstate = function () {
     return {
         /* add_property_capability: mixin get, set, add_property and get_properties functionality */
 
-        add_property_capability: function (obj, secrets) {
+        make_property_container: function (obj) {
             // private store for properties goes here
             var props = {};
 
@@ -18,7 +18,12 @@ var tstate = function () {
 
             // return a protected "property manager" object that the client can keep secret
             mgr.set = function (prop, val) {
-                ;
+                if (typeof val === "object" 
+                    && val.hasOwnProperty(get_properties) 
+                    && typeof val.get_properties === "function") {
+                    
+                    // walk tree; register properties of val under those of obj
+                }
             }
 
             mgr.add = function () {
@@ -37,9 +42,8 @@ var tstate = function () {
             mgr.settable = function (prop) {
                 ;
             };
-
-        when: function(fqprop, action) {
-            // call action() when fqprop ('fully qualified property') is true
+            
+            return mgr;
         }
     };
 }();
