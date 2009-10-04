@@ -17,49 +17,58 @@ var appstate = (function () {
     */
 
     var that = {};
-    
-    // make_url_backed(obj, args):
-    //
-    // add "loaded", "error", "urL" properties to object; try to load it from args.url; handle retry logic
-    // (and redirection logic?) as necessary. Callback to args.success() when we have data; callback
-    // args.error() when we decide to give up retrying. Also endow obj with cancel_loading() method
+
+    /* make_url_backed(obj, args):
+
+       Add "loaded", "error", "urL" properties to object; try to load it from args.url; handle retry logic
+       (and redirection logic?) as necessary. Callback to args.success() when we have data; callback
+       args.error() when we decide to give up retrying. Also endow obj with cancel_loading() method */
 
     var make_url_backed = function (obj, args) {
-    
+
+        args = args || {};
+
         var propmgr = args.property_manager;
         propmgr.add("url", "loaded", "error");
+        var get = propmgr.get;
         var set = propmgr.set;
+        var url = args.url || null;
         var seturl_success = args.seturl_success;
-        var seturl_error = args.seturl_error;
-        
+        var seturl_error = args.seturl_error || function () {};
+        var xhr;
+
         set("loaded", false);
         set("error", false);
         set("url", args.url);
-                
-        var handle_success = function (response, status) {
-            // implement redirection logic here if needed
-            set("loaded", true);
-            seturl_success(response, status);
-        };
-        
-        var handle_error = function (xhr, status, err) {
-            // implement retry logic here
-            
-            if (!get("loaded")) {
-                set("error", true);
-                seturl_error(xhr, status, err);
-            }
-        };
 
-        var xhr = $.ajax({
-            url: url,
-            success: handle_success,
-            error: handle_error,
-            dataType: args.data_type
-        }); 
-        
+        if (url) {
+            var handle_success = function (response, status) {
+                // implement redirection logic here if needed
+                set("loaded", true);
+                seturl_success(response, status);
+            };
+
+            var handle_error = function (xhr, status, err) {
+                // implement retry logic here
+
+                if (!get("loaded")) {
+                    set("error", true);
+                    seturl_error(xhr, status, err);
+                }
+            };
+
+            xhr = $.ajax({
+                url: url,
+                success: handle_success,
+                error: handle_error,
+                dataType: args.data_type
+            });
+        }
+
         obj.cancel_loading = function () {
-            xhr.abort();
+            if (xhr) {
+                xhr.abort();
+            }
         };
     };
 
@@ -72,19 +81,21 @@ var appstate = (function () {
         var set = propmgr.set;
 
         propmgr.add("instance");
-        
+
         that.seturl = function (url) {
             url = url || null;
-            
-            if (url !== get("instance.url")) {
-                var instance = get("instance");
+
+            var instance = that.get("instance");
+            var instance_url = instance ? instance.get("url") : undefined;
+
+            if (url !== instance_url) {
                 if (instance) {
                     instance.cancel_loading();
                 }
                 set("instance", instance_constructor(url));
             }
         };
-    
+
         return that;
     };
 
@@ -106,7 +117,6 @@ var appstate = (function () {
                 var jq_base = $(html);
 
                 tstate("tree").seturl( jq_base.find("a[rel='tree']").attr("href") );
-                
                 tstate("seq-table").seturl( jq_base.find("a[rel='seq-table']").attr("href") );
 
                 /* If the server provides a *link* to a groups_def, that means it has determined the grouping
@@ -114,7 +124,7 @@ var appstate = (function () {
                    *form* (with class "form.groups-def-request"), the server is providing a facility for
                    requesting a groups_def based on some parameter(s) (specified by an additional class)-- so
                    pass the form along to the groups_def object.*/
-                
+
                 var grplink = jq_base.find("a[rel='groups-def']");
                 if (grplink) {
                     tstate("seq-table.instance.groups-def").set_source({
@@ -141,12 +151,13 @@ var appstate = (function () {
 
 
     var new_tree = function (url) {
-        
+
         var propmgr = tstate.add_property_capability(that);
         var set = propmgr.set;
 
         propmgr.add("data", "threshold");
-        
+        set("threshold", null);
+
         make_url_backed(that, {
             url: url,
             property_manager: propmgr,
@@ -160,8 +171,82 @@ var appstate = (function () {
             }
         });
     };
-    
-    
+
+
+    // groups_def now lives under seq_table.instance; this means it goes away if seq-table does
+    // (which is what you want).
+
+    var new_groups_def = function () {
+
+        var that = {};
+
+        var propmgr = tstate.add_property_capability(that);
+        var set = propmgr.set;
+        propmgr.add("source-type", "groups");
+
+        var jq_request_form;
+
+        var new_grouping = function (url) {
+
+            var that = {};
+            var propmgr = tstate.make_property_container(that);
+
+            make_url_backed(that, {
+                url: url,
+                property_manager: propmgr,
+                seturl_success: function (response) {
+                    // set the grouping to whatever the server says
+                },
+
+                seturl_error: function () {
+                    // ...
+                }
+            });
+
+            // initialize an empty grouping grouping here.
+
+            return that;
+        };
+
+
+        var set_grouping_from_threshold = function () {
+            var threshold = tstate("tree.threshold").val();
+
+            if (threshold && jq_request_form) {
+                jq_request_form.find("input[name='threshold-value']").val(threshold);
+                set("grouping",
+                    new_grouping( jq_request_form.attr("action") + "?" + jq_request_form.serialize() )
+                );
+            }
+            else {
+                set("grouping", new_grouping(null));
+            }
+        };
+
+
+        that.set_source = function (args) {
+            if (args.type === "threshold") {
+                set("source_type", "threshold");
+                jq_request_form = args.form;
+                set_grouping_from_threshold();
+            }
+            else if (args.type === "url") {
+                set("source_type", "url");
+                set("grouping", new_grouping(args.url));
+            }
+        };
+
+
+        tstate("tree.instance.threshold").on_change( function () {
+            if (that.get("source_type") === "threshold") {
+                set_grouping_from_threshold();
+            }
+        });
+
+        return that;
+    };
+
+
     var new_seq_table = function (url) {
 
         /* Some quick Firebug experimentation suggests passing a ~1M string around between javascript
@@ -181,9 +266,9 @@ var appstate = (function () {
         var propmgr = tstate.add_property_capability(that);
         var set = propmgr.set;
 
-        propmgr.add("table" "groups-def");
+        propmgr.add("table", "groups-def");
         set("groups-def", new_groups_def());
-        
+
         var sort_form;
 
         make_url_backed(that, {
@@ -197,7 +282,7 @@ var appstate = (function () {
                     html: jq_table.html(),
                     jquery_obj: jq_table
                 });
-                
+
                 // also keep the sort form for that.sort()
                 sort_form = jq_doc.find("form.sort-form");
 
@@ -215,7 +300,7 @@ var appstate = (function () {
                 console.log("error: new_tree.seturl ajax call returned error.");
             }
         });
-        
+
         /* seq_table.sort(): request a version of this table sorted (by the server) on sort_cols */
 
         that.sort = function (sort_cols) {
@@ -277,117 +362,199 @@ var appstate = (function () {
     };
 
 
-    // groups_def now is lives under seq_table.instance; this means it goes away if seq-table does
-    // (which is what you want). However, source
 
-
-    var new_groups_def = function () {
+    var new_selected_elements = function () {
 
         var that = {};
 
-        var jq_request_form;
-        var seq_table_url;
-
         var propmgr = tstate.add_property_capability(that);
         var set = propmgr.set;
-        propmgr.add("source-type", "groups");
+        propmgr.add("rows", "cells", "cols");
 
 
-        var new_grouping = function (url) {
-            
-            // add properties
-            
-            add_url_backed_capability(that, {
-                property_manager: propmgr,
-                seturl_success: function (response) {
-                    // set the groups-def to whatever the server says
-                },
+        var new_element_set = function () {
 
-                seturl_error: function () {
-                    // ...
+            var that = {};
+            var propmgr = tstate.make_property_container(that);
+            var set = propmgr.set;
+            propmgr.add("serialized", "added", "removed");
+
+            set("serialized", "");
+            set("added", []);
+            set("removed", []);
+
+            var elements = {};
+
+
+            var list_to_dict = function (list) {
+                var dict = {};
+
+                for (var i = 0; i < list.length; i++) {
+                    dict[list[i]] = true;
                 }
+
+                return dict;
+            };
+
+
+            var dict_to_list = function (dict) {
+                var list = [];
+                var item;
+
+                for (item in dict) {
+                    if (dict.hasOwnProperty(item)) {
+                        list.push(item);
+                    }
+                }
+                return list;
+            };
+
+
+
+            var subtract = function (first, second) {
+                var item;
+                var first_minus_second = [];
+
+                for (item in first) {
+                    if (first.hasOwnProperty(item)) {
+                        if (!second[item]) {
+                            first_minus_second.push(item);
+                        }
+                    }
+                }
+
+                return first_minus_second;
+            };
+
+
+            // set "added" and "removed" but avoid setting "serialized"
+            var set_to = function (new_elts) {
+                var old_elements = elements;
+                elements = list_to_dict(new_elts);
+
+                var added = subtract(elements, old_elements);
+                var removed = subtract(old_elements, elements);
+
+                set("added", added);
+                set("removed", removed);
+
+                return ((added.length + removed.length) > 0);
+            };
+
+
+            // uses a pretty trivial serialization-deserialization protocol
+            var serialize = function () {
+                return dict_to_list(elements).splice(",");
+            };
+
+
+            var deserialize = function (s) {
+                set_to(s.split(","));
+            };
+
+
+            that.set_to = function (new_elts) {
+                var changed = set_to(new_elts);
+                if (changed) {
+                    set("serialized", serialize());
+                }
+            };
+
+
+            that.add = function (new_elts) {
+                var added = [];
+                var item;
+
+                for (var i = 0; i < new_elts.length; i++) {
+                    item = new_elts[i];
+
+                    if (!elements[item]) {
+                        elements[item] = true;
+                        added.push(item);
+                    }
+                }
+
+                if (added.length > 0) {
+                    set("added", added);
+                    set("serialized", serialize());
+                }
+            };
+
+
+            that.remove = function (to_remove) {
+                var removed = [];
+                var item;
+
+                for (var i = 0; i < to_remove.length; i++) {
+                    item = to_remove[i];
+
+                    delete elements[item];
+                    removed.push(item);
+                }
+
+                if (removed.length > 0) {
+                    set("removed", removed);
+                    set("serialized", serialize());
+                }
+            };
+
+
+            that.as_list = function () {
+                return dict_to_list(elements);
+            };
+
+
+            // let serialized be a read/write property for the sake of simplicty of history mechanism
+
+            propmgr.setter("serialized", function (s) {
+                deserialize(s);
             });
-            
+
+
+            return that;
         };
-
-
-        var clear = function () {
-            that.seturl(null);
-            // set the groups-def to null...
-        };
-
-
-        var set_from_threshold = function () {
-            if (that.get("source_type") === "threshold") {
-                var t = tstate("tree.threshold").val();
-                if (t) {
-                    jq_request_form.find("input[name='threshold-value']").val(t);
-                    set("grouping", 
-                        new_grouping( jq_request_form.attr("action") + "?" + jq_request_form.serialize()
-                    );
-                }
-                else {
-                    clear();
-                }
-            }
-        };
-
-
-        that.set_source = function (args) {
-            seq_table_url = tstate("seq-table.url").val();
-
-            if (args.type === "threshold") {
-                set("source_type", "threshold");
-                jq_request_form = args.form;
-                set_from_threshold();
-            }
-            else if (args.type === "url") {
-                set("source_type", "url");
-                set("grouping", new_grouping(url));
-            }
-        };
-
-
-        tstate("tree.instance.threshold").on_change( function () {
-            set_from_threshold();
-        });
 
 
         return that;
     };
 
 
-
     that.init = function () {
-    
+
         var root = {};
-    
+
         var propmgr = tstate.add_property_capability(root);
-        propmgr.add("tree",...);
+        propmgr.add("tree"/* ... */);
         var set = propmgr.set;
-    
+
         set("tree", new_url_backed_container(new_tree));
-        set("base", ...);           // or some similar name.
-    
+        set("base" /* ... */);                      // or some similar name.
+        set("selected", new_selected_elements());
+
         tstate.root(root);                          // now tstate("tree") = tree as defined above, etc.
     };
 }());
 
 
+// Example.
+
 $(document).ready(function () {
 
     appstate.init();
-    
 
-    
-    tstate("selected.rows.serialized").hist("sel");
-    
+    // i.e., history mechanism whould write selected.rows.serialized like "srows=r12,r13,r14"; should
+    // observe changed to srows in location.hash and write them back to selected.rows.serialized
+
+    tstate("selected.rows.serialized").hist("srows");
+    tstate("selected.cols.serialized").hist("scols");
+    tstate("selected.cells.serialized").hist("scells");
+
     // other things will need to happen too, but this is one.
-    
+
     tstate("selected.rows.added").on_change( function () {
         // idea is to use apply() to make this === tstate("selected.rows.added") in this context.
-        $(this.as_list().splice(" .")).addClass("selected")     
+        $(this.as_list().splice(" .")).addClass("selected");
     });
-    
-    
+
+    // etc.
 });
