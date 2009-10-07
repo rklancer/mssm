@@ -86,7 +86,7 @@ var appstate = (function () {
 
         propmgr.add("instance");
 
-        that.seturl = function (url) {
+        that.set_instance_url = function (url) {
             url = url || null;
 
             var instance = that.get("instance");
@@ -122,8 +122,8 @@ var appstate = (function () {
         that.seturl_success = function (html, status) {
             var jq_base = $(html);
 
-            tstate("tree").seturl( jq_base.find("a[rel='tree']").attr("href") );
-            tstate("seq-table").seturl( jq_base.find("a[rel='seq-table']").attr("href") );
+            tstate("tree").set_instance_url( jq_base.find("a[rel='tree']").attr("href") );
+            tstate("seq-table").set_instance_url( jq_base.find("a[rel='seq-table']").attr("href") );
 
             /* If the server provides a *link* to a groups_def, that means it has determined the grouping
                to use, and we should pass the url to the groups_def object. If the server provides a
@@ -149,7 +149,7 @@ var appstate = (function () {
 
 
         that.seturl_error = function (xhr, status, err) {
-            console.log("Error loading base_resource" + url);        // and log it.
+            console.log("error: new_base_instance() ajax call returned error, url = " + url);
         };
 
 
@@ -179,7 +179,7 @@ var appstate = (function () {
 
 
         that.seturl_error = function (xhr, status, err) {
-            console.log("error: new_tree_instance.seturl ajax call returned error.");
+            console.log("error: new_tree_instance() ajax call returned error, url = " + url);
         };
 
 
@@ -309,13 +309,13 @@ var appstate = (function () {
                   1. correspond to *this* version of the seq_table
                OR 2. have "loaded" property == false */
 
-            tstate("base").seturl( jq_doc.find("a[rel='base-resource]").attr("href") );
+            tstate("base").set_instance_url( jq_doc.find("a[rel='base-resource]").attr("href") );
         };
 
 
         that.seturl_error = function (xhr, status, err) {
             set("error", true);
-            console.log("error: new_tree_instance.seturl ajax call returned error.");
+            console.log("error: new_seq_table_instance() ajax call returned error, url = " + url);
         };
 
 
@@ -323,7 +323,7 @@ var appstate = (function () {
 
         that.sort = function (sort_cols) {
             sort_form.find("input[name=sort-cols]").val(sort_cols.serialize());
-            tstate("tree").seturl( sort_form.attr("action") + "?" + sort_form.serialize() );
+            tstate("tree").set_instance_url( sort_form.attr("action") + "?" + sort_form.serialize() );
         };
 
 
