@@ -4,7 +4,7 @@ var tstate = function () {
     return {
         /* add_property_capability: mixin get, set, add_property and get_properties functionality */
 
-        make_property_container: function (obj) {
+        add_property_manager: function (obj) {
             // private store for properties goes here
             var props = {};
 
