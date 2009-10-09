@@ -156,6 +156,8 @@ var tstate = function (selector) {
 
     tstate.init();
 
+    // note we want to keep these wrapped in a closure with access to the correct value of "node"
+
     var methods_to_add = {
         val: function () {
             return prop_val;
@@ -169,7 +171,6 @@ var tstate = function (selector) {
         // make a second on_change_action for history; no unregistering?
 
         hist: function (hash_key) {
-
             node.on_change_actions.push(function () {
                 write_to_hash(hash_key, node.val);
             });
@@ -273,7 +274,7 @@ tstate.add_property_manager = function (obj) {
     obj.get_properties = function () {
         var prop;
         var prop_names = [];
-        
+
         for (prop in props) {
             if (props.hasOwnProperty(prop)) {
                 prop_names.push(prop);
@@ -281,7 +282,7 @@ tstate.add_property_manager = function (obj) {
         }
         return prop_names;
     };
-    
+
 
     obj.get = function (prop) {
         return props[prop];
@@ -295,7 +296,7 @@ tstate.add_property_manager = function (obj) {
 
         listeners[prop].push(action);
     };
-    
+
 
     obj.unregister_listener = function (prop, listener) {
         if (listeners[prop]) {
@@ -325,20 +326,21 @@ tstate.add_property_manager = function (obj) {
         }
     };
 
-    // accepts a list of strings and objects; the strings define new properties; the 
-    
+    // accepts a list of strings and objects; the strings define new property names (default value: null)
+    // objects have their keys copied over with the corresponding vals used as the initial value of those keys
+
     mgr.add = function () {
         if (props !== undefined) {
             console.log("error: attempted to define property list twice!");
             return;
         }
         props = {};
-        
+
         var arg, key, i;
-        
+
         for (i = 0; i < arguments.length; i++) {
             arg = arguments[i];
-            
+
             if (typeof arg === "string") {
                 props[arg] = null;
             }
@@ -357,14 +359,14 @@ tstate.add_property_manager = function (obj) {
     mgr.setter = function (prop, setfunc) {
         obj.set = setfunc;
     };
-    
+
 
     // tells tstate to allow setting this property in the "default" way, ie., just by calling mgr.set
     // without calling the special setter function defined in
     mgr.settable = function (prop) {
         obj.set = mgr.set;
     };
-    
+
 
     return mgr;
 };
@@ -372,14 +374,14 @@ tstate.add_property_manager = function (obj) {
 
 /* note usages:
 
-        // tstate global must have add_property_manager method
-        tstate.add_property_manager(that)
+        // properties of root_obj are the likes of "base", "seq-table", etc
+        tstate.root(root_obj)
 
         // but tstate must itself be a function, which returns objects that have a val method:
         tstate("base.url").val()
 
         // moreover it must copy over methods from the objects it wraps, to allow this shorthand:
-        tstate("groups_def").set_source("url", grplink.attr("href"));    // *groups_def* defines set_source()!
+        tstate("seq-table.instance.groups_def").set_source("url", grplink.attr("href"));
 
         // furthermore, the objects must have some way to associate methods like seturl with the tstate
         // "set" method so that--for those properties which are relevant--the following can work:
