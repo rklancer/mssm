@@ -655,6 +655,9 @@ var appstate = (function () {
 
         tstate.root(root);                          // now tstate("tree") = tree as defined above, etc.
     };
+    
+    
+    return that;
 }());
 
 
