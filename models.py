@@ -164,8 +164,8 @@ class CreateAlignmentForm(BaseAlignmentForm):
 
         if local_file:
 	
-            # workaround ticket 7712: local_file may be an InMemoryUploadedFile, which doesn't implement readlines()
-            # (see http://code.djangoproject.com/ticket/7712)
+            # workaround ticket 7712: local_file may be an InMemoryUploadedFile, which doesn't implement
+            # readlines() (see http://code.djangoproject.com/ticket/7712)
             
             file_object = local_file._file
 

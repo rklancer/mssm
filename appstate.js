@@ -323,7 +323,7 @@ var appstate = (function () {
 
         that.sort = function (sort_cols) {
             sort_form.find("input[name=sort-cols]").val(sort_cols.serialize());
-            tstate("tree").set_instance_url( sort_form.attr("action") + "?" + sort_form.serialize() );
+            tstate("table").set_instance_url( sort_form.attr("action") + "?" + sort_form.serialize() );
         };
 
 

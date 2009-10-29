@@ -8,11 +8,10 @@ body { font-size: small; padding: 0; margin: 0; }
 
 .noraseq-admin { font-size: 11px; margin-left: 1em; }
 
-/* display h2 inline so that "option links" (e.g., <a>sort</a> | <a>unsort</a>) can be floated right, yet share the 
-   same text baseline as the h2. 
-   
-   However, inline display causes h2 margin to overspill the containing div, causing layout problems; therefore style
-   header-block" divs, instead of h2s, to get margins and padding. */
+/* Display h2 inline so that "option links" (e.g., <a>sort</a> | <a>unsort</a>) can be floated right, yet
+share the same text baseline as the h2.
+
+However, inline display causes h2 margin to overspill the containing div, causing layout problems; therefore style "header-block" divs, instead of h2s, to get margins and padding. */
 
 .noraseq-admin h2 { display: inline; padding: 0; margin: 0; font-size: 1.3em;  font-weight: normal; }	
 .noraseq-admin .header-block { display: block; margin-top: 0.2em; margin-bottom: 0.8em; }
