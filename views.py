@@ -1,21 +1,27 @@
 from django.shortcuts import render_to_response, get_object_or_404
-from django.http import HttpResponseRedirect, HttpResponseNotAllowed
+from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.http import QueryDict
 from django.template import RequestContext
 
 from models import CreateAlignmentForm, EditAlignmentForm
-from models import Alignment, AlignmentRow, AlignmentCell
+from models import Alignment, Row
+
+from itertools import izip
 
 def alignment_list(request):
 
     if request.method == 'POST':
+        print "okay, handling POST"
         form = CreateAlignmentForm(request.POST, request.FILES)
 
         if form.is_valid():
+            print "form is valid"
             new_alignment = form.save()
-            new_alignment.extract_alignment_details(form.cleaned_data['biopy_alignment'])
+            print "form saved"
+            new_alignment.biopy_alignment = form.cleaned_data['biopy_alignment']
+            print "set biopy_alignment"
             if 'remote_url_contents' in form.cleaned_data:
                new_alignment.save_to_file(form.cleaned_data['remote_url_contents'])
 
@@ -25,109 +31,57 @@ def alignment_list(request):
         form = CreateAlignmentForm()
         if 'url' in request.GET and request.GET['url']:
             form.initial = { 'source_url': request.GET['url'] }
-    else:
-        return respond_not_allowed(request.method, permitted_methods=['GET', 'POST'])
 
     alignments = Alignment.objects.all()
     return render_to_response('alignment_list.html', {'alignments' : alignments, 'form' : form})
 
 
-def alignment_detail(request, alignment_id):
-
-	# okay we're going to have to comment and refactor this sucker!
-	
-    method = get_request_method(request)
-    request_data = get_request_data(request)
-    alignment = get_object_or_404(Alignment, pk=alignment_id)
-    
-    if method == 'DELETE':
-        alignment.delete()
-        return HttpResponseRedirect(reverse(deleted))
-    
-    elif method == 'PUT':
-        form = EditAlignmentForm(request_data, instance=alignment)
-        if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(alignment.get_absolute_url())
-
-    elif method == 'GET':
-        alignment_rows = alignment.alignmentrow_set.all()
-
-        if 'sort-by' in request_data and request_data['sort-by']:
-            sort_by = int(request_data['sort-by'])
-            column_cells = AlignmentCell.objects.filter(row__in=alignment_rows).filter(col=sort_by)
-            alignment_rows = \
-                AlignmentRow.objects.extra(
-                        tables=["mssm_cellstatistic"], 
-                        where=["mssm_cellstatistic.cell_id=mssm_alignmentcell.id"], 
-                        select={'statistic_value': "mssm_cellstatistic.value"}). \
-                    filter(
-                        alignmentcell__in=column_cells). \
-                    order_by('statistic_value') 
-
-        if 'show-ungapped' in request_data and request_data['show-ungapped']:
-            show_ungapped = int(request_data['show-ungapped'])
-            ungapped_row = alignment.alignmentrow_set.get(row_num=show_ungapped) 
-            to_show = [r != '-' for r in ungapped_row.sequence]
-        else:
-            to_show = [True] * alignment.length
-
-        col_nums = range(1, alignment.length+1)
-        header_row = [t[0] for t in zip(col_nums, to_show) if t[1]]
-        for row in alignment_rows:
-            row.filtered_sequence = \
-                ({'abbrev': t[0], 'is_gap': t[0]=='-', 'col_num': t[2]} 
-                    for t in zip(row.sequence, to_show, col_nums)
-                    if t[1])
-        
-        context = { 'alignment': alignment, 
-                    'alignment_rows': alignment_rows,
-                    'header_row': header_row,
-                    'num_cols': len(to_show),
-                    'table_width': 15*len(header_row) }
-		
-		# the following is before checking for 'edit' and 'delete' because we have no way to 
-		# edit or delete in the noraseq interface yet
-		
-        if 'view' in request_data and request_data['view'] == 'noraseq':
-            return render_to_response('alignment_noraseq_view.html', context, RequestContext(request))
-
-        if 'edit' in request_data:
-            context['edit_form'] = EditAlignmentForm(instance=alignment)
-        elif 'delete' in request_data:
-            context['show_delete_form'] = True
-        
-        return render_to_response('alignment_detail.html', context, RequestContext(request))
-
-    else:
-        return respond_not_allowed(method, permitted_methods=['GET', 'PUT', 'DELETE'])
-
-
 def index(request):
     return render_to_response('index.html', {'absolute_url_prefix' : settings.ABSOLUTE_URL_PREFIX})
-    
+
 
 def deleted(request):
     return render_to_response('deleted.html')
 
 
-def respond_not_allowed(method, permitted_methods=[]):
-    response = HttpResponseNotAllowed(permitted_methods)
-    response.write('Method %(method)s not allowed.' % locals())
-    return response
+def alignment_detail(request, alignment_id):
 
+    alignment = get_object_or_404(Alignment, pk=alignment_id)
 
-def get_request_method(request):
-    if request.method == 'POST' and 'method_tunnel' in request.POST:
-        return request.POST['method_tunnel']
-    else:
-        return request.method
+    if request.method == 'POST':
+        if request.POST['action'] == 'delete':
+            alignment.delete()
+            return HttpResponseRedirect(reverse(deleted))
+        
+        if request.POST['action'] == 'edit':
+            form = EditAlignmentForm(request.POST, instance=alignment)
+            if form.is_valid():
+                form.save()
+                return HttpResponseRedirect(alignment.get_absolute_url())
+            else:
+                return HttpResponseBadRequest("That input wasn't valid")
+                
+    elif request.method == 'GET':
+        context = {}
+        if 'edit' in request.GET:
+            context['edit_form'] = EditAlignmentForm(instance=alignment)
+        elif 'delete' in request.GET:
+            context['show_delete_form'] = True
 
+        alignment_rows = alignment.rows.all().values("num", "name", "sequence")
+        
+        pre = alignment.prerenderer
+        pre.load_template()
+        for row in alignment_rows:
+            row['prerendered_tds'] = pre.render_row(row['sequence'])
 
-def get_request_data(request):
-    if request.method == 'GET':
-        return request.GET
-    elif request.method == 'POST':
-        return request.POST
-    else:
-        return QueryDict(request.raw_post_data)
+        context = {
+            'alignment': alignment, 
+            'alignment_rows': alignment_rows,
+            'header_row': range(1,alignment.length+1),
+            'num_cols': alignment.length
+        }
+        
+        print "starting render"
+
+        return render_to_response('alignment_detail.html', context, RequestContext(request))

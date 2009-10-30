@@ -4,11 +4,14 @@ from django.forms import ValidationError
 from django.forms.util import ErrorList
 from django.conf import settings
 from django.db.models.fields.files import FieldFile
+from django.db.models.signals import pre_save
+from django.template.loader import render_to_string
 
 from urllib import urlopen
 from Bio import AlignIO
 from StringIO import StringIO
 from datetime import datetime
+from itertools import chain, izip
 import os
 
 
@@ -23,6 +26,7 @@ MSSM_UPLOAD_DIR = 'mssm/uploads'
 
 
 class Alignment(models.Model):
+
     name = models.CharField("Alignment name", max_length=100)
     source_url = models.URLField(max_length=1000, blank=True, null=True)
     local_file = models.FileField(blank=True, null=True, upload_to=MSSM_UPLOAD_DIR)
@@ -35,7 +39,7 @@ class Alignment(models.Model):
     context_url = models.URLField("Optional URL with more info", max_length=1000, blank=True)
     creation_date = models.DateTimeField(auto_now_add=True)
     length = models.IntegerField(blank=True, null=True, editable=False)
-
+    
     @models.permalink
     def get_absolute_url(self):
         # for whatever reason, must include fully qualified package path (with project path) below
@@ -43,21 +47,51 @@ class Alignment(models.Model):
 
     def __unicode__(self):
         return self.name
+    
+    def get_biopy_alignment(self):
+        return self._biopy_alignment
 
-    def extract_alignment_details(self, biopy_alignment):
-        self.length = biopy_alignment.get_alignment_length()
+    def set_biopy_alignment(self, value):
+        print "in set_biopy_alignment"
+        self._biopy_alignment =  value
+        self.length = value.get_alignment_length()
         self.save()
+        self.extract_rows_and_columns()
+
+    biopy_alignment = property(get_biopy_alignment, set_biopy_alignment)
+    
+    def extract_rows_and_columns(self):
+        print "in extract_rows_and_columns"
         
+        cols = [[]] * self.length
         row_num = 1
-        for biopy_seqrec in biopy_alignment:
-            new_row = AlignmentRow()
+
+        for biopy_seqrec in self.biopy_alignment:
+            print "row number %d" % row_num
+            new_row = Row()
             new_row.alignment = self
-            new_row.sequence = str(biopy_seqrec.seq)
+            seq = str(biopy_seqrec.seq)
+            new_row.sequence = seq
             new_row.name = biopy_seqrec.id
-            new_row.row_num = row_num
+            new_row.num = row_num
             row_num += 1
             new_row.save()
-                        
+
+            for col_num in range(self.length):
+                cols[col_num].append(seq[col_num])
+        
+        print "self.length = %d" % self.length
+        
+        for col_num in range(self.length):
+            print "col number %d" % col_num
+            new_col = Column()
+            new_col.alignment = self
+            new_col.sequence = ''.join(cols[col_num])
+            new_col.num = col_num + 1       # 1-based indexing for row and column numbering
+            print "saving..."
+            new_col.save()
+            
+        
     def save_to_file(self, unsaved_contents):
         if not self.local_file:
             model_field = self.local_file.field
@@ -67,73 +101,89 @@ class Alignment(models.Model):
             upload_file.close()
             self.local_file = FieldFile(instance=self, field=model_field, name=upload_filename)
             self.save()
+
+
+class RowPrerenderer(models.Model):
+    """
+    Each Alignment has a RowPrerenderer object. Using RowPrerenderer significantly speeds up generation of the
+    full alignment HTML for large alignments
     
-    def save(self, *args, **kwargs):
-        super(Alignment, self).save(*args, **kwargs)
-        if AlignmentCalculation.objects.filter(alignment=self).count() == 0:
-            AlignmentCalculation(alignment=self, last_accessed=datetime.now()).save()
+    Before rendering a sequence of alignment rows to an html table, call
+    alignment.rowprerenderer.load_template(). This initializes the renderer from the template
+    'prerendered_row_tds.html'
+    
+    This template should generate alignment.length tds, with '%s' substituted for the residue-dependent class
+    attribute of each td, and '%c' as the contents of each td element.
+    
+    Subsequently, call prerenderer.render_row(row.sequence) for each row. The return value is a string
+    containing the <td> elements for each row, with the '%c's substituted with the individual characters from
+    the row sequence, and the '%s's substituted with 'gap' if the residue is a gap and '' otherwise
+    
+    (Obviously, this is suboptimal from a code cleanliness perspective, but it really is much faster)
+    
+    It is best to call load_template() before each batch of rows. This way, the template can be changed.
+    """
+    alignment = models.OneToOneField(Alignment, related_name = "prerenderer")
+    
+    def load_template(self):
+        self._template_string = render_to_string(
+            'prerendered_row_tds.html',
+            { 'col_nums': xrange(1, self.alignment.length+1) }
+        )
+        
+    def render_row(self, seq):
+        # note that chain(*izip...) is a formula for splicing two iterables together like so:
+        #     iter(['gap', '', 'gap', ...]) + iter(['-', 'A', '-',...])
+        #         -> iter(['gap', '-', '', 'A', 'gap', '-',...])
+        
+        return self._template_string % tuple(
+            chain(*izip(('gap' if c=='-' else '' for c in seq), seq))
+        )
 
 
-class AlignmentRow(models.Model):
-    alignment = models.ForeignKey(Alignment)
+def register_prerenderer(sender, *args, **kwargs):
+    alignment = kwargs.get('instance')
+    # I don't believe this needs to go in a transaction - orphan RowPrerenderers are fine;
+    # moreover overwriting the 
+    if not RowPrerenderer.objects.filter(alignment=alignment):
+        pre = RowPrerenderer()
+        pre.alignment = alignment
+        pre.save()
+
+pre_save.connect(register_prerenderer, sender=Alignment, weak=False)
+
+
+
+
+class Row(models.Model):
+    alignment = models.ForeignKey(Alignment, related_name = 'rows', db_index=True)
+    num = models.IntegerField(editable=False, db_index=True)
     name = models.CharField(max_length=100)
     sequence = models.TextField()
-    row_num = models.IntegerField(editable=False)
     
-    def save(self, *args, **kwargs):
-        super(AlignmentRow, self).save(*args, **kwargs)
-        calc = AlignmentCalculation.objects.get(alignment=self.alignment)
-        for index, residue in enumerate(self.sequence):
-            cell = AlignmentCell(row=self, col=index+1, residue=residue)
-            cell.save()
-            value = ord(cell.residue) if cell.residue != '-' else 255
-            cell_stat = CellStatistic(cell=cell, calculation=calc, value=value)
-            cell_stat.save()
-            
     def __unicode__(self):
         return self.name
 
-
-class AlignmentCell(models.Model):
-    row = models.ForeignKey(AlignmentRow)
-    col = models.IntegerField()
-    residue = models.CharField(max_length=1)        # haven't yet decided which 1-letter codes to limit to...
-    
     class Meta:
-        unique_together = (('col', 'row'),) 
-    
-    
-class Phylogeny(models.Model):
-    pass
-    
-    
-class AlignmentSubgrouping(models.Model):
-    pass
-    
-    
-class AlignmentSubgroup(models.Model):
-    pass
-    
-    
-class AlignmentCalculation(models.Model):
-    alignment = models.ForeignKey(Alignment)
-    # link to subgrouping
-    last_accessed = models.DateTimeField()          # possibly index
+        unique_together = ('alignment', 'num')
 
-    
-class CellStatistic(models.Model):
-    cell = models.ForeignKey(AlignmentCell)
-    calculation = models.ForeignKey(AlignmentCalculation)
-    value = models.FloatField()
-    
 
-class RowStatistic(models.Model):
-    pass
-    
-    
-class ColumnStatistic(models.Model):
-    pass 
-    
+class Column(models.Model):
+    alignment = models.ForeignKey(Alignment, related_name = 'columns', db_index=True)
+    num = models.IntegerField(editable=False, db_index=True)
+    sequence = models.TextField()
+
+    class Meta:
+        unique_together = ('alignment', 'num')
+
+
+class Cell(models.Model):
+    row = models.ForeignKey(Row, db_index=True)
+    column = models.ForeignKey(Column, db_index=True)
+
+    class Meta:
+        unique_together = ('column', 'row')
+
     
 class BaseAlignmentForm(ModelForm):
     
@@ -167,6 +217,8 @@ class CreateAlignmentForm(BaseAlignmentForm):
             # workaround ticket 7712: local_file may be an InMemoryUploadedFile, which doesn't implement
             # readlines() (see http://code.djangoproject.com/ticket/7712)
             
+            # n.b., ticket 7712 has been fixed in Django 1.1
+            
             file_object = local_file._file
 
         elif source_url:
@@ -196,5 +248,4 @@ class CreateAlignmentForm(BaseAlignmentForm):
 class EditAlignmentForm(BaseAlignmentForm):
     
     class Meta(BaseAlignmentForm.Meta):
-        exclude = ['source_url', 'local_file', 'format']
-     
+        exclude = ['source_url', 'local_file', 'format', 'prerenderer']
