@@ -4,7 +4,7 @@ from django.forms import ValidationError
 from django.forms.util import ErrorList
 from django.conf import settings
 from django.db.models.fields.files import FieldFile
-from django.db.models.signals import pre_save
+from django.db.models.signals import post_save
 from django.template.loader import render_to_string
 
 from urllib import urlopen
@@ -143,16 +143,19 @@ class RowPrerenderer(models.Model):
 
 def register_prerenderer(sender, *args, **kwargs):
     alignment = kwargs.get('instance')
-    # I don't believe this needs to go in a transaction - orphan RowPrerenderers are fine;
-    # moreover overwriting the 
+
     if not RowPrerenderer.objects.filter(alignment=alignment):
         pre = RowPrerenderer()
         pre.alignment = alignment
-        pre.save()
+        try:
+            pre.save()
+        except IntegrityError:
+            # apparently a RowPrerenderer for this Alignment was saved to the database sometime between the
+            # if statement above and pre.save()
+            pass
+            
 
-pre_save.connect(register_prerenderer, sender=Alignment, weak=False)
-
-
+post_save.connect(register_prerenderer, sender=Alignment, weak=False)
 
 
 class Row(models.Model):
