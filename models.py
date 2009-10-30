@@ -52,7 +52,6 @@ class Alignment(models.Model):
         return self._biopy_alignment
 
     def set_biopy_alignment(self, value):
-        print "in set_biopy_alignment"
         self._biopy_alignment =  value
         self.length = value.get_alignment_length()
         self.save()
@@ -61,13 +60,11 @@ class Alignment(models.Model):
     biopy_alignment = property(get_biopy_alignment, set_biopy_alignment)
     
     def extract_rows_and_columns(self):
-        print "in extract_rows_and_columns"
         
         cols = [[]] * self.length
         row_num = 1
 
         for biopy_seqrec in self.biopy_alignment:
-            print "row number %d" % row_num
             new_row = Row()
             new_row.alignment = self
             seq = str(biopy_seqrec.seq)
@@ -80,15 +77,11 @@ class Alignment(models.Model):
             for col_num in range(self.length):
                 cols[col_num].append(seq[col_num])
         
-        print "self.length = %d" % self.length
-        
         for col_num in range(self.length):
-            print "col number %d" % col_num
             new_col = Column()
             new_col.alignment = self
             new_col.sequence = ''.join(cols[col_num])
             new_col.num = col_num + 1       # 1-based indexing for row and column numbering
-            print "saving..."
             new_col.save()
             
         

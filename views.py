@@ -63,6 +63,7 @@ def alignment_detail(request, alignment_id):
                 
     elif request.method == 'GET':
         context = {}
+        
         if 'edit' in request.GET:
             context['edit_form'] = EditAlignmentForm(instance=alignment)
         elif 'delete' in request.GET:
@@ -75,13 +76,9 @@ def alignment_detail(request, alignment_id):
         for row in alignment_rows:
             row['prerendered_tds'] = pre.render_row(row['sequence'])
 
-        context = {
-            'alignment': alignment, 
-            'alignment_rows': alignment_rows,
-            'header_row': range(1,alignment.length+1),
-            'num_cols': alignment.length
-        }
-        
-        print "starting render"
+        context['alignment'] = alignment 
+        context['alignment_rows'] = alignment_rows
+        context['header_row'] = range(1,alignment.length+1)
+        context['num_cols'] = alignment.length
 
         return render_to_response('alignment_detail.html', context, RequestContext(request))
