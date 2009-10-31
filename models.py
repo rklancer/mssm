@@ -119,7 +119,7 @@ class RowPrerenderer(models.Model):
     
     def load_template(self):
         self._template_string = render_to_string(
-            'prerendered_row_tds.html',
+            'noraseq/prerendered_row_tds.html',
             { 'col_nums': xrange(1, self.alignment.length+1) }
         )
         

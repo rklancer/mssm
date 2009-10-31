@@ -33,15 +33,15 @@ def alignment_list(request):
             form.initial = { 'source_url': request.GET['url'] }
 
     alignments = Alignment.objects.all()
-    return render_to_response('alignment_list.html', {'alignments' : alignments, 'form' : form})
+    return render_to_response('noraseq/alignment_list.html', {'alignments' : alignments, 'form' : form})
 
 
 def index(request):
-    return render_to_response('index.html', {'absolute_url_prefix' : settings.ABSOLUTE_URL_PREFIX})
+    return render_to_response('noraseq/index.html', {'absolute_url_prefix' : settings.ABSOLUTE_URL_PREFIX})
 
 
 def deleted(request):
-    return render_to_response('deleted.html')
+    return render_to_response('noraseq/deleted.html')
 
 
 def alignment_detail(request, alignment_id):
@@ -81,4 +81,4 @@ def alignment_detail(request, alignment_id):
         context['header_row'] = range(1,alignment.length+1)
         context['num_cols'] = alignment.length
 
-        return render_to_response('alignment_detail.html', context, RequestContext(request))
+        return render_to_response('noraseq/alignment_detail.html', context, RequestContext(request))
