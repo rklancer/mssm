@@ -22,14 +22,14 @@ ALIGNMENT_FORMAT_CHOICES = (
     ('emboss', 'EMBOSS'),
 )
 
-MSSM_UPLOAD_DIR = 'mssm/uploads'
+UPLOAD_DIR = 'noraseq/uploads'
 
 
 class Alignment(models.Model):
 
     name = models.CharField("Alignment name", max_length=100)
     source_url = models.URLField(max_length=1000, blank=True, null=True)
-    local_file = models.FileField(blank=True, null=True, upload_to=MSSM_UPLOAD_DIR)
+    local_file = models.FileField(blank=True, null=True, upload_to=UPLOAD_DIR)
     format = models.CharField(
         "Format of alignment file",
         max_length=max([len(t[0]) for t in ALIGNMENT_FORMAT_CHOICES]), 
@@ -42,8 +42,7 @@ class Alignment(models.Model):
     
     @models.permalink
     def get_absolute_url(self):
-        # for whatever reason, must include fully qualified package path (with project path) below
-        return (settings.PROJECT_NAME + '.mssm.views.alignment_detail', [self.id])
+        return ('noraseq.views.alignment_detail', [self.id])
 
     def __unicode__(self):
         return self.name
