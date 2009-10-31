@@ -29,7 +29,7 @@ def alignment_list(request):
         return respond_not_allowed(request.method, permitted_methods=['GET', 'POST'])
 
     alignments = Alignment.objects.all()
-    return render_to_response('alignment_list.html', {'alignments' : alignments, 'form' : form})
+    return render_to_response('mssm/alignment_list.html', {'alignments' : alignments, 'form' : form})
 
 
 def alignment_detail(request, alignment_id):
@@ -90,25 +90,25 @@ def alignment_detail(request, alignment_id):
 		# edit or delete in the noraseq interface yet
 		
         if 'view' in request_data and request_data['view'] == 'noraseq':
-            return render_to_response('alignment_noraseq_view.html', context, RequestContext(request))
+            return render_to_response('mssm/alignment_noraseq_view.html', context, RequestContext(request))
 
         if 'edit' in request_data:
             context['edit_form'] = EditAlignmentForm(instance=alignment)
         elif 'delete' in request_data:
             context['show_delete_form'] = True
         
-        return render_to_response('alignment_detail.html', context, RequestContext(request))
+        return render_to_response('mssm/alignment_detail.html', context, RequestContext(request))
 
     else:
         return respond_not_allowed(method, permitted_methods=['GET', 'PUT', 'DELETE'])
 
 
 def index(request):
-    return render_to_response('index.html', {'absolute_url_prefix' : settings.ABSOLUTE_URL_PREFIX})
+    return render_to_response('mssm/index.html', {'absolute_url_prefix' : settings.ABSOLUTE_URL_PREFIX})
     
 
 def deleted(request):
-    return render_to_response('deleted.html')
+    return render_to_response('mssm/deleted.html')
 
 
 def respond_not_allowed(method, permitted_methods=[]):
