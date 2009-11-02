@@ -1,5 +1,5 @@
 from django.shortcuts import render_to_response, get_object_or_404
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.http import HttpResponseRedirect, HttpResponseBadRequest, HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.http import QueryDict
@@ -9,6 +9,15 @@ from models import CreateAlignmentForm, EditAlignmentForm
 from models import Alignment, Row
 
 from itertools import izip
+
+def dummy(request, **kwargs):
+    resp = HttpResponse()
+
+    for arg in kwargs:
+        resp.write(arg + ':' + kwargs[arg])
+
+    return resp
+
 
 def alignment_list(request):
 
