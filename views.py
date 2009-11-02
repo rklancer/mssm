@@ -10,13 +10,12 @@ from models import Alignment, Row
 
 from itertools import izip
 
+
 def dummy(request, **kwargs):
-    resp = HttpResponse()
-
+    response = HttpResponse()
     for arg in kwargs:
-        resp.write(arg + ':' + kwargs[arg])
-
-    return resp
+        response.write(arg + ':' + kwargs[arg])
+    return response
 
 
 def alignment_list(request):
