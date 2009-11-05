@@ -1,6 +1,14 @@
 from django.conf.urls.defaults import *
 from django.views.generic.simple import redirect_to
 from noraseq.views import dummy
+from noraseq.api.handlers import AlignmentBase
+
+from piston.resource import Resource
+from piston.authentication import HttpBasicAuthentication, NoAuthentication
+
+
+#auth = HttpBasicAuthentication(realm='NORASeq API')
+auth = NoAuthentication
 
 # we'll go with the convention that url patterns below are directed to callables with the name of the 
 # corresponding resource.
@@ -13,7 +21,8 @@ from noraseq.views import dummy
 
 # alignment basics
 
-alignment_base = dummy
+#alignment_base = dummy
+alignment_base = Resource(AlignmentBase)
 alignment_table = dummy
 row_list = dummy
 column_list = dummy

@@ -10,6 +10,8 @@ from models import Alignment, Row
 
 from itertools import izip
 
+from noraseq.utils import PreRenderer
+
 
 def dummy(request, **kwargs):
     response = HttpResponse()
@@ -21,15 +23,11 @@ def dummy(request, **kwargs):
 def alignment_list(request):
 
     if request.method == 'POST':
-        print "okay, handling POST"
         form = CreateAlignmentForm(request.POST, request.FILES)
 
         if form.is_valid():
-            print "form is valid"
             new_alignment = form.save()
-            print "form saved"
             new_alignment.biopy_alignment = form.cleaned_data['biopy_alignment']
-            print "set biopy_alignment"
             if 'remote_url_contents' in form.cleaned_data:
                new_alignment.save_to_file(form.cleaned_data['remote_url_contents'])
 
@@ -79,8 +77,7 @@ def alignment_detail(request, alignment_id):
 
         alignment_rows = alignment.rows.all().values("num", "name", "sequence")
         
-        pre = alignment.prerenderer
-        pre.load_template()
+        pre = PreRenderer("noraseq/prerendered_row_tds.html", alignment)
         for row in alignment_rows:
             row['prerendered_tds'] = pre.render_row(row['sequence'])
 

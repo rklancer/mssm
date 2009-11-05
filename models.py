@@ -4,14 +4,13 @@ from django.forms import ValidationError
 from django.forms.util import ErrorList
 from django.conf import settings
 from django.db.models.fields.files import FieldFile
-from django.db.models.signals import post_save
-from django.template.loader import render_to_string
+
 
 from urllib import urlopen
 from Bio import AlignIO
 from StringIO import StringIO
 from datetime import datetime
-from itertools import chain, izip
+
 import os
 
 
@@ -93,61 +92,6 @@ class Alignment(models.Model):
             upload_file.close()
             self.local_file = FieldFile(instance=self, field=model_field, name=upload_filename)
             self.save()
-
-
-class RowPrerenderer(models.Model):
-    """
-    Each Alignment has a RowPrerenderer object. Using RowPrerenderer significantly speeds up generation of the
-    full alignment HTML for large alignments
-    
-    Before rendering a sequence of alignment rows to an html table, call
-    alignment.rowprerenderer.load_template(). This initializes the renderer from the template
-    'prerendered_row_tds.html'
-    
-    This template should generate alignment.length tds, with '%s' substituted for the residue-dependent class
-    attribute of each td, and '%c' as the contents of each td element.
-    
-    Subsequently, call prerenderer.render_row(row.sequence) for each row. The return value is a string
-    containing the <td> elements for each row, with the '%c's substituted with the individual characters from
-    the row sequence, and the '%s's substituted with 'gap' if the residue is a gap and '' otherwise
-    
-    (Obviously, this is suboptimal from a code cleanliness perspective, but it really is much faster)
-    
-    It is best to call load_template() before each batch of rows. This way, the template can be changed.
-    """
-    alignment = models.OneToOneField(Alignment, related_name = "prerenderer")
-    
-    def load_template(self):
-        self._template_string = render_to_string(
-            'noraseq/prerendered_row_tds.html',
-            { 'col_nums': xrange(1, self.alignment.length+1) }
-        )
-        
-    def render_row(self, seq):
-        # note that chain(*izip...) is a formula for splicing two iterables together like so:
-        #     iter(['gap', '', 'gap', ...]) + iter(['-', 'A', '-',...])
-        #         -> iter(['gap', '-', '', 'A', 'gap', '-',...])
-        
-        return self._template_string % tuple(
-            chain(*izip(('gap' if c=='-' else '' for c in seq), seq))
-        )
-
-
-def register_prerenderer(sender, *args, **kwargs):
-    alignment = kwargs.get('instance')
-
-    if not RowPrerenderer.objects.filter(alignment=alignment):
-        pre = RowPrerenderer()
-        pre.alignment = alignment
-        try:
-            pre.save()
-        except IntegrityError:
-            # apparently a RowPrerenderer for this Alignment was saved to the database sometime between the
-            # if statement above and pre.save()
-            pass
-            
-
-post_save.connect(register_prerenderer, sender=Alignment, weak=False)
 
 
 class Row(models.Model):
