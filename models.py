@@ -88,35 +88,30 @@ class Alignment(models.Model):
         
     def extract_tree(self):
         
-        f = None
+        temp = None
         
         # make sure there's a stockholm format file for quicktree to read from
         if self.local_file.name and self.format == "stockholm":
-            print "using stockholm upload"
             fname = self.local_file.name
         else:
-            f = tempfile.NamedTemporaryFile()
-            print "created temp file %s" % f.name
-            AlignIO.write([self.biopy_alignment], f, "stockholm")
-            f.flush()
-            print "wrote stockholm format"
-            fname = f.name
+            temp = tempfile.NamedTemporaryFile()
+            print "writing stockholm format file..."
+            AlignIO.write([self.biopy_alignment], temp, "stockholm")
+            temp.flush()
+            fname = temp.name
         
-        # quicktree has to be in the PATH for this
-        print "opening quicktree..."
-        p = subprocess.Popen(['quicktree', fname], shell=False, stdout=subprocess.PIPE)
-        print "quicktree opened. Waiting..."
+        print "opening quicktree on stockholm format file %s" % fname
+        quicktree_out = os.popen('quicktree %s' % fname)
         
-        # there should be some elementary error checking here (i.e., check return code of p)
-        p.wait()
-        print "wait done."
+        # there should be some elementary error checking here...
         
-        self.newick = p.communicate()[0]
+        self.newick = quicktree_out.read()
+        print "quicktree finished"
         
-        # process the tree here!         
+        # ...and process the tree here!         
 
-        if f:
-            f.close()
+        if temp:
+            temp.close()   # should auto-delete on close (which is why we kept it open after writing)
         
             
             
@@ -168,6 +163,7 @@ class BaseAlignmentForm(ModelForm):
     
     class Meta:
         model = Alignment
+        exclude = ['newick']
 
 
 class CreateAlignmentForm(BaseAlignmentForm):
