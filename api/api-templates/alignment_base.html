@@ -3,13 +3,16 @@
     <title>Alignment Base Resource</title>
 </head>
 <body>
-    <h1>Base Resource for alignment</h1>
+    <h1>Base Resource for alignment {{ alignment.id }}, {{ alignment.name }}</h1>
 
-    <ul>
-        <li><a rel="tree" href="/">Tree</a></li>
-        <li><a rel="seq-table" href="/">Sequence Table</a>
-        <li><a rel="groups-def" href="/">Group Definition</a></li>
-    </ul>
+    <dl>
+        <dt>alignment name</dt> <dd class="name">{{ alignment.name }}</dd>
+        <dt>tree</dt> <dd><a rel="tree" href="/">link</a></dd>
+        <dt>sequence table</dt> <dd><a rel="seq-table" href="{% url noraseq.api.resources.alignment_table , alignment_id=alignment.id %}">link</a></dd>
+        <dt>group definitions</dt> <dd><a rel="groups-def" href="/">link</a></dd>
+    </dl>
+    
+    Request a thresholded grouping:
     
     <ul>
         <form class="groups-def-request threshold-request" method="POST" action="/">

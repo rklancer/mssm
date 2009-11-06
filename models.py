@@ -11,7 +11,7 @@ from Bio import AlignIO
 from StringIO import StringIO
 from datetime import datetime
 
-import os
+import os, tempfile
 
 
 ALIGNMENT_FORMAT_CHOICES = (
@@ -38,6 +38,7 @@ class Alignment(models.Model):
     context_url = models.URLField("Optional URL with more info", max_length=1000, blank=True)
     creation_date = models.DateTimeField(auto_now_add=True)
     length = models.IntegerField(blank=True, null=True, editable=False)
+    newick = models.TextField(blank=True)
     
     @models.permalink
     def get_absolute_url(self):
@@ -82,7 +83,43 @@ class Alignment(models.Model):
             new_col.num = col_num + 1       # 1-based indexing for row and column numbering
             new_col.save()
             
+        self.extract_tree()
         
+        
+    def extract_tree(self):
+        
+        f = None
+        
+        # make sure there's a stockholm format file for quicktree to read from
+        if self.local_file.name and self.format == "stockholm":
+            print "using stockholm upload"
+            fname = self.local_file.name
+        else:
+            f = tempfile.NamedTemporaryFile()
+            print "created temp file %s" % f.name
+            AlignIO.write([self.biopy_alignment], f, "stockholm")
+            f.flush()
+            print "wrote stockholm format"
+            fname = f.name
+        
+        # quicktree has to be in the PATH for this
+        print "opening quicktree..."
+        p = subprocess.Popen(['quicktree', fname], shell=False, stdout=subprocess.PIPE)
+        print "quicktree opened. Waiting..."
+        
+        # there should be some elementary error checking here (i.e., check return code of p)
+        p.wait()
+        print "wait done."
+        
+        self.newick = p.communicate()[0]
+        
+        # process the tree here!         
+
+        if f:
+            f.close()
+        
+            
+            
     def save_to_file(self, unsaved_contents):
         if not self.local_file:
             model_field = self.local_file.field
@@ -99,6 +136,7 @@ class Row(models.Model):
     num = models.IntegerField(editable=False, db_index=True)
     name = models.CharField(max_length=100)
     sequence = models.TextField()
+    comment = models.TextField(blank=True)
     
     def __unicode__(self):
         return self.name
@@ -111,7 +149,8 @@ class Column(models.Model):
     alignment = models.ForeignKey(Alignment, related_name = 'columns', db_index=True)
     num = models.IntegerField(editable=False, db_index=True)
     sequence = models.TextField()
-
+    comment = models.TextField(blank=True)
+    
     class Meta:
         unique_together = ('alignment', 'num')
 
@@ -119,7 +158,8 @@ class Column(models.Model):
 class Cell(models.Model):
     row = models.ForeignKey(Row, db_index=True)
     column = models.ForeignKey(Column, db_index=True)
-
+    comment = models.TextField(blank=True)
+    
     class Meta:
         unique_together = ('column', 'row')
 
@@ -151,14 +191,8 @@ class CreateAlignmentForm(BaseAlignmentForm):
         if not format:
             return cleaned_data     # field validation will have already supplied required error messages
 
-        if local_file:
-	
-            # workaround ticket 7712: local_file may be an InMemoryUploadedFile, which doesn't implement
-            # readlines() (see http://code.djangoproject.com/ticket/7712)
-            
-            # n.b., ticket 7712 has been fixed in Django 1.1
-            
-            file_object = local_file._file
+        if local_file:    
+            biopy_alignment_file = local_file
 
         elif source_url:
             try:
@@ -169,13 +203,13 @@ class CreateAlignmentForm(BaseAlignmentForm):
                 return cleaned_data
             
             cleaned_data['remote_url_contents'] = remote_url_contents
-            file_object = StringIO(remote_url_contents)
+            biopy_alignment_file = StringIO(remote_url_contents)
             
         else:
             raise ValidationError("You need to either supply a file or a valid URL.")
         
         try:
-            biopy_alignment = AlignIO.read(file_object, format)
+            biopy_alignment = AlignIO.read(biopy_alignment_file, format)
         except ValueError:
             raise ValidationError(
                 "The alignment could not be parsed. Perhaps you chose the wrong format?")
@@ -187,4 +221,4 @@ class CreateAlignmentForm(BaseAlignmentForm):
 class EditAlignmentForm(BaseAlignmentForm):
     
     class Meta(BaseAlignmentForm.Meta):
-        exclude = ['source_url', 'local_file', 'format', 'prerenderer']
+        exclude = ['source_url', 'local_file', 'format', 'newick']
