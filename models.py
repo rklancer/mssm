@@ -5,13 +5,14 @@ from django.forms.util import ErrorList
 from django.conf import settings
 from django.db.models.fields.files import FieldFile
 
-
 from urllib import urlopen
 from Bio import AlignIO
+from Bio.Nexus.Nexus import Tree
 from StringIO import StringIO
 from datetime import datetime
 
 import os, tempfile
+import mptt
 
 
 ALIGNMENT_FORMAT_CHOICES = (
@@ -108,12 +109,32 @@ class Alignment(models.Model):
         self.newick = quicktree_out.read()
         print "quicktree finished"
         
-        # ...and process the tree here!         
-
+        tree = Tree(self.newick)
+        self.extract_clades(tree, tree.root)
+        
         if temp:
             temp.close()   # should auto-delete on close (which is why we kept it open after writing)
+    
+    
+    def extract_clades(self, tree, n):
+        print "extracting clade %d" % n
         
-            
+        node = tree.node(n)
+        
+        c = Clade(alignment=self, num=node.id, local_branch_length=node.data.branchlength)
+        if node.prev is not None:
+            c.parent = self.clades.get(num=node.prev)
+            c.cumulative_branch_length = c.parent.cumulative_branch_length + c.local_branch_length
+
+        if not node.succ:
+            # no successors -> leaf node
+            c.row = self.rows.get(name=node.data.taxon)
+
+        c.save()
+
+        for child in node.succ:
+            self.extract_clades(tree, child)
+                    
             
     def save_to_file(self, unsaved_contents):
         if not self.local_file:
@@ -158,7 +179,23 @@ class Cell(models.Model):
     class Meta:
         unique_together = ('column', 'row')
 
-    
+
+class Clade(models.Model):
+    alignment = models.ForeignKey(Alignment, related_name='clades', db_index=True)
+    num = models.IntegerField(editable=False)
+    cumulative_branch_length = models.FloatField(default=0.0)
+    local_branch_length = models.FloatField(editable=False)
+    row = models.OneToOneField(Row, null=True)               # leaf nodes only
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+
+
+# use django-mptt to manage tree structure of Clades. Possibly this should be in __init__.py?
+try:
+    mptt.register(Clade, order_insertion_by=["num"])
+except mptt.AlreadyRegistered:
+    pass
+
+
 class BaseAlignmentForm(ModelForm):
     
     class Meta:

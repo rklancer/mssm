@@ -5,3 +5,4 @@ from models import Alignment, Row
 
 admin.site.register(Alignment)
 admin.site.register(Row)
+
