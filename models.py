@@ -55,40 +55,31 @@ class Alignment(models.Model):
         self._biopy_alignment =  value
         self.length = value.get_alignment_length()
         self.save()
-        self.extract_rows_and_columns()
+        self.extract_related_objects()
 
     biopy_alignment = property(get_biopy_alignment, set_biopy_alignment)
     
+    
+    def extract_related_objects(self):
+        self.extract_rows_and_columns()
+        self.newick = self.get_newick_tree()
+        tree = Tree(self.newick)
+        self.extract_clades(tree, tree.root)
+    
+    
     def extract_rows_and_columns(self):
-        
-        cols = [[]] * self.length
         row_num = 1
-
         for biopy_seqrec in self.biopy_alignment:
-            new_row = Row()
-            new_row.alignment = self
-            seq = str(biopy_seqrec.seq)
-            new_row.sequence = seq
-            new_row.name = biopy_seqrec.id
-            new_row.num = row_num
-            row_num += 1
+            new_row = Row(alignment=self, sequence=str(biopy_seqrec.seq), name=biopy_seqrec.id, num=row_num)
             new_row.save()
+            row_num += 1
 
-            for col_num in range(self.length):
-                cols[col_num].append(seq[col_num])
-        
         for col_num in range(self.length):
-            new_col = Column()
-            new_col.alignment = self
-            new_col.sequence = ''.join(cols[col_num])
-            new_col.num = col_num + 1       # 1-based indexing for row and column numbering
+            new_col = Column(alignment=self, sequence=self.biopy_alignment.get_column(col_num), num=col_num+1)
             new_col.save()
-            
-        self.extract_tree()
-        
-        
-    def extract_tree(self):
-        
+    
+    
+    def get_newick_tree(self):
         temp = None
         
         # make sure there's a stockholm format file for quicktree to read from
@@ -102,20 +93,17 @@ class Alignment(models.Model):
             fname = temp.name
         
         print "opening quicktree on stockholm format file %s" % fname
-        quicktree_out = os.popen('quicktree %s' % fname)
-        
+        quicktree_out = os.popen('quicktree %s' % fname)   # subprocess.Popen hangs the Django dev server
+
         # there should be some elementary error checking here...
-        
-        self.newick = quicktree_out.read()
+        newick_tree = quicktree_out.read()     
         print "quicktree finished"
         
-        tree = Tree(self.newick)
-        self.extract_clades(tree, tree.root)
-        
         if temp:
-            temp.close()   # should auto-delete on close (which is why we kept it open after writing)
-    
-    
+            temp.close()   # should auto delete on close (which is why we kept it open after writing)
+        return newick_tree
+        
+
     def extract_clades(self, tree, n):
         print "extracting clade %d" % n
         
@@ -134,7 +122,7 @@ class Alignment(models.Model):
 
         for child in node.succ:
             self.extract_clades(tree, child)
-                    
+
             
     def save_to_file(self, unsaved_contents):
         if not self.local_file:
@@ -183,10 +171,10 @@ class Cell(models.Model):
 class Clade(models.Model):
     alignment = models.ForeignKey(Alignment, related_name='clades', db_index=True)
     num = models.IntegerField(editable=False)
-    cumulative_branch_length = models.FloatField(default=0.0)
+    cumulative_branch_length = models.FloatField(default=0.0, editable=False)
     local_branch_length = models.FloatField(editable=False)
     row = models.OneToOneField(Row, null=True)               # leaf nodes only
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
+    parent = models.ForeignKey('self', null=True, related_name='children')
 
 
 # use django-mptt to manage tree structure of Clades. Possibly this should be in __init__.py?
