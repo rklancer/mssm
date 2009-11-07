@@ -39,7 +39,7 @@ class Alignment(models.Model):
     context_url = models.URLField("Optional URL with more info", max_length=1000, blank=True)
     creation_date = models.DateTimeField(auto_now_add=True)
     length = models.IntegerField(blank=True, null=True, editable=False)
-    newick = models.TextField(blank=True)
+    newick_tree = models.TextField(blank=True)
     
     @models.permalink
     def get_absolute_url(self):
@@ -48,22 +48,54 @@ class Alignment(models.Model):
     def __unicode__(self):
         return self.name
     
+    
     def get_biopy_alignment(self):
+        if '_biopy_alignment' not in self.__dict__:
+            # don't call set_biopy_alignment(). Want to make biopy_alignment available, not extract from it.
+            self.local_file.open('r')
+            self._biopy_alignment = AlignIO.read(self.local_file, self.format)
+            self.local_file.close()
+        
         return self._biopy_alignment
 
     def set_biopy_alignment(self, value):
-        self._biopy_alignment =  value
+        self._biopy_alignment = value
         self.length = value.get_alignment_length()
         self.save()
         self.extract_related_objects()
 
     biopy_alignment = property(get_biopy_alignment, set_biopy_alignment)
     
-    
+
+    def get_contents(self):
+        if '_contents' not in self.__dict__:
+            self.local_file.open('r')
+            self._contents = self.local_file.read()
+            self.local_file.close()
+
+        return self._contents
+
+    def set_contents(self, value):
+        if self.local_file:
+            upload_file = self.local_file.open('w')
+        else:
+            model_field = self.local_file.field     # note this works even though self.local_file is falsy
+            upload_filename = model_field.generate_filename(self, "%d.%s" % (self.id, self.format))
+            self.local_file = FieldFile(instance=self, field=model_field, name=upload_filename)
+            self.save()
+            # Django FieldFile open() method fails if the file doesn't exist in filesystem (even w/mode 'w')
+            upload_file = open(self.local_file.path, 'w')
+
+        upload_file.write(value)
+        upload_file.close()
+
+    contents = property(get_contents, set_contents)
+
+
     def extract_related_objects(self):
         self.extract_rows_and_columns()
-        self.newick = self.get_newick_tree()
-        tree = Tree(self.newick)
+        self.newick_tree = self.get_newick_tree()
+        tree = Tree(self.newick_tree)
         self.extract_clades(tree, tree.root)
     
     
@@ -82,9 +114,9 @@ class Alignment(models.Model):
     def get_newick_tree(self):
         temp = None
         
-        # make sure there's a stockholm format file for quicktree to read from
+        # quicktree expects a stockholm format input file
         if self.local_file.name and self.format == "stockholm":
-            fname = self.local_file.name
+            fname = self.local_file.path
         else:
             temp = tempfile.NamedTemporaryFile()
             print "writing stockholm format file..."
@@ -98,9 +130,12 @@ class Alignment(models.Model):
         # there should be some elementary error checking here...
         newick_tree = quicktree_out.read()     
         print "quicktree finished"
-        
+
         if temp:
-            temp.close()   # should auto delete on close (which is why we kept it open after writing)
+            # 'temp' is unlinked immediately after creation--so be sure to close it only after we're certain
+            # that quicktree succesfully opened it (i.e, only after read(), not just after popen())
+            temp.close()
+            
         return newick_tree
         
 
@@ -122,17 +157,6 @@ class Alignment(models.Model):
 
         for child in node.succ:
             self.extract_clades(tree, child)
-
-            
-    def save_to_file(self, unsaved_contents):
-        if not self.local_file:
-            model_field = self.local_file.field
-            upload_filename = model_field.generate_filename(self, "%d.%s" % (self.id, self.format))
-            upload_file = open(os.path.join(settings.MEDIA_ROOT, upload_filename), 'w')
-            upload_file.write(unsaved_contents)
-            upload_file.close()
-            self.local_file = FieldFile(instance=self, field=model_field, name=upload_filename)
-            self.save()
 
 
 class Row(models.Model):
@@ -188,7 +212,7 @@ class BaseAlignmentForm(ModelForm):
     
     class Meta:
         model = Alignment
-        exclude = ['newick']
+        exclude = ['newick_tree']
 
 
 class CreateAlignmentForm(BaseAlignmentForm):
@@ -196,8 +220,9 @@ class CreateAlignmentForm(BaseAlignmentForm):
     def clean(self):
         """
         # 1. validates that, if there is no local_file, that source_url downloads okay (placing contents in
-             cleaned_data['remote_url_contents']
-        # 2. validates that the resulting file, whether a local file or the contents of remote url, parses correctly
+             cleaned_data['remote_url_contents'])
+        # 2. validates that the resulting file, whether a local file or the contents of remote url, parses
+             correctly
         # 3. Places resulting Biopython Alignment object in cleaned_data['biopy_alignment']
         """
         super(CreateAlignmentForm, self).clean()
@@ -210,7 +235,9 @@ class CreateAlignmentForm(BaseAlignmentForm):
         # Let's not waste resources downloading and parsing files if the format field isn't valid.
         
         if not format:
-            return cleaned_data     # field validation will have already supplied required error messages
+            # remember always to return cleaned_data; field validation will have already supplied the required
+            # error messages here
+            return cleaned_data     
 
         if local_file:    
             biopy_alignment_file = local_file
@@ -242,4 +269,4 @@ class CreateAlignmentForm(BaseAlignmentForm):
 class EditAlignmentForm(BaseAlignmentForm):
     
     class Meta(BaseAlignmentForm.Meta):
-        exclude = ['source_url', 'local_file', 'format', 'newick']
+        exclude = ['source_url', 'local_file', 'format', 'newick_tree']

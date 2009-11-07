@@ -29,7 +29,7 @@ def alignment_list(request):
             new_alignment = form.save()
             new_alignment.biopy_alignment = form.cleaned_data['biopy_alignment']
             if 'remote_url_contents' in form.cleaned_data:
-               new_alignment.save_to_file(form.cleaned_data['remote_url_contents'])
+               new_alignment.contents = form.cleaned_data['remote_url_contents']
 
             return HttpResponseRedirect(new_alignment.get_absolute_url())
 
