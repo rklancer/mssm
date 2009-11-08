@@ -216,6 +216,22 @@ try:
 except mptt.AlreadyRegistered:
     pass
 
+class Grouping(models.Model):
+    """
+    a QuerySet containing the clades:
+
+    cuts = a.clades.filter(cumulative_branch_length__gt=threshold,parent__cumulative_branch_length__lte=threshold)
+    cut_ids = cuts.values_list('id', flat=True)
+
+    # this finds all the groupings that have all of the clades in cuts, OR MORE. However, it's an obvious proof
+    # that it a set of clades represents some cut, no thresholded grouping can have all those clades plus some
+    # more.
+                    a.groupings.filter(clades__id__in=list(cut_ids)).annotate(num_clades=Count('clades')).filter(num_clades=len(cut_ids)).values()
+    """
+    alignment = models.ForeignKey(Alignment, related_name='groupings')
+    clades = models.ManyToManyField(Clade, related_name='groupings')
+    threshold = models.FloatField()
+    
 
 class BaseAlignmentForm(ModelForm):
     
