@@ -32,8 +32,8 @@ class AlignmentBase(BaseHandler):
     def read(self, request, alignment_id):
         alignment = get_object_or_404(Alignment, pk=alignment_id)
         return render_to_response('api/alignment_base.html', 
-            {'alignment': alignment,
-             'column_sorted': False
+            { 'alignment': alignment,
+              'column_sorted': False
         })
         
 
@@ -138,12 +138,17 @@ class ColumnSortedGroupList(BaseHandler):
     def read(self, request, alignment_id, sort_cols):
 
         alignment = get_object_or_404(Alignment, pk=alignment_id)
-        keys_and_row_nums = get_keys_and_row_nums(alignment, sort_cols)
 
-        # return a JSON mapping between row classes
-                
-        return dict((row_num_to_url(alignment_id, row), self.key_to_url(alignment_id, sort_cols, key))
-            for key, row in keys_and_row_nums)
+        mapping = {}
+        groups = set()
+        
+        for key, row in get_keys_and_row_nums(alignment, sort_cols):
+            group_url = self.key_to_url(alignment_id, sort_cols, key)
+            mapping[row_num_to_url(alignment_id, row)] = group_url
+            groups.add(group_url)
+        
+        return { 'groups': list(groups),
+                 'mapping': mapping }
 
 
 class ColumnSortedTableRedirector(BaseHandler):
@@ -205,7 +210,7 @@ class ThresholdGroupingList(TunneledBaseHandler):
 
 def clade_to_group_url(clade, grouping_id):   
     return reverse('noraseq.api.resources.threshold_group', 
-        kwargs = {
+        kwargs={
             'alignment_id': str(clade.alignment.id), 
             'grouping_id': grouping_id,
             'group_id': str(clade.id)
@@ -214,7 +219,7 @@ def clade_to_group_url(clade, grouping_id):
 
 def row_to_url(row):
     return reverse('noraseq.api.resources.row', 
-        kwargs = {
+        kwargs={
             'alignment_id': str(row.alignment.id),
             'row_num': str(row.num)
         })
@@ -224,12 +229,16 @@ class ThresholdGroupList(BaseHandler):
     def read(self, request, alignment_id, grouping_id):
         grouping = get_object_or_404(ThresholdGrouping, alignment__pk=alignment_id, pk=grouping_id)
         
+        groups = []
         mapping = {}
         for root_clade in grouping.root_clades.all():
+            group_url = clade_to_group_url(root_clade, grouping_id)
+            groups.append(group_url)
             for row in root_clade.get_descendants(include_self=True).filter(row__isnull=False):
-                mapping[row_to_url(row)] = clade_to_group_url(root_clade, grouping_id)
+                mapping[row_to_url(row)] = group_url
         
-        return mapping
+        return { 'groups': groups,
+                 'mapping': mapping }
         
 
 class ThresholdGroup(BaseHandler):
@@ -272,11 +281,6 @@ class CommentOnRow(TunneledBaseHandler):
         row.save()
         return HttpResponse(status=204)
 
-
-class CellResource(BaseHandler):
-    
-    def read(self, request, alignment_id, row_num, cell_num):
-        pass
         
         
     
