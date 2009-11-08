@@ -33,7 +33,7 @@ class Alignment(models.Model):
     local_file = models.FileField(blank=True, null=True, upload_to=UPLOAD_DIR)
     format = models.CharField(
         "Format of alignment file",
-        max_length=max([len(t[0]) for t in ALIGNMENT_FORMAT_CHOICES]), 
+        max_length=max([len(t[0]) for t in ALIGNMENT_FORMAT_CHOICES]),
         choices = ALIGNMENT_FORMAT_CHOICES,
     )
     description = models.TextField("Description of alignment")
@@ -41,22 +41,22 @@ class Alignment(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     length = models.IntegerField(blank=True, null=True, editable=False)
     newick_tree = models.TextField(blank=True)
-    
+
     @models.permalink
     def get_absolute_url(self):
         return ('noraseq.views.alignment_detail', [self.id])
 
     def __unicode__(self):
         return self.name
-    
-    
+
+
     def get_biopy_alignment(self):
         if '_biopy_alignment' not in self.__dict__:
             # don't call set_biopy_alignment(). Want to make biopy_alignment available, not extract from it.
             self.local_file.open('r')
             self._biopy_alignment = AlignIO.read(self.local_file, self.format)
             self.local_file.close()
-        
+
         return self._biopy_alignment
 
     def set_biopy_alignment(self, value):
@@ -66,7 +66,7 @@ class Alignment(models.Model):
         self.extract_related_objects()
 
     biopy_alignment = property(get_biopy_alignment, set_biopy_alignment)
-    
+
 
     def get_alignment_file_contents(self):
         if '_alignment_file_contents' not in self.__dict__:
@@ -79,7 +79,7 @@ class Alignment(models.Model):
     def set_alignment_file_contents(self, value):
         # cache the value
         self._alignment_file_contents = value
-        
+
         # and save to permanent storage
         if not self.local_file:
             model_field = self.local_file.field     # note this works even though self.local_file is falsy
@@ -101,29 +101,29 @@ class Alignment(models.Model):
         self.save()
         tree = Tree(self.newick_tree)
         self.extract_clades(tree, tree.root)
-    
-    
+
+
     def extract_rows_and_columns(self):
         row_num = 1
         for biopy_seqrec in self.biopy_alignment:
             new_row = Row(
-                alignment=self, 
-                sequence=str(biopy_seqrec.seq).upper(), 
+                alignment=self,
+                sequence=str(biopy_seqrec.seq).upper(),
                 name=biopy_seqrec.id, num=row_num)
             new_row.save()
             row_num += 1
 
         for col_num in range(self.length):
             new_col = Column(
-                alignment=self, 
+                alignment=self,
                 sequence=self.biopy_alignment.get_column(col_num).upper(),
                 num=col_num+1)
             new_col.save()
-    
-    
+
+
     def get_newick_tree(self):
         temp = None
-        
+
         # quicktree expects a stockholm format input file
         if self.local_file.name and self.format == "stockholm":
             fname = self.local_file.path
@@ -133,27 +133,27 @@ class Alignment(models.Model):
             AlignIO.write([self.biopy_alignment], temp, "stockholm")
             temp.flush()
             fname = temp.name
-        
+
         print "opening quicktree on stockholm format file %s" % fname
         quicktree_out = os.popen('quicktree %s' % fname)   # subprocess.Popen hangs the Django dev server
 
         # there should be some elementary error checking here...
-        newick_tree = quicktree_out.read()     
+        newick_tree = quicktree_out.read()
         print "quicktree finished"
 
         if temp:
             # 'temp' is unlinked immediately after creation--so be sure to close it only after we're certain
             # that quicktree succesfully opened it (i.e, only after read(), not just after popen())
             temp.close()
-            
+
         return newick_tree
-        
+
 
     def extract_clades(self, tree, n):
         print "extracting clade %d" % n
-        
+
         node = tree.node(n)
-        
+
         c = Clade(alignment=self, num=node.id, local_branch_length=node.data.branchlength)
         if node.prev is not None:
             c.parent = self.clades.get(num=node.prev)
@@ -170,20 +170,22 @@ class Alignment(models.Model):
 
 
     def get_threshold_grouping(self, threshold):
-        # given a threshold branch length, cut the tree at that branch length.
-        # Returns a ThresholdGrouping object corresponding to the cut, with the property that any time
-        # a given threshold corresponds to a previously-seen cut, the same ThresholdGroupSet is returned.
- 
+        """
+        Given a threshold branch length, cut the tree at that branch length.
+        Returns a ThresholdGrouping object corresponding to the cut, with the property that any time
+        a given threshold corresponds to a previously-seen cut, the same ThresholdGroupSet is returned.
+        """
+
         root_clades = self.clades.filter(cumulative_branch_length__gt=threshold,
             parent__cumulative_branch_length__lte=threshold)
         root_clade_ids = root_clades.values_list('id', flat=True)
-        
+
         # This query finds all the ThresholdGroupings that contain *all* clades in the 'root_clades' queryset.
         # Note that it's an obvious proof that, if a set of C of clades represents some cut, then can be no
         # other cut that contains all members of C.
         # So (modulo consistency issues) there should be at most one ThresholdGrouping returned, and it should
         # contain exactly the same set of root clades as in 'root_clades'
-        
+
         existing_groupings = self.threshold_groupings.filter(
             root_clades__id__in=list(root_clade_ids)
         ).annotate(
@@ -193,17 +195,18 @@ class Alignment(models.Model):
         ).order_by(
             'id'
         )
-        
+
         # if database consistency issue mean there are two existing_groupings, try to always return the first
-        
+
         if len(existing_groupings) > 0:
             return existing_groupings[0]
-        else:
-            new_grouping = ThresholdGrouping(alignment=self, threshold=threshold)
-            new_grouping.save()
-            new_grouping.root_clades = root_clades
-            return new_grouping
-        
+
+        new_grouping = ThresholdGrouping(alignment=self, threshold=threshold)
+        new_grouping.save()
+        new_grouping.root_clades = root_clades
+
+        return new_grouping
+
 
 class Row(models.Model):
     alignment = models.ForeignKey(Alignment, related_name = 'rows', db_index=True)
@@ -211,7 +214,7 @@ class Row(models.Model):
     name = models.CharField(max_length=100)
     sequence = models.TextField()
     comment = models.TextField(blank=True)
-    
+
     def __unicode__(self):
         return self.name
 
@@ -224,7 +227,7 @@ class Column(models.Model):
     num = models.IntegerField(editable=False, db_index=True)
     sequence = models.TextField()
     comment = models.TextField(blank=True)
-    
+
     class Meta:
         unique_together = ('alignment', 'num')
 
@@ -233,7 +236,7 @@ class Cell(models.Model):
     row = models.ForeignKey(Row, db_index=True)
     column = models.ForeignKey(Column, db_index=True)
     comment = models.TextField(blank=True)
-    
+
     class Meta:
         unique_together = ('column', 'row')
 
@@ -253,22 +256,23 @@ try:
 except mptt.AlreadyRegistered:
     pass
 
+
 class ThresholdGrouping(models.Model):
 
     alignment = models.ForeignKey(Alignment, related_name='threshold_groupings')
     root_clades = models.ManyToManyField(Clade, related_name='threshold_groupings')
     threshold = models.FloatField()
-    
+
 
 class BaseAlignmentForm(ModelForm):
-    
+
     class Meta:
         model = Alignment
         exclude = ['newick_tree']
 
 
 class CreateAlignmentForm(BaseAlignmentForm):
-    
+
     def clean(self):
         """
         # 1. validates that, if there is no local_file, that source_url downloads okay (placing contents in
@@ -282,16 +286,16 @@ class CreateAlignmentForm(BaseAlignmentForm):
         source_url = cleaned_data.get('source_url')
         local_file = cleaned_data.get('local_file')
         format = cleaned_data.get('format')
-        
+
         # this method (clean()) is called whether or not the format field validates.
         # Let's not waste resources downloading and parsing files if the format field isn't valid.
-        
+
         if not format:
             # remember always to return cleaned_data; field validation will have already supplied the required
             # error messages here
-            return cleaned_data     
+            return cleaned_data
 
-        if local_file:    
+        if local_file:
             biopy_alignment_file = local_file
 
         elif source_url:
@@ -301,24 +305,24 @@ class CreateAlignmentForm(BaseAlignmentForm):
                 self._errors['source_url'] = ErrorList(['Could not load url: %s' % source_url])
                 del cleaned_data['source_url']
                 return cleaned_data
-            
+
             cleaned_data['remote_url_contents'] = remote_url_contents
             biopy_alignment_file = StringIO(remote_url_contents)
-            
+
         else:
             raise ValidationError("You need to either supply a file or a valid URL.")
-        
+
         try:
             biopy_alignment = AlignIO.read(biopy_alignment_file, format)
         except ValueError:
             raise ValidationError(
                 "The alignment could not be parsed. Perhaps you chose the wrong format?")
-        
+
         cleaned_data['biopy_alignment'] = biopy_alignment
         return cleaned_data
 
 
 class EditAlignmentForm(BaseAlignmentForm):
-    
+
     class Meta(BaseAlignmentForm.Meta):
         exclude = ['source_url', 'local_file', 'format', 'newick_tree']

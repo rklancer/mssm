@@ -15,7 +15,8 @@
     Request a thresholded grouping:
     
     <ul>
-        <form class="groups-def-request threshold-request" method="POST" action="/">
+        <form class="groups-def-request threshold-request" method="POST" 
+        action="{% url noraseq.api.resources.threshold_grouping_list , alignment_id=alignment.id %}">
             <li><input type="text" name="threshold-value"></input></li>
             <li><input type="submit"></input></li>
         </form>

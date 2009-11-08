@@ -6,8 +6,8 @@ from noraseq.api.resources import *
 
 threshold_grouping_urls = patterns('',
     (r'^$', threshold_grouping_list),
-    (r'^(?P<grouping_id>\d+/)$', threshold_group_list),
-    (r'^(?P<grouping_id>\d+/)/group/(?P<group_id>\d+)/$', threshold_group),
+    (r'^(?P<grouping_id>\d+)/$', threshold_group_list),
+    (r'^(?P<grouping_id>\d+)/group/(?P<group_id>\d+)/$', threshold_group),
 )
 
 

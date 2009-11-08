@@ -10,7 +10,7 @@ from itertools import izip
 from noraseq.utils import PreRenderer
 
 # import models below
-from noraseq.models import Alignment, Row
+from noraseq.models import Alignment, Row, ThresholdGrouping
 
 class TunneledBaseHandler(BaseHandler):
     
@@ -23,7 +23,7 @@ class TunneledBaseHandler(BaseHandler):
             if method == "DELETE":
                 return self.delete(request, *args, **kwargs)
         
-        self.post(request, *args, **kwargs)
+        return self.post(request, *args, **kwargs)
 
 
 class AlignmentBase(BaseHandler):
@@ -132,7 +132,83 @@ class ColumnSortedGroupList(BaseHandler):
         return dict((row_num_to_url(alignment_id, row), self.key_to_url(alignment_id, sort_cols, key))
             for key, row in keys_and_row_nums)
 
+
+class ThresholdGroupingList(TunneledBaseHandler):
+
+    def post(self, request, alignment_id):
+        alignment = get_object_or_404(Alignment, pk=alignment_id)    
+        if 'threshold-value' not in request.POST:
+            return rc.BAD_REQUEST
         
+        try:
+            threshold = float(request.POST['threshold-value'])
+        except ValueError:
+            return rc.BAD_REQUEST
+
+        response = HttpResponse(status=303)
+        response['Location'] = reverse('noraseq.api.resources.threshold_group_list', 
+            kwargs={
+                'alignment_id': alignment_id, 
+                'grouping_id': str(alignment.get_threshold_grouping(threshold).id)
+            })
+        
+        return response
+        
+
+    def read(self, request, alignment_id):
+        alignment = get_object_or_404(Alignment, pk=alignment_id)
+        
+        return [reverse('noraseq.models.threshold_group_list', 
+            kwargs={
+                'alignment_id': alignment_id, 
+                'grouping_id': str(id)
+            }) for id in alignment.threshold_groupings.values_list('id', flat=True)]
+
+
+
+def clade_to_group_url(clade, grouping_id):   
+    return reverse('noraseq.api.resources.threshold_group', 
+        kwargs = {
+            'alignment_id': str(clade.alignment.id), 
+            'grouping_id': grouping_id,
+            'group_id': str(clade.id)
+        })
+            
+
+def row_to_url(row):
+    return reverse('noraseq.api.resources.row', 
+        kwargs = {
+            'alignment_id': str(row.alignment.id),
+            'row_num': str(row.num)
+        })
+        
+class ThresholdGroupList(BaseHandler):
+    
+    def read(self, request, alignment_id, grouping_id):
+        grouping = get_object_or_404(ThresholdGrouping, alignment__pk=alignment_id, pk=grouping_id)
+        
+        mapping = {}
+        for root_clade in grouping.root_clades.all():
+            for row in root_clade.get_descendants(include_self=True).filter(row__isnull=False):
+                mapping[row_to_url(row)] = clade_to_group_url(root_clade, grouping_id)
+        
+        return mapping
+        
+
+class ThresholdGroup(BaseHandler):
+    
+    def read(self, request, alignment_id, grouping_id, group_id):
+        grouping = get_object_or_404(ThresholdGrouping, alignment__pk=alignment_id, pk=grouping_id)
+        try:
+            root_clade = grouping.root_clades.get(id=group_id)
+        except DoesNotExist:
+            return rc.NOT_FOUND
+            
+        return [row_to_url(c.row) 
+            for c in root_clade.get_descendants(include_self=True).filter(row__isnull=False)]
+    
+        
+
 class RowResource(BaseHandler):
     
     def read(self, request, alignment_id, row_num):
