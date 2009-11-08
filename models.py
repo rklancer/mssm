@@ -105,12 +105,18 @@ class Alignment(models.Model):
     def extract_rows_and_columns(self):
         row_num = 1
         for biopy_seqrec in self.biopy_alignment:
-            new_row = Row(alignment=self, sequence=str(biopy_seqrec.seq), name=biopy_seqrec.id, num=row_num)
+            new_row = Row(
+                alignment=self, 
+                sequence=str(biopy_seqrec.seq).upper(), 
+                name=biopy_seqrec.id, num=row_num)
             new_row.save()
             row_num += 1
 
         for col_num in range(self.length):
-            new_col = Column(alignment=self, sequence=self.biopy_alignment.get_column(col_num), num=col_num+1)
+            new_col = Column(
+                alignment=self, 
+                sequence=self.biopy_alignment.get_column(col_num).upper(),
+                num=col_num+1)
             new_col.save()
     
     

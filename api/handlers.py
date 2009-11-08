@@ -105,7 +105,7 @@ class ColumnSortedGroup(BaseHandler):
     def read(self, request, alignment_id, sort_cols, group_pattern):
         alignment = get_object_or_404(Alignment, pk=alignment_id)
         keys_and_row_nums = get_keys_and_row_nums(alignment, sort_cols)
-        row_nums = [num for key, num in keys_and_row_nums if key == tuple(group_pattern)]
+        row_nums = [num for key, num in keys_and_row_nums if key == tuple(group_pattern.upper())]
         
         if not row_nums:
             raise Http404
