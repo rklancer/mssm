@@ -29,7 +29,7 @@ def alignment_list(request):
             new_alignment = form.save()
             new_alignment.biopy_alignment = form.cleaned_data['biopy_alignment']
             if 'remote_url_contents' in form.cleaned_data:
-               new_alignment.contents = form.cleaned_data['remote_url_contents']
+               new_alignment.alignment_file_contents = form.cleaned_data['remote_url_contents']
 
             return HttpResponseRedirect(new_alignment.get_absolute_url())
 
@@ -75,7 +75,7 @@ def alignment_detail(request, alignment_id):
         elif 'delete' in request.GET:
             context['show_delete_form'] = True
 
-        alignment_rows = alignment.rows.all().values("num", "name", "sequence")
+        alignment_rows = alignment.rows.order_by("clade__lft").values("num", "name", "sequence")
         
         pre = PreRenderer("noraseq/prerendered_row_tds.html", alignment)
         for row in alignment_rows:

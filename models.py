@@ -67,34 +67,37 @@ class Alignment(models.Model):
     biopy_alignment = property(get_biopy_alignment, set_biopy_alignment)
     
 
-    def get_contents(self):
-        if '_contents' not in self.__dict__:
+    def get_alignment_file_contents(self):
+        if '_alignment_file_contents' not in self.__dict__:
             self.local_file.open('r')
-            self._contents = self.local_file.read()
+            self._alignment_file_contents = self.local_file.read()
             self.local_file.close()
 
-        return self._contents
+        return self._alignment_file_contents
 
-    def set_contents(self, value):
-        if self.local_file:
-            upload_file = self.local_file.open('w')
-        else:
+    def set_alignment_file_contents(self, value):
+        # cache the value
+        self._alignment_file_contents = value
+        
+        # and save to permanent storage
+        if not self.local_file:
             model_field = self.local_file.field     # note this works even though self.local_file is falsy
             upload_filename = model_field.generate_filename(self, "%d.%s" % (self.id, self.format))
             self.local_file = FieldFile(instance=self, field=model_field, name=upload_filename)
             self.save()
-            # Django FieldFile open() method fails if the file doesn't exist in filesystem (even w/mode 'w')
-            upload_file = open(self.local_file.path, 'w')
 
+        # Django FieldFile open() method fails if the file doesn't exist in filesystem (even using mode 'w')
+        upload_file = open(self.local_file.path, 'w')
         upload_file.write(value)
         upload_file.close()
 
-    contents = property(get_contents, set_contents)
+    alignment_file_contents = property(get_alignment_file_contents, set_alignment_file_contents)
 
 
     def extract_related_objects(self):
         self.extract_rows_and_columns()
         self.newick_tree = self.get_newick_tree()
+        self.save()
         tree = Tree(self.newick_tree)
         self.extract_clades(tree, tree.root)
     
