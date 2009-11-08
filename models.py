@@ -4,6 +4,7 @@ from django.forms import ValidationError
 from django.forms.util import ErrorList
 from django.conf import settings
 from django.db.models.fields.files import FieldFile
+from django.db.models import Count
 
 from urllib import urlopen
 from Bio import AlignIO
@@ -168,6 +169,42 @@ class Alignment(models.Model):
             self.extract_clades(tree, child)
 
 
+    def get_threshold_grouping(self, threshold):
+        # given a threshold branch length, cut the tree at that branch length.
+        # Returns a ThresholdGrouping object corresponding to the cut, with the property that any time
+        # a given threshold corresponds to a previously-seen cut, the same ThresholdGroupSet is returned.
+ 
+        root_clades = self.clades.filter(cumulative_branch_length__gt=threshold,
+            parent__cumulative_branch_length__lte=threshold)
+        root_clade_ids = root_clades.values_list('id', flat=True)
+        
+        # This query finds all the ThresholdGroupings that contain *all* clades in the 'root_clades' queryset.
+        # Note that it's an obvious proof that, if a set of C of clades represents some cut, then can be no
+        # other cut that contains all members of C.
+        # So (modulo consistency issues) there should be at most one ThresholdGrouping returned, and it should
+        # contain exactly the same set of root clades as in 'root_clades'
+        
+        existing_groupings = self.threshold_groupings.filter(
+            root_clades__id__in=list(root_clade_ids)
+        ).annotate(
+            num_clades=Count('root_clades')
+        ).filter(
+            num_clades=len(root_clade_ids)
+        ).order_by(
+            'id'
+        )
+        
+        # if database consistency issue mean there are two existing_groupings, try to always return the first
+        
+        if len(existing_groupings) > 0:
+            return existing_groupings[0]
+        else:
+            new_grouping = ThresholdGrouping(alignment=self, threshold=threshold)
+            new_grouping.save()
+            new_grouping.root_clades = root_clades
+            return new_grouping
+        
+
 class Row(models.Model):
     alignment = models.ForeignKey(Alignment, related_name = 'rows', db_index=True)
     num = models.IntegerField(editable=False, db_index=True)
@@ -216,20 +253,10 @@ try:
 except mptt.AlreadyRegistered:
     pass
 
-class Grouping(models.Model):
-    """
-    a QuerySet containing the clades:
+class ThresholdGrouping(models.Model):
 
-    cuts = a.clades.filter(cumulative_branch_length__gt=threshold,parent__cumulative_branch_length__lte=threshold)
-    cut_ids = cuts.values_list('id', flat=True)
-
-    # this finds all the groupings that have all of the clades in cuts, OR MORE. However, it's an obvious proof
-    # that it a set of clades represents some cut, no thresholded grouping can have all those clades plus some
-    # more.
-                    a.groupings.filter(clades__id__in=list(cut_ids)).annotate(num_clades=Count('clades')).filter(num_clades=len(cut_ids)).values()
-    """
-    alignment = models.ForeignKey(Alignment, related_name='groupings')
-    clades = models.ManyToManyField(Clade, related_name='groupings')
+    alignment = models.ForeignKey(Alignment, related_name='threshold_groupings')
+    root_clades = models.ManyToManyField(Clade, related_name='threshold_groupings')
     threshold = models.FloatField()
     
 
