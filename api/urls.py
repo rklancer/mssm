@@ -18,6 +18,10 @@ column_sorted_urls = patterns('',
     (r'^group/(?P<group_pattern>[-acdefghiklmnpqrstvwyACDEFGHIKLMNPQRSTVWY]+)/$', column_sorted_group),
 )
 
+column_sorted_redirector_urls = patterns('',
+    (r'^$', column_sorted_base_redirector),
+    (r'^table/', column_sorted_table_redirector),
+)
 
 manual_sorted_urls = patterns('',
     (r'^$', manual_sorted_base),
@@ -112,6 +116,7 @@ alignment_urls = patterns('',
     (r'^table/$', alignment_table),
     (r'^sorted/$', sorted_alignment_index),
     (r'^sorted/by-columns/(?P<sort_cols>(?:\d+/)*\d+)/', include(column_sorted_urls)),
+    (r'^sorted/by-columns/', include(column_sorted_redirector_urls)),
     (r'^sorted/manual/(?P<sort_id>\d+)/', include(manual_sorted_urls)),
     (r'^correlations/all-pairs/$', pair_correlations),
     (r'^correlations/by-column/$', column_correlations),

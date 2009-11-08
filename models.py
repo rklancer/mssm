@@ -178,7 +178,7 @@ class Alignment(models.Model):
 
         root_clades = self.clades.filter(cumulative_branch_length__gt=threshold,
             parent__cumulative_branch_length__lte=threshold)
-        root_clade_ids = root_clades.values_list('id', flat=True)
+        root_clade_ids = list(root_clades.values_list('id', flat=True))   # i.e., prevent requerying
 
         # This query finds all the ThresholdGroupings that contain *all* clades in the 'root_clades' queryset.
         # Note that it's an obvious proof that, if a set of C of clades represents some cut, then can be no
@@ -187,7 +187,7 @@ class Alignment(models.Model):
         # contain exactly the same set of root clades as in 'root_clades'
 
         existing_groupings = self.threshold_groupings.filter(
-            root_clades__id__in=list(root_clade_ids)
+            root_clades__id__in=root_clade_ids
         ).annotate(
             num_clades=Count('root_clades')
         ).filter(

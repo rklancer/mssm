@@ -6,6 +6,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse
 
 from itertools import izip
+import re
 
 from noraseq.utils import PreRenderer
 
@@ -133,6 +134,30 @@ class ColumnSortedGroupList(BaseHandler):
             for key, row in keys_and_row_nums)
 
 
+class ColumnSortedTableRedirector(BaseHandler):
+    
+    def read(self, request, alignment_id):
+        # for now we're accepting a comma-separated list of column numbers. Could change accept URLs as well.
+        if 'sort-cols' not in request.GET:
+            return rc.BAD_REQUEST
+        
+        # change to allow for leading 'c's?
+
+        sort_cols = request.GET['sort-cols']
+        cols_re = re.compile(r"^(\d+,)*\d+$")
+        if not cols_re.match(sort_cols):
+            return rc.BAD_REQUEST
+        
+        # check that the alignment exists before redirecting to it
+        alignment = get_object_or_404(Alignment, pk=alignment_id)
+        
+        return HttpResponseRedirect(reverse('noraseq.api.resources.column_sorted_table',
+            kwargs = {
+                'alignment_id': alignment_id,
+                'sort_cols': sort_cols.replace(',','/')
+            }))
+
+
 class ThresholdGroupingList(TunneledBaseHandler):
 
     def post(self, request, alignment_id):
@@ -206,8 +231,7 @@ class ThresholdGroup(BaseHandler):
             
         return [row_to_url(c.row) 
             for c in root_clade.get_descendants(include_self=True).filter(row__isnull=False)]
-    
-        
+
 
 class RowResource(BaseHandler):
     
