@@ -200,7 +200,7 @@ class ThresholdGroupingList(TunneledBaseHandler):
     def read(self, request, alignment_id):
         alignment = get_object_or_404(Alignment, pk=alignment_id)
         
-        return [reverse('noraseq.models.threshold_group_list', 
+        return [reverse('noraseq.api.resources.threshold_group_list', 
             kwargs={
                 'alignment_id': alignment_id, 
                 'grouping_id': str(id)
