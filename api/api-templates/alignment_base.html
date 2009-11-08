@@ -3,24 +3,71 @@
     <title>Alignment Base Resource</title>
 </head>
 <body>
-    <h1>Base Resource for alignment {{ alignment.id }}, {{ alignment.name }}</h1>
-
+    <h1>Base Resource for alignment {{ alignment.id }}, "{{ alignment.name }}" 
+        {% if column_sorted %}
+        sorted on columns {{ sort_cols_humanized }}
+        {% endif %}
+    </h1>
+    
     <dl>
-        <dt>alignment name</dt> <dd class="name">{{ alignment.name }}</dd>
-        <dt>tree</dt> <dd><a rel="tree" href="/">link</a></dd>
-        <dt>sequence table</dt> <dd><a rel="seq-table" href="{% url noraseq.api.resources.alignment_table , alignment_id=alignment.id %}">link</a></dd>
-        <dt>group definitions</dt> <dd><a rel="groups-def" href="/">link</a></dd>
+        <dt>
+            alignment name
+        </dt>
+        <dd>
+            {{ alignment.name }}
+        </dd>
+        
+        <dt>
+            tree
+        </dt>
+        <dd>
+            <a rel="tree" href="/">link</a>
+        </dd>
+        
+        <dt>
+            sequence table
+        </dt>
+        <dd>    
+            {% if column_sorted %}
+            <a rel="seq-table" 
+               href="{% url noraseq.api.resources.column_sorted_table alignment_id=alignment.id, sort_cols=sort_cols %}">
+            link</a>
+            {% else %}
+            <a rel="seq-table" 
+               href="{% url noraseq.api.resources.alignment_table alignment_id=alignment.id %}">
+            link</a>
+            {% endif %}
+        </dd>
+        
+        {% if column_sorted %}
+        <dt>
+            unsorted alignment base
+        </dt>
+        <dd class="name">
+            <a rel="unsorted-base" 
+               href="{% url noraseq.api.resources.alignment_base alignment_id=alignment.id %}">
+            link</a>
+        </dd>
+
+        <dt>
+            group definitions
+        </dt>
+        <dd>
+            <a rel="groups-def" 
+               href="{% url noraseq.api.resources.column_sorted_group_list alignment_id=alignment.id, sort_cols=sort_cols %}">
+        link</a>
+        </dd>
+        {% endif %}
     </dl>
     
+    {% if not column_sorted %}
     Request a thresholded grouping:
-    
-    <ul>
-        <form class="groups-def-request threshold-request" method="POST" 
-        action="{% url noraseq.api.resources.threshold_grouping_list , alignment_id=alignment.id %}">
-            <li><input type="text" name="threshold-value"></input></li>
-            <li><input type="submit"></input></li>
+        <form class="groups-def-request threshold-request" 
+              method="POST" 
+              action="{% url noraseq.api.resources.threshold_grouping_list alignment_id=alignment.id %}">
+            <input type="text" name="threshold-value"></input>
+            <input type="submit"></input>
         </form>
-    </ul>
-    
+    {% endif %}
 </body>
 </html>

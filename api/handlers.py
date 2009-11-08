@@ -31,12 +31,16 @@ class AlignmentBase(BaseHandler):
     
     def read(self, request, alignment_id):
         alignment = get_object_or_404(Alignment, pk=alignment_id)
-        return render_to_response('api/alignment_base.html', {'alignment': alignment})
+        return render_to_response('api/alignment_base.html', 
+            {'alignment': alignment,
+             'column_sorted': False
+        })
+        
 
-class ColumnSortedAlignmentBase(AlignmentBase):
-    
-    def read(self, request, alignment_id, sort_cols):
-        pass
+def prerender_tds(rows, alignment):
+    pre = PreRenderer("noraseq/prerendered_row_tds.html", alignment)
+    for row in rows:
+        row['prerendered_tds'] = pre.render_row(row['sequence'])
 
 
 class Table(BaseHandler):
@@ -49,19 +53,29 @@ class Table(BaseHandler):
         # ordering in by 'clade__lft' guarantees this property)
         
         alignment_rows = alignment.rows.order_by("clade__lft").values("num", "name", "sequence")
-        
-        pre = PreRenderer("noraseq/prerendered_row_tds.html", alignment)
-        for row in alignment_rows:
-            row['prerendered_tds'] = pre.render_row(row['sequence'])
+        prerender_tds(alignment_rows, alignment)
 
         return render_to_response('api/alignment_table.html',
             { 'alignment' : alignment,
+              'column_sorted': False,
               'alignment_rows': alignment_rows,
               'header_row': range(1,alignment.length+1),
               'num_cols' : alignment.length
             })
-    
-    
+
+
+class ColumnSortedBase(BaseHandler):
+
+    def read(self, request, alignment_id, sort_cols):
+        alignment = get_object_or_404(Alignment, pk=alignment_id)
+        return render_to_response('api/alignment_base.html', 
+            {'alignment': alignment,
+             'column_sorted': True,
+             'sort_cols': sort_cols,
+             'sort_cols_humanized': sort_cols.replace('/', ', ')
+            })
+
+
 def get_keys_and_row_nums(alignment, sort_cols):
     # convert 'sort_cols' (string captured from url) into a list of numbers    
     sort_col_nums = [int(num) for num in sort_cols.split('/')]
@@ -77,20 +91,18 @@ class ColumnSortedTable(BaseHandler):
 
     def read(self, request, alignment_id, sort_cols):
         alignment = get_object_or_404(Alignment, pk=alignment_id)
-        
         alignment_rows = alignment.rows.values("num", "name", "sequence")
 
-        # pull out the common bits this shares with Table above...
-
-        pre = PreRenderer("noraseq/prerendered_row_tds.html", alignment)
-        for row in alignment_rows:
-            row['prerendered_tds'] = pre.render_row(row['sequence'])
+        prerender_tds(alignment_rows, alignment)
 
         keys_and_row_nums = get_keys_and_row_nums(alignment, sort_cols)
         sorted_rows = [alignment_rows[row_num-1] for key, row_num in sorted(keys_and_row_nums)]
     
         return render_to_response('api/alignment_table.html',
             { 'alignment' : alignment,
+              'column_sorted': True,
+              'sort_cols_humanized': sort_cols.replace('/', ', '),
+              'sort_cols': sort_cols,
               'alignment_rows': sorted_rows,
               'header_row': range(1,alignment.length+1),
               'num_cols' : alignment.length
