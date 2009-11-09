@@ -3,12 +3,17 @@
     <title>Alignment Base Resource</title>
 </head>
 <body>
+    <!-- div.jqwrapper is needed by jquery; $(html).find('form') only works if <form> is nested within another
+         element; and $(html) apparently strips any <html>, <head>, <body> elements found in 'html', because
+         it can only process those elements which are legal to make children of a <div> --> 
+    <div class="jq_wrapper"> 
+    
     <h1>Base Resource for alignment {{ alignment.id }}, "{{ alignment.name }}" 
         {% if column_sorted %}
         sorted on columns {{ sort_cols_humanized }}
         {% endif %}
     </h1>
-    
+
     <dl>
         <dt>
             alignment name
@@ -69,5 +74,6 @@
             <input type="submit"></input>
         </form>
     {% endif %}
+</div>
 </body>
 </html>

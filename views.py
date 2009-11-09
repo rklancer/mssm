@@ -55,7 +55,12 @@ def noraseq_viewer(request, alignment_id):
     alignment = get_object_or_404(Alignment, pk=alignment_id)
     context = { 'alignment': alignment, 
                 'header_row': range(1,alignment.length+1),
-                'table_width': 15*alignment.length }
+                'table_width': 15*alignment.length,
+                'base_url': reverse('noraseq.api.resources.alignment_base',
+                    kwargs = {
+                        'alignment_id': alignment.id
+                    })
+                }
 
     return render_to_response('noraseq/noraseq_viewer.html', context, RequestContext(request))
     

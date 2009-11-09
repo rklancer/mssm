@@ -3,6 +3,11 @@
     <title>Alignment Row</title>
 </head>
 <body>
+    <!-- div.jqwrapper is needed by jquery; $(html).find('form') only works if <form> is nested within another
+         element; and $(html) apparently strips any <html>, <head>, <body> elements found in 'html', because
+         it can only process those elements which are legal to make children of a <div> -->
+    <div class="jqwrapper">
+        
     <h1>Row {{ row.num }} of alignment {{ row.alignment.id }}</h1>
 
     <dl>
@@ -27,5 +32,6 @@
         <input type="submit">
     </form>
     
+    </div>
 </body>
 </html>

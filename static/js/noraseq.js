@@ -72,6 +72,8 @@ $(document).ready(function() {
     $("#row-label-panel").resizable({'helper': 'ui-state-highlight'});
     
     safely_size_overflow_containers();
+    
+    alert(BASE_URL);
 });
 
 

@@ -230,6 +230,13 @@ var appstate = (function () {
             if (threshold && jq_request_form) {
                 jq_request_form.find("input[name='threshold-value']").val(threshold);
                 set("grouping",
+                
+                    // actually, we need to POST to the url constructed below, *then* set the grouping url
+                    // to the 
+                    
+                    // POST to jq_request_form.attr("action") with data jq_request_form.serialize()
+                    // (get resulting data as JSON)
+                    
                     new_grouping( jq_request_form.attr("action") + "?" + jq_request_form.serialize() )
                 );
             }
