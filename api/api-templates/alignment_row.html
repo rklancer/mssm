@@ -1,0 +1,31 @@
+<html>
+<head>
+    <title>Alignment Row</title>
+</head>
+<body>
+    <h1>Row {{ row.num }} of alignment {{ row.alignment.id }}</h1>
+
+    <dl>
+        <dt>parent alignment</dt> <dd><a rel="alignment" href="{% url noraseq.api.resources.alignment_base alignment_id=row.alignment.id %}">{{row.alignment.name}}</a></dd>
+        <dt>row number</dt> <dd class="number">{{row.num}}</dd>
+        <dt>sequence name</dt> <dd class="name">{{row.name}}</dd>
+        <dt>CSS class</dt> <dd class="class">r{{row.num}}</dd>
+        <dt>comment</dt> <dd class="comment-text"><a rel="comment" href="{% url noraseq.api.resources.comment_on_row alignment_id=row.alignment.id, row_num=row.num %}">{{row.comment}}</a></dd>
+        <dt>sequence</dt> <dd class="sequence">
+            {% for residue in row.sequence %}
+                <a rel="cell" class="c{{forloop.counter}}"
+                   href="{% url noraseq.api.resources.cell alignment_id=row.alignment.id, row_num=row.num, col_num=forloop.counter %}">
+                   {{residue}}
+                </a>
+            {% endfor %}
+                   
+    </dl>
+    
+    <form class="update-comment" method="POST" action="{% url noraseq.api.resources.comment_on_row alignment_id=row.alignment.id, row_num=row.num %}">
+        <input type=hidden name="tunneled_method" value="PUT">
+        <input name="text" value="{{row.comment}}">
+        <input type="submit">
+    </form>
+    
+</body>
+</html>

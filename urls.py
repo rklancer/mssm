@@ -1,8 +1,9 @@
 from django.conf.urls.defaults import *
-from noraseq.views import index, deleted, alignment_list, alignment_detail
+from noraseq.views import index, deleted, alignment_list, alignment_detail, noraseq_viewer
 
 alignment_urls = patterns('', 
     (r'^$', alignment_detail),
+    (r'^viewer/', noraseq_viewer),
 )
 
 urlpatterns = patterns('',

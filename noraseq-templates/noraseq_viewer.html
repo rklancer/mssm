@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 	
 	<title>NORASeq view of {{ alignment.name }}</title>
 	
@@ -162,7 +162,7 @@
 				<div class="scrolling-panel">
 					<div class="scrolling-content">
 						<div id="column-labels">
-						  <table id="column-labels-table">
+						  <table id="column-labels-table"  width="{{table_width}}px">
 						    <thead>
 					        <tr class="column-labels-table-row">
 										{% for col_num in header_row %}
@@ -184,6 +184,8 @@
 						<div class="y-overflow-container">
 							<div class="scrolling-panel"> 
 								<div class="scrolling-content">
+									{% comment %}
+									
 									<table id="sequence-table">	
 										{% spaceless %}
 										<thead>
@@ -204,6 +206,8 @@
 										</tbody>
 										{% endspaceless %}
 									</table>
+									
+									{% endcomment %}
 								</div> <!-- scrolling-content -->
 							</div> <!-- scrolling-panel -->
 						</div> <!-- y-overflow-container -->

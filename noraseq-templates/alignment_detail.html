@@ -7,6 +7,7 @@
     <h1>Detail of alignment {{ alignment.id }}: {{ alignment.name }}</h1>
    
     <ul>
+        <li><a href="{% url noraseq.views.noraseq_viewer alignment_id=alignment.id %}">NORASeq view</a></li>
 		<li><a href="?edit">Edit information</a></li>
         <li><a href="?delete">Delete alignment</a>
         {% if show_delete_form %}

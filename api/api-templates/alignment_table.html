@@ -1,0 +1,69 @@
+<html>
+<head>
+    <title>Alignment Table</title>
+</head>
+<body>
+    <h1>Table for alignment {{ alignment.id }}, "{{ alignment.name }}" 
+        {% if column_sorted %}
+        sorted on columns {{ sort_cols_humanized }}
+        {% endif %}
+    </h1>
+
+    request a sorted alignment (input comma separated column numbers:
+    <form class="sort-form" method="GET"
+        action="{% url noraseq.api.resources.column_sorted_table_redirector alignment_id=alignment.id %}">
+        <input name="sort-cols" value=""></input>
+        <input type="submit"></input>
+    </form>
+    
+    
+    <dl>
+        <dt>
+            alignment base {% if column_sorted %}(sorted){% endif %}
+        </dt>
+        <dd>
+            {% if column_sorted %}
+            <a rel="base-resource" 
+               href="{% url noraseq.api.resources.column_sorted_base alignment_id=alignment.id, sort_cols=sort_cols %}">
+            {% else %}
+            <a rel="base-resource" 
+               href="{% url noraseq.api.resources.alignment_base alignment_id=alignment.id %}">
+            {% endif %}
+            link</a>
+        </dd>
+
+        {% if column_sorted %}
+        <dt>
+            unsorted alignment table
+        </dt>
+        <dd class="name">
+            <a rel="unsorted-table" 
+               href="{% url noraseq.api.resources.alignment_table alignment_id=alignment.id %}">
+            link</a>
+        </dd>
+        {% endif %}
+    </dl>
+    
+    <table class="seq-table">
+		<thead>
+			<tr>
+	            <th>description</th>
+	            <th>row</th>
+	            {% for col in header_row %}
+	            <th class="c{{col}}">{{col}}</th>
+	            {% endfor %}
+	        </tr>
+    	</thead>
+		<tbody>
+	        {% for row in alignment_rows %}
+	        <tr class="r{{row.num}}">
+	            <td>{{row.name}}</td>
+	            <td><a rel="row" href="{% url noraseq.api.resources.row alignment_id=alignment.id, row_num=row.num %}">{{row.num}}</a></td>
+                {{ row.prerendered_tds|safe }}
+	        </tr>
+	        {% endfor %}
+		</tbody>
+    </table>
+    
+</body>
+</html>

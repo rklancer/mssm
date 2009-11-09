@@ -77,12 +77,12 @@ $(document).ready(function() {
 
 /* safely_size_overflow_containers():
 
-  Call size_overflow_containers(), but make sure to do it while #sequence-table is display: none because resizing any 
-  divs containing the large sequence-table is a very slow operation in Firefox.
+  Call size_overflow_containers(), but make sure to do it while #sequence-table is display: none because
+  resizing any divs containing the large sequence-table is a very slow operation in Firefox.
   
-  Note that in order for this strategy to work, we need to pause between hiding #sequence-table and resizing any
-  divs that contain it; similarly we need to pause to allow the div resizing to finish processing before we
-  show #sequence-table again.
+   Note that in order for this strategy to work, we need to pause between hiding #sequence-table and resizing
+  any divs that contain it; similarly we need to pause to allow the div resizing to finish processing before
+  we show #sequence-table again.
 */
 
 var safely_size_overflow_containers = function () {
@@ -120,24 +120,25 @@ var safely_size_overflow_containers = function () {
     </div>
   </div>
   
-  This function assumes a maximum size for the .x-overflow-container (it's assumed to be no wider than the monitor
-  size. Still need to write the mechanism that sets a larger maximum size if the viewport is ever enlarged larger
-  than the monitor size.)
+  This function assumes a maximum size for the .x-overflow-container (it's assumed to be no wider than the
+  monitor size. Still need to write the mechanism that sets a larger maximum size if the viewport is ever
+  enlarged larger than the monitor size.)
   
-  Then it resizes the x-scrolling-panel so that it is the width of the contained content plus the width of the 
-  .x-overflow-container it's in. (Similarly, it resizes y-scrolling-panels such that they are the height of the 
-  content plus the container.)
+   Then it resizes the x-scrolling-panel so that it is the width of the contained content plus the width of
+  the .x-overflow-container it's in. (Similarly, it resizes y-scrolling-panels such that they are the height
+  of the content plus the container.)
   
-  This ensures that the content can be scrolled up from the point at which the content left edge overlaps the left 
-  edge of the overflow container, to the point at which the content's *right edge* overlaps the left edge of the 
-  overflow container. (For y-scrolling case, substitute "top" for "left" and "bottom" for "right".)
-
-  NOTE the size of the content to be scrolled should never change; this function examines the original height
-  and width of the content and caches them before it modifies the .x(y)-overflow-container sizes; subsequent calls
-  use the cached values. This is necessary because in the case of an x-overflow-container nested in a
-  y-overflow-container, or vice versa, the function will modify the apparent height or width of the inner container
-  making it impossible in general to know how to add up the dimensions of the content that is enclosed by the outer
-  container, but not the inner, with the dimensions of the content that is enclosed by both containers. 
+   This ensures that the content can be scrolled up from the point at which the content left edge overlaps the
+  left edge of the overflow container, to the point at which the content's *right edge* overlaps the left edge
+  of the overflow container. (For y-scrolling case, substitute "top" for "left" and "bottom" for "right".)
+  
+   NOTE the size of the content to be scrolled should never change; this function examines the original height
+  and width of the content and caches them before it modifies the .x(y)-overflow-container sizes; subsequent
+  calls use the cached values. This is necessary because in the case of an x-overflow-container nested in a
+  y-overflow-container, or vice versa, the function will modify the apparent height or width of the inner
+  container making it impossible in general to know how to add up the dimensions of the content that is
+  enclosed by the outer container, but not the inner, with the dimensions of the content that is enclosed by
+  both containers.
  
 */
   
