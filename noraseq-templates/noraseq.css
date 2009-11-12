@@ -53,7 +53,7 @@ However, inline display causes h2 margin to overspill the containing div, causin
                   cursor: pointer; 
                     }
                   
-.column-labels-table-row { height: 12px; }
+.column-labels-table-row { height: 20px; }
 .column-labels-table-row > th { width: 16px; 
                                 padding: 0;
                                 background-color: #ebead3;

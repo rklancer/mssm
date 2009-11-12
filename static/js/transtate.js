@@ -342,23 +342,6 @@ var tstate = (function () {
     return tstate;
 }());
 
-/*
-
-what needs to change:
-
-1. throw an exception if no node found
-
-2. callback should:
-
- 1. notify down tree (do the on_change events)
- 2. *rebuild* tree
- 
-3. tstate "on_change" should be register a list of names like "parent.child1.child2"
-
-4. use bbq plugin for changes?
-
-*/
-
 
 setup = function () {
     r = {"bval": 1};
@@ -393,7 +376,3 @@ setup = function () {
         tstate("base.url").set( ... )       // not every property gets a "set" method
 */
 
-
-// in listener
-// making callback
-// calling callback

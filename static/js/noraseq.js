@@ -2,83 +2,19 @@ $(document).ready(function() {
     $("#stats-panel").tabs();
     
     $('#stats-panel ul.ui-tabs-nav a').click(function(){
-        var state = {},
-        // Get the index of this tab.
         idx = $(this).parent().prevAll().length;
-
-        // Set the state!
-        state['stats-panel'] = idx;
-        $.bbq.pushState( state );
-
-        // And finally, prevent the default link click behavior by returning false.
+        $.bbq.pushState({'stats-panel': idx});
         return false;
     });
 
     $(window).bind('hashchange', function (e) {
+        $('#stats-panel').each(function(){
+            var idx = $.bbq.getState(this.id, true) || 0;
+            $(this).tabs('select', idx);
+        });
+    });
 
-      // Iterate over all tab widgets.
-      $('#stats-panel').each(function(){
-
-        // Get the index for this tab widget from the hash, based on the
-        // appropriate id property. In jQuery 1.4, you should use e.getState()
-        // instead of $.bbq.getState(). The second, 'true' argument coerces the
-        // string value to a number.
-        var idx = $.bbq.getState(this.id, true) || 0;
-
-        // Select the appropriate tab for this tab widget (you could keep track of
-        // what tab each widget is on using .data, and only select a tab if it has
-        // changed).
-        $(this).tabs('select', idx );
-      });
-    })
-
-    // Since the event is only triggered when the hash changes, we need to trigger
-    // the event now, to handle the hash the page may have loaded with.
     $(window).trigger('hashchange');
-    
-    
-    $("#moveup").click( function () {
-        $("#sequence-content-panel .y-overflow-container").animate({scrollTop: 300}, 1000);
-    });
-    
-    $("#movedown").click( function () {
-        $("#sequence-content-panel .y-overflow-container").animate({scrollTop: 0}, 1000);
-    });
-    
-    /* test speed of interactive responses to click event on table cells (uses event delegation to bind
-        handler once, to #sequence-table.) */
-        
-    $("#sequence-table").mousedown( function (e) {
-        var td = $(e.target).closest("td").not(".gap");        
-        
-        td.addClass("commented");
-        
-        /*
-        if (td) {
-            var done = function () {
-                td.removeClass("commented").unbind('mouseleave.test-event-delegation')
-                    .unbind('mouseup.test-event-delegation');
-            };
-            
-            // use .test-event-delegation namespace for the events we bind so that later we unbind just the handler
-            // below. Another option is for done() to pass to unbind() a reference to itself...
-            
-            td.addClass("commented").bind("mouseleave.test-event-delegation", done).bind("mouseup.test-event-delegation", done);
-        }
-        */
-        
-    });
-    
-    
-    $("#sequence-table").mouseover( function (e) {
-        var td = $(e.target).closest("td").not(".gap");
-        
-        td.addClass("hovered-cell").bind("mouseout.noraseq-hover", function () {
-            td.removeClass("hovered-cell").unbind("mouseout.noraseq-hover");
-        });                
-    });
-    
-    
     
     $("#column-labels-table").mouseover( function (e) {
         var th = $(e.target).closest("th");
