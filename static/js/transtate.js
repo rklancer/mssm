@@ -2,9 +2,19 @@ var tstate = (function () {
 
     var history_listeners = {};
     var inited = false;
-    var tree = {}; // check on this?
+    var tree = {};
+    var undefined;
+    
+    var init = function () {
+        if (!inited) {
+            console.log("initial trigger of hashchange event");
+            $(window).trigger("hashchange");
+            inited = true;
+        }
+    };
+    
+        
     var on_change_mapping = {
-        // FIXME: define a subobject to contain the mapping, so add doesn't share the same namespace with the paths.
         add: function (path, action) {
             if (!(this.mapping.hasOwnProperty(path))) {
                 this.mapping[path] = [];
@@ -37,86 +47,6 @@ var tstate = (function () {
             children: {},
             on_change_actions: []
         };
-    };
-
-
-    var get_raw_hash = function () {
-
-        // Note MDC docs indicate Firefox has a bug in location.hash; it improperty decodes hash component.
-        // However location.href does not, allowing us to uri-encode and uri-decode as desired.
-
-        return (/#(.*)$/).exec(location.href)[1];
-    };
-
-
-    var raw_hash_to_dict = function (hash) {
-        var re = /([^=&]+)=?([^&]+)/g;
-        var re_results;
-        var hash_dict = {};
-        var key, val;
-
-        while ((re_results = re.exec(hash)) !== null) {
-            key = decodeURIComponent(re_results[1]);
-            val = decodeURIComponent(re_results[2]);
-            hash_dict[key] = val;
-        }
-
-        return hash_dict;
-    };
-
-
-    var history_callback = function (hash) {
-
-        var hash_dict = raw_hash_to_dict(get_raw_hash());
-        var listeners;
-        var key;
-
-        for (key in hash_dict) {
-            if (hash_dict.hasOwnProperty[key] && history_listeners[key]) {
-                listeners = history_listeners[key];
-
-                for (var i = 0; i < listeners.length; i++) {
-                    listeners[i](hash_dict[key]);
-                }
-            }
-        }
-    };
-
-
-    // NOTE we'll want to use a modified version of the history plugin, or write our own, so that the callback
-    // does not get called after changing the hash.
-
-    var write_to_hash = function (key, val) {
-
-        var hash_dict = raw_hash_to_dict(get_raw_hash);
-
-        hash_dict[key] = val;
-
-        // Javascript offers no guarantees as to the order in which we iterate keys, so enforce an ordering
-        var keys = [];
-        var hkey;
-
-        for (hkey in hash_dict) {
-            if (hash_dict.hasOwnProperty(hkey)) {
-                keys.push(hkey);
-            }
-        }
-        keys.sort();
-
-        var new_hash = [];
-
-        for (var i = 0; i < keys.length; i++) {
-            new_hash.push([
-                encodeURIComponent(keys[i]),
-                "=",
-                encodeURIComponent(hash_dict[keys[i]])
-            ].join(""));
-        }
-
-        new_hash = new_hash.join("&");
-
-        console.log("loading " + new_hash + "into url");
-        //$.history.load(new_hash);
     };
 
 
@@ -161,10 +91,10 @@ var tstate = (function () {
         node.path = (parent.path === "") ? node.name : parent.path + "." + node.name;
         node.parent = parent;
         node.callback = function () {
-            console.log("in listener for node" + node);
+            console.log("in node-change callback");
+            parent.children[name] = subtree(name, parent);
             notify(node.path);
             remove_callbacks(node);
-            parent.children[name] = subtree(name, parent);
         };
         parent.val.register_listener(name, node.callback);
         
@@ -176,21 +106,15 @@ var tstate = (function () {
     var add_children = function (node) {
         var child_name;
         
-        if (typeof(node.val) === "object" && node.val.hasOwnProperty("get_properties")) {
+        // note the below has to check if node.val === null because (absurdly) typeof(null) is "object"
+        if (typeof(node.val) === "object" 
+              && node.val !== null
+              && node.val.hasOwnProperty("get_properties")) {
             var props = node.val.get_properties();
             for (var i= 0; i < props.length; i++) {
                 child_name = props[i];
                 node.children[child_name] = subtree(child_name, node);
             }
-        }
-    };
-
-
-    var init = function () {
-        if (!inited) {
-            console.log("initing jquery history with history_callback");
-            //$.history.init(history_callback);
-            inited = true;
         }
     };
 
@@ -204,26 +128,39 @@ var tstate = (function () {
 
         init();
 
-        // note we define these here, now, so they are wrapped in a closure with access to the correct value
-        // of "node"
-        
 
         var methods_to_add = {
             val: function () {
                 return node.val;
             },
+            
             on_change: function (action) {
-                
-                // NOTE for doc: actions are not allowed to refer to "this".
+                // NOTE for doc: actions are not allowed to refer to "this"?
                 on_change_mapping.add(path, action);
             },
+            
             hist: function (hash_key) {
-                node.on_change(function () {
-                    write_to_hash(hash_key, node.val);
+                on_change_mapping.add(path, function () {
+                    var node = get_node(path);
+                    var new_state = {};
+                    new_state[hash_key] = node.val;
+                    
+                    console.log("writing state '" + node.val + "' to key '" + hash_key + "'.");
+                    
+                    $.bbq.pushState(new_state);
                 });
 
-                tstate.history_listeners[hash_key].push(function (hash_val) {
-                    node.val.set(hash_val);
+                $(window).bind('hashchange', function (e) {
+                    
+                    // FIXME: unsure what to do if state isn't *in* hash to start with.
+                    
+                    var new_val = $.bbq.getState(hash_key, true) || '';
+                    var node = get_node(path);
+                    console.log("read state '" + new_val + "' from key '" + hash_key + "'.");
+                    if (new_val !== node.val) {
+                        console.log("  (state changed, old val was '" + node.val + "'.)");
+                        node.parent.val.set(node.name, new_val);
+                    }
                 });
             }
         };
@@ -277,7 +214,8 @@ var tstate = (function () {
         var props;
         var listeners = {};
         var setters = {};
-
+        var undefined;
+        
 
         obj.get_properties = function () {
             var prop;
@@ -339,9 +277,9 @@ var tstate = (function () {
             }
             props[prop] = val;
 
-            var listener, nlisteners;
+            var listener;
             if (listeners.hasOwnProperty(prop)) {
-                for (var i = 0; i <listeners[prop].length; i++) {
+                for (var i = 0; i < listeners[prop].length; i++) {
                     console.log("calling listener, i = " + i);
                     listeners[prop][i]();
                 }
@@ -427,12 +365,15 @@ setup = function () {
     pm = tstate.add_property_manager(r);
     pm.add("child1", "child2");
     pm.set("child1", "v1");
-    c2 = {"c2val": 2}
+    c2 = {"c2val": 2};
     pm2 = tstate.add_property_manager(c2);
     pm2.add("child2child");
     pm2.set("child2child", "v2");
     pm.set("child2", c2);
     tstate.root(r);
+    
+    pm2.settable("child2child");
+    tstate("child2.child2child").hist("c2c");
 };
 
 

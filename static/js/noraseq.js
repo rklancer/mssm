@@ -1,6 +1,42 @@
 $(document).ready(function() {
     $("#stats-panel").tabs();
     
+    $('#stats-panel ul.ui-tabs-nav a').click(function(){
+        var state = {},
+        // Get the index of this tab.
+        idx = $(this).parent().prevAll().length;
+
+        // Set the state!
+        state['stats-panel'] = idx;
+        $.bbq.pushState( state );
+
+        // And finally, prevent the default link click behavior by returning false.
+        return false;
+    });
+
+    $(window).bind('hashchange', function (e) {
+
+      // Iterate over all tab widgets.
+      $('#stats-panel').each(function(){
+
+        // Get the index for this tab widget from the hash, based on the
+        // appropriate id property. In jQuery 1.4, you should use e.getState()
+        // instead of $.bbq.getState(). The second, 'true' argument coerces the
+        // string value to a number.
+        var idx = $.bbq.getState(this.id, true) || 0;
+
+        // Select the appropriate tab for this tab widget (you could keep track of
+        // what tab each widget is on using .data, and only select a tab if it has
+        // changed).
+        $(this).tabs('select', idx );
+      });
+    })
+
+    // Since the event is only triggered when the hash changes, we need to trigger
+    // the event now, to handle the hash the page may have loaded with.
+    $(window).trigger('hashchange');
+    
+    
     $("#moveup").click( function () {
         $("#sequence-content-panel .y-overflow-container").animate({scrollTop: 300}, 1000);
     });
