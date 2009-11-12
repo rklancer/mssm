@@ -51,7 +51,7 @@ def deleted(request):
 
 
 def noraseq_viewer(request, alignment_id):
-
+    
     alignment = get_object_or_404(Alignment, pk=alignment_id)
     context = { 'alignment': alignment, 
                 'header_row': range(1,alignment.length+1),
@@ -61,7 +61,6 @@ def noraseq_viewer(request, alignment_id):
                         'alignment_id': alignment.id
                     })
                 }
-
     return render_to_response('noraseq/noraseq_viewer.html', context, RequestContext(request))
     
 

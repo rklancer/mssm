@@ -3,17 +3,27 @@ var tstate = (function () {
     var history_listeners = {};
     var inited = false;
     var tree = {}; // check on this?
+    var on_change_mapping = {
+        add: function (path, action) {
+            if (!(this.hasOwnProperty(path))) {
+                this[path] = [];
+            }
+            this[path].push(function () {
+                action.apply(get_node(path).val, arguments);
+            });
+        }        
+    };
 
 
-    var get_node = function (selector) {
+    var get_node = function (path) {
         var node = tree;
-
-        selector = selector.split(".");
-
-        for (var i = 0; i < selector.length; i++) {
-            node = node.children[selector[i]];
+        path = path.split(".");
+        for (var i = 0; i < path.length; i++) {
+            node = node.children[path[i]];
+            if (node === undefined) {
+                throw "path " + path + " not found.";
+            }
         }
-
         return node;
     };
 
@@ -21,7 +31,8 @@ var tstate = (function () {
     var new_node = function () {
         return {
             name: "",
-            obj: null,
+            path: "",
+            val: null,
             parent: null,
             children: {},
             on_change_actions: []
@@ -104,74 +115,75 @@ var tstate = (function () {
 
         new_hash = new_hash.join("&");
 
-        $.history.load(new_hash);
+        console.log("loading " + new_hash + "into url");
+        //$.history.load(new_hash);
     };
 
 
-    /* notify_down_tree(node):
-
-        Call the on_change_actions for this node and all its descendants. This way, if 'seq-table.instance' is
-        set, on_change listeners for 'seq-table.instance' are called, as are those for
-        'seq-table.instance.groups-def.grouping', and all the other descendant nodes.
-    */
-
-    var notify_down_tree = function (node) {
-        var child_name;
-
-        for (var i = 0; i < node.on_change_actions.length; i++) {
-            node.on_change_actions[i]();
+    var notify = function (path) {
+        var actions = on_change_mapping[path];
+        
+        if (actions !== undefined) {
+            for (var i = 0; i < actions.length; i++) {
+                actions[i]();
+            }
         }
-
+        
+        var child_name;
+        var node = get_node(path);        
         for (child_name in node.children) {
             if (node.children.hasOwnProperty(child_name)) {
-                notify_down_tree(node.children[child_name]);
+                notify(node.children[child_name].path);
             }
         }
     };
-
-
-    var bind_callbacks_and_values;
     
     
-    /* make_callback(node):
-
-        Return a change-listener callback function that can be attached to node. When the property value
-        corresponding to node is set, the callback will be called, triggering 1) a rebinding of the callbacks
-        and cached property values at node to its descendants, and 2) execution of the on_change_action(s) for
-        node and all its descendants. */
-
-    var make_callback = function (node) {
-        return function () {
-            bind_callbacks_and_values(node);
-            notify_down_tree(node);
-        };
-    };
-
-
-    /* bind_callbacks_and_values(node):
-
-        Assuming node has changed, descend tree from node, recording the new values of each tree node,
-        unbinding the change listener associated with whatever property used to be at that node, and binding a
-        new change listener to whatever property/object is now present at that node. */
-
-    bind_callbacks_and_values = function (node) {
-
+    var remove_callbacks = function (node) {
         var parent, child_name;
-
+        
         if (node.parent) {
             // root node doesn't have/need a callback.
             parent = node.parent.val;
-            parent.unregister_listener(node.name, node.callback);
-
-            node.callback = make_callback(node);
-            parent.register_listener(node.name, node.callback);
-
-            node.val = parent.get(node.name);
+            parent.remove_listener(node.name, node.callback);
         }
-
+        
         for (child_name in node.children) {
             if (node.children.hasOwnProperty(child_name)) {
-                bind_callbacks_and_values(node.children[child_name]);
+                remove_callbacks(node.children[child_name]);
+            }
+        }
+    };
+    
+    
+    var subtree = function (name, parent) {
+        var node = new_node();
+        node.val = parent.val.get(name);
+
+        node.name = name;
+        node.path = (parent.path === "") ? node.name : parent.path + "." + node.name;
+        node.parent = parent;
+        node.callback = function () {
+            console.log("in listener for node" + node);
+            notify(node.path);
+            remove_callbacks(node);
+            parent.children[name] = subtree(name, parent);
+        };
+        parent.val.register_listener(name, node.callback);
+        
+        add_children(node);
+        return node;
+    };
+    
+    
+    var add_children = function (node) {
+        var child_name;
+        
+        if (typeof(node.val) === "object" && node.val.hasOwnProperty("get_properties")) {
+            var props = node.val.get_properties();
+            for (var i= 0; i < props.length; i++) {
+                child_name = props[i];
+                node.children[child_name] = subtree(child_name, node);
             }
         }
     };
@@ -179,15 +191,16 @@ var tstate = (function () {
 
     var init = function () {
         if (!inited) {
-            $.history.init(history_callback);
+            console.log("initing jquery history with history_callback");
+            //$.history.init(history_callback);
             inited = true;
         }
     };
-    
-    
-    var tstate = function (selector) {
 
-        var node = get_node(selector);
+
+    var tstate = function (path) {
+
+        var node = get_node(path);
 
         var tstate_object = {};
         var method_name;
@@ -197,16 +210,14 @@ var tstate = (function () {
 
         // note we define these here, now, so they are wrapped in a closure with access to the correct value
         // of "node"
+        
 
         var methods_to_add = {
             val: function () {
                 return node.val;
             },
-
             on_change: function (action) {
-                node.on_change_actions.push(function () {
-                    action.apply(node.val, arguments);
-                });
+                on_change_mapping.add(path, action);
             },
             // make a second on_change_action for history; no unregistering?
 
@@ -225,8 +236,8 @@ var tstate = (function () {
         if (typeof(node.val) === "object" || typeof(node.val) === "function") {
 
             /* For convenience, copy methods from node.val to tstate_object, except any named "val",
-               "on_change", etc. so you can do tstate("selector").method() (if method is named "on_change" for
-               some reason, you have to do tstate("selector").val().on_change()) */
+               "on_change", etc. so you can do tstate("path").method() (if method is named "on_change" for
+               some reason, you have to do tstate("path").val().on_change()) */
 
             for (method_name in node.val) {
                 if (node.val.hasOwnProperty(method_name) &&
@@ -250,7 +261,6 @@ var tstate = (function () {
             }
         }
 
-
         return tstate_object;
     };
 
@@ -258,31 +268,10 @@ var tstate = (function () {
     // need to cache values in tree so we're not walking the tree for every recursive call to bind_callbacks
 
     tstate.root = function (root_obj) {
-
-        tree = new_node();
-
-        var build_tree = function (node, obj) {
-            var props, prop_name, child_node;
-
-            if (typeof(obj) === "object" && obj.hasOwnProperty("get_properties")) {
-                props = obj.get_properties();
-                for (var i= 0; i < props.length; i++) {
-                    prop_name = props[i];
-
-                    child_node = new_node();
-                    child_node.name = prop_name;
-                    child_node.parent = node;
-
-                    node.children[prop_name] = child_node;
-
-                    build_tree(child_node, obj.get(prop_name));
-                }
-            }
-        };
-
-        build_tree(tree, root_obj);
-
-        bind_callbacks_and_values(tree);
+        var root_node = new_node();
+        root_node.val = root_obj;
+        add_children(root_node);
+        tree = root_node;
     };
 
 
@@ -323,11 +312,11 @@ var tstate = (function () {
         };
 
 
-        obj.unregister_listener = function (prop, listener) {
+        obj.remove_listener = function (prop, listener) {
             if (listeners[prop]) {
-                for (var i = 0; i < listeners.length; i++) {
+                for (var i = 0; i < listeners[prop].length; i++) {
                     if (listeners[prop][i] === listener) {
-                        listeners.splice(i,1);
+                        listeners[prop].splice(i,1);
                         return;
                     }
                 }
@@ -351,13 +340,16 @@ var tstate = (function () {
 
 
         mgr.set = function (prop, val) {
+            if (!props.hasOwnProperty(prop)) {
+                throw "Property " + prop + " not found.";
+            }
             props[prop] = val;
 
-            var listener;
-
-            for (listener in listeners[prop]) {
-                if (listeners.hasOwnProperty(listener)) {
-                    listeners[listener]();
+            var listener, nlisteners;
+            if (listeners.hasOwnProperty(prop)) {
+                for (var i = 0; i <listeners[prop].length; i++) {
+                    console.log("calling listener, i = " + i);
+                    listeners[prop][i]();
                 }
             }
         };
@@ -418,6 +410,36 @@ var tstate = (function () {
     return tstate;
 }());
 
+/*
+
+what needs to change:
+
+1. throw an exception if no node found
+
+2. callback should:
+
+ 1. notify down tree (do the on_change events)
+ 2. *rebuild* tree
+ 
+3. tstate "on_change" should be register a list of names like "parent.child1.child2"
+
+4. use bbq plugin for changes?
+
+*/
+
+
+setup = function () {
+    r = {"bval": 1};
+    pm = tstate.add_property_manager(r);
+    pm.add("child1", "child2");
+    pm.set("child1", "v1");
+    c2 = {"c2val": 2}
+    pm2 = tstate.add_property_manager(c2);
+    pm2.add("child2child");
+    pm2.set("child2child", "v2");
+    pm.set("child2", c2);
+    tstate.root(r);
+};
 
 
 /* note usages:
@@ -435,3 +457,8 @@ var tstate = (function () {
         // "set" method so that--for those properties which are relevant--the following can work:
         tstate("base.url").set( ... )       // not every property gets a "set" method
 */
+
+
+// in listener
+// making callback
+// calling callback
