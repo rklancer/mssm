@@ -33,9 +33,9 @@
 
 <body>
 	<div id="header">
-		<h1>NORA<span style="font-weight: bold">Seq</span> 
-		  <div style="width: 500px; display: inline; font-size: 75%; margin-left: 3em; color: #666666;">Analyzing: <span style="background-color: #eeeeaa; font-style: italic">Serpins</span></div>
-	  </h1>
+		<h1>
+		    NORA<span style="font-weight: bold">Seq</span>
+		</h1>
 	</div>
 	<hr>
 	<div id="admin" class="noraseq-admin">
@@ -147,8 +147,6 @@
 		
 		<button id="display-none" type="button">set display: none</button>
 	-->
-	<button id="moveup" type="button">move up</button>
-	<button id="movedown" type="button">move down</button>
 
 
 	<div id="sequence-panel">
@@ -191,30 +189,9 @@
 						<div class="y-overflow-container">
 							<div class="scrolling-panel"> 
 								<div class="scrolling-content">
-									{% comment %}
-									
-									<table id="sequence-table">	
-										{% spaceless %}
-										<thead>
-											<tr class="sequence-table-row">
-												{% for col in header_row %}
-												<th></th>
-												{% endfor %}
-											</tr>
-										</thead>
-										<tbody>
-										{% for row in alignment_rows %}
-										<tr class="r{{row.row_num}} sequence-table-row">
-											{% for residue in row.filtered_sequence %}
-											<td class="c{{residue.col_num}}{% if residue.is_gap %} gap{% endif %}">{{residue.abbrev}}</td>
-											{% endfor %}
-										</tr>
-										{% endfor %}
-										</tbody>
-										{% endspaceless %}
-									</table>
-									
-									{% endcomment %}
+                                    
+                                    <!-- sequence table goes here -->
+                                    
 								</div> <!-- scrolling-content -->
 							</div> <!-- scrolling-panel -->
 						</div> <!-- y-overflow-container -->

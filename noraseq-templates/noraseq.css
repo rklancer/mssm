@@ -1,73 +1,183 @@
-html { overflow: hidden; }
+html {
+    overflow: hidden;
+}
 
-body { font-size: small; padding: 0; margin: 0; }
+body {
+    font-size: 12px;
+    padding: 0;
+    margin: 0;
+    font-family: Verdana, Arial, sans-serif;
+}
 
-#header h1 { font-weight: normal; font-family: Verdana, Arial, sans-serif; font-size: 250%;  
-             color: #888888; 
-             margin: 0.2em 0.2em 0.2em 0.2em; }
+#header h1 {
+    font-weight: normal;
+    font-size: 2.5em;
+    color: #888888;
+    margin: 0.2em 0.2em 0.2em 0.2em;
+}
 
-.noraseq-admin { font-size: 11px; margin-left: 1em; }
+.noraseq-admin {
+    font-size: 1em;
+    margin-left: 1em;
+}
 
-/* Display h2 inline so that "option links" (e.g., <a>sort</a> | <a>unsort</a>) can be floated right, yet
-share the same text baseline as the h2.
+.noraseq-admin .ui-widget {
+    font-size: 1.0em;           /* overwrite jquery ui css */
+}
 
-However, inline display causes h2 margin to overspill the containing div, causing layout problems; therefore style "header-block" divs, instead of h2s, to get margins and padding. */
+.noraseq-admin p {
+    margin-left: 1em;
+    margin-top: 0.5em;
+    margin-bottom: 0.3em;
+}
 
-.noraseq-admin h2 { display: inline; padding: 0; margin: 0; font-size: 1.3em;  font-weight: normal; }	
-.noraseq-admin .header-block { display: block; margin-top: 0.2em; margin-bottom: 0.8em; }
-.noraseq-admin .header-block .option-link { float: right; }
+.noraseq-admin .ghosted {
+    color: #aaaaaa;
+}
 
-.noraseq-admin p { margin-left: 1em; margin-top: 0.5em; margin-bottom: 0.3em;}
 
-.option-link { font-size: 0.9em; }
-.option-link > p { display: inline; }
-.option-link > a { color: #0000ee; text-decoration: none; }
-.option-link > a:visited { color: #0000ee; }
-.option-link > a:hover { text-decoration: underline; }
-.noraseq-admin .ghosted { color: #aaaaaa; }
+/* Display h2 inline so that "option links" (e.g., <a>sort</a> | <a>unsort</a>) can
+   be floated right, yet share the same text baseline as the h2. However, inline display causes h2 margin to
+   overspill the containing div, causing layout problems; therefore style "header-block" divs, instead of
+   h2s, to get margins and padding. */
 
-#stats-panel { background: transparent; border: 0; margin-bottom: 1em; }
-#stats-panel .ui-tabs-panel { background-color: #eeeeee; border: 1px solid #cccccc; }
-#stats-panel ul { margin-left: 1em; background: transparent; border: 0; }
+.noraseq-admin h2 {
+    display: inline;
+    padding: 0;
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: normal;
+}
 
-#stats-panel > div { float: left; }
+.noraseq-admin .header-block {
+    display: block;
+    margin-top: 0.2em;
+    margin-bottom: 0.8em;
+}
 
-.admin-display-cell { float: left; }
-.column-score-histogram { float: left; width: 200px; height: 150px; background-color: #ffffff; }
-.column-by-score { float: left; width: 250px; height: 150px; background-color: #ffffff; }
-.selected-column-histogram { float: left; width: 200px; height: 150px; background-color: #ffffff; }
+.noraseq-admin .header-block .option-link {
+    float: right;
+}
 
-.x-overflow-container { overflow: hidden; }
-.y-overflow-container { overflow: hidden; }
 
-#row-label-control { background-color: #e8ecf9; }
-#column-labels { background-color: #d5ddf3; height: 30px; width: 100%; position: relative; }
+.option-link {
+    font-size: 0.9em;
+}
 
-#column-labels-table { table-layout: fixed;
-                  background: transparent; 
-                  border-spacing: 0px;
-                  border-collapse: separate; 
-                  position: absolute; 
-                  bottom: 0px;  
-                  left: 0px;
-                  cursor: pointer; 
-                    }
-                  
-.column-labels-table-row { height: 20px; }
-.column-labels-table-row > th { width: 16px; 
-                                padding: 0;
-                                background-color: #ebead3;
-                                border-color: #babfcf;
-                                border-style: solid solid none none;
-                                border-width: 1px;
-                                -moz-border-radius-topleft: 5px;
-                                -webkit-border-top-left-radius: 5px;
-                                border-top-left-radius: 5px;
-                                -moz-border-radius-topright: 5px;
-                                -webkit-border-top-right-radius: 5px;
-                                border-top-right-radius: 5px;                                
-                              }
-                              
+.option-link > p {
+    display: inline;
+}
+
+.option-link > a {
+    color: #0000ee;
+    text-decoration: none;
+}
+
+.option-link > a:visited {
+    color: #0000ee;
+}
+
+.option-link > a:hover {
+    text-decoration: underline;
+}
+
+
+#stats-panel {
+    background: transparent;
+    border: 0;
+    margin-bottom: 6px;
+}
+
+#stats-panel .ui-tabs-panel {
+    background-color: #eeeeee;
+    border: 1px solid #cccccc;
+}
+
+#stats-panel ul {
+    margin-left: 1em;
+    background: transparent;
+    border: 0;
+}
+
+#stats-panel > div {
+    float: left;
+}
+
+
+.admin-display-cell {
+    float: left;
+}
+
+.column-score-histogram {
+    float: left;
+    width: 200px;
+    height: 150px;
+    background-color: #ffffff;
+}
+
+.column-by-score {
+    float: left;
+    width: 250px;
+    height: 150px;
+    background-color: #ffffff;
+}
+
+.selected-column-histogram {
+    float: left;
+    width: 200px;
+    height: 150px;
+    background-color: #ffffff;
+}
+
+.x-overflow-container {
+    overflow: hidden;
+}
+
+.y-overflow-container {
+    overflow: hidden;
+}
+
+#row-label-control {
+    background-color: #e8ecf9;
+}
+
+#column-labels {
+    background-color: #d5ddf3;
+    height: 30px;
+    width: 100%;
+    position: relative;
+}
+
+#column-labels-table {
+    table-layout: fixed;
+    background: transparent;
+    border-spacing: 0px;
+    border-collapse: separate;
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    cursor: pointer;
+}
+
+.column-labels-table-row {
+    height: 20px;
+}
+
+.column-labels-table-row > th {
+    width: 16px;
+    padding: 0;
+    background-color: #ebead3;
+    border-color: #babfcf;
+    border-style: solid solid none none;
+    border-width: 1px;
+    -moz-border-radius-topleft: 5px;
+    -webkit-border-top-left-radius: 5px;
+    border-top-left-radius: 5px;
+    -moz-border-radius-topright: 5px;
+    -webkit-border-top-right-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
 .column-labels-table-row > .selected {
     background-color: #CFBD87;
 }
@@ -107,56 +217,91 @@ However, inline display causes h2 margin to overspill the containing div, causin
     background-color: #dfd2ab;
 }
 
-/* the ridiculous width of #sequence-panel is necessary to make sure #row-label-panel and #sequence-content-panel
-     always float next to each other, no matter how wide #sequence-content-panel becomes (and it may become very 
-     wide when it contains a long sequence alignment...) */
-     
-#sequence-panel { width: 100000px; }
-#row-label-panel { float: left; width:200px; height: 500px; background-color: #cccccc; color: black;}
-#sequence-content-panel { float: left; }
+/* the ridiculous width of #sequence-panel is necessary to make sure #row-label-panel and
+   #sequence-content-panel
+   always float next to each other, no matter how wide #sequence-content-panel becomes (and it may become very
+   wide when it contains a long sequence alignment...) */
 
-#sequence-table { table-layout: fixed;
-                  background-color: #efefe0; 
-                  border-spacing: 0px;
-                  border-collapse: separate; 
-                  font-family: "Verdana"; 
-                  font-size: 12px; 
-                  color: #333333;
-                  cursor: pointer;  }
-                  
-
-.sequence-table-row > th { padding: 0px 1px; width: 15px; }
-                  
-                  
-.sequence-table-row > td { text-align: center; 
-                           background-color: #ebead3; 
-                           border: 1px solid #ebead3; 
-                           padding: 0; }
-                           
-.sequence-table-row > .gap { background: transparent; 
-                             color: #efefe0;            /* invisible, but selectable and 'web-scrapable' */
-							 border-color: #E6E5C6 #efefe0 #efefe0 #efefe0; /* alternately #EBE9B8*/
-                             cursor: default; }
-
-.sequence-table-row > .selected.commented { 
-                         /*background-color: #CFBD87; color: yellow; */
-                         background-color: #ffff80; color: #666666;
+#sequence-panel {
+    width: 100000px;
 }
-                             
-.sequence-table-row > .commented { /*border-width: 2px 1px 1px 1px; border-color: yellow #cccccc #cccccc #cccccc; */
-                            background-color: #ffff80;
+
+#row-label-panel {
+    float: left;
+    width:200px;
+    height: 500px;
+    background-color: #cccccc;
+    color: black;
+}
+
+#sequence-content-panel {
+    float: left;
+}
+
+#sequence-table {
+    table-layout: fixed;
+    background-color: #efefe0;
+    border-spacing: 0px;
+    border-collapse: separate;
+    font-family: "Verdana";
+    font-size: 12px;
+    color: #333333;
+    cursor: pointer;
+}
+
+
+.sequence-table-row > th {
+    padding: 0px 1px;
+    width: 15px;
+}
+
+
+.sequence-table-row > td {
+    text-align: center;
+    background-color: #ebead3;
+    border: 1px solid #ebead3;
+    padding: 0;
+}
+
+.sequence-table-row > .gap {
+    background: transparent;
+    color: #efefe0;                                  /* invisible, but selectable and 'web-scrapable' */
+    border-color: #E6E5C6 #efefe0 #efefe0 #efefe0;   /* alternately #EBE9B8*/
+    cursor: default;
+}
+
+.sequence-table-row > .selected.commented {
+    /*background-color: #CFBD87; color: yellow; */
+    background-color: #ffff80; color: #666666;
+}
+
+.sequence-table-row > .commented {
+    background-color: #ffff80;
 }
 
 /* helpers */
 
 /* add this class to remove pesky left margin from leftmost inline element */
-.noraseq-left-align { margin-left: 0px; }
+.noraseq-left-align {
+    margin-left: 0px;
+}
 
-.noraseq-vrule { float: left; margin: 10px 20px 10px 20px; width:1px; height: 150px; background-color: #cccccc; }
+.noraseq-vrule {
+    float: left;
+    margin: 10px 20px 10px 20px;
+    width:1px;
+    height: 150px;
+    background-color: #cccccc;
+}
 
 /* add this class temporarily to visualize the border of a div */
-.noraseq-border-helper { border: 1px solid #333333; }
+.noraseq-border-helper {
+    border: 1px solid #333333;
+}
 
-/* use this class to make non-floated container stretch to height of any floated divs it contains 
+/* use this class to make non-floated container stretch to height of any floated divs it contains
    (usage: add an empty div with this class after all floated divs) */
-.noraseq-bottom-anchor { float: none; clear: both; }
+.noraseq-bottom-anchor {
+    float: none;
+    clear: both;
+}
