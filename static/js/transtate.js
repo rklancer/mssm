@@ -4,13 +4,12 @@ var tstate = (function () {
     var inited = false;
     var tree = {}; // check on this?
     var on_change_mapping = {
+        // FIXME: define a subobject to contain the mapping, so add doesn't share the same namespace with the paths.
         add: function (path, action) {
-            if (!(this.hasOwnProperty(path))) {
-                this[path] = [];
+            if (!(this.mapping.hasOwnProperty(path))) {
+                this.mapping[path] = [];
             }
-            this[path].push(function () {
-                action.apply(get_node(path).val, arguments);
-            });
+            this.mapping[path].push(action);
         }        
     };
 
@@ -120,20 +119,17 @@ var tstate = (function () {
     };
 
 
-    var notify = function (path) {
-        var actions = on_change_mapping[path];
+    var notify = function (notify_path_root) {
+        var actions, path;
         
-        if (actions !== undefined) {
-            for (var i = 0; i < actions.length; i++) {
-                actions[i]();
-            }
-        }
-        
-        var child_name;
-        var node = get_node(path);        
-        for (child_name in node.children) {
-            if (node.children.hasOwnProperty(child_name)) {
-                notify(node.children[child_name].path);
+        for (path in on_change_mapping.mapping) {
+            if (on_change_mapping.mapping.hasOwnProperty(path)) {
+                if(path.substring(0, notify_path_root.length) === notify_path_root) {
+                    actions = on_change_mapping.mapping[path];
+                    for (var i = 0; i < actions.length; i++) {
+                        actions[i]();
+                    }
+                }
             }
         }
     };
@@ -207,7 +203,6 @@ var tstate = (function () {
 
         init();
 
-
         // note we define these here, now, so they are wrapped in a closure with access to the correct value
         // of "node"
         
@@ -217,12 +212,12 @@ var tstate = (function () {
                 return node.val;
             },
             on_change: function (action) {
+                
+                // NOTE for doc: actions are not allowed to refer to "this".
                 on_change_mapping.add(path, action);
             },
-            // make a second on_change_action for history; no unregistering?
-
             hist: function (hash_key) {
-                node.on_change_actions.push(function () {
+                node.on_change(function () {
                     write_to_hash(hash_key, node.val);
                 });
 
@@ -264,8 +259,6 @@ var tstate = (function () {
         return tstate_object;
     };
 
-
-    // need to cache values in tree so we're not walking the tree for every recursive call to bind_callbacks
 
     tstate.root = function (root_obj) {
         var root_node = new_node();
