@@ -10,7 +10,8 @@ var tstate = (function () {
                 this.mapping[path] = [];
             }
             this.mapping[path].push(action);
-        }        
+        },
+        mapping : {}
     };
 
 
