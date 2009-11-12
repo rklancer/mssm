@@ -1,8 +1,197 @@
+var appstate = (function () {
+
+    var that = {};
+    
+    var new_selected_elements = function () {
+
+        var that = {};
+
+        var propmgr = tstate.add_property_manager(that);
+        var set = propmgr.set;
+        propmgr.add("rows", "cols", "cells");
+
+
+        var new_element_set = function () {
+
+            var that = {};
+            var propmgr = tstate.add_property_manager(that);
+            var set = propmgr.set;
+            propmgr.add("serialized", "added", "removed");
+
+            set("serialized", "");
+            set("added", []);
+            set("removed", []);
+
+            var elements = {};
+
+
+            var list_to_dict = function (list) {
+                var dict = {};
+
+                for (var i = 0; i < list.length; i++) {
+                    dict[list[i]] = true;
+                }
+
+                return dict;
+            };
+
+
+            var dict_to_list = function (dict) {
+                var list = [];
+                var item;
+
+                for (item in dict) {
+                    if (dict.hasOwnProperty(item)) {
+                        list.push(item);
+                    }
+                }
+                return list;
+            };
+
+
+            var subtract = function (first, second) {
+                var item;
+                var first_minus_second = [];
+
+                for (item in first) {
+                    if (first.hasOwnProperty(item)) {
+                        if (!second[item]) {
+                            first_minus_second.push(item);
+                        }
+                    }
+                }
+
+                return first_minus_second;
+            };
+
+
+            // set "added" and "removed" but avoid setting "serialized"
+            var set_to = function (new_elts) {
+                var old_elements = elements;
+                elements = list_to_dict(new_elts);
+
+                var added = subtract(elements, old_elements);
+                var removed = subtract(old_elements, elements);
+
+                set("added", added);
+                set("removed", removed);
+
+                return ((added.length + removed.length) > 0);
+            };
+
+
+            // uses a pretty trivial serialization-deserialization protocol: commas!
+            var serialize = function () {
+                return dict_to_list(elements).join(",");
+            };
+
+
+            var deserialize = function (s) {
+                s = s.toString();           // if s has no commas it may be passed in as a number
+                that.set_to(s.split(","));
+            };
+
+
+            that.set_to = function (new_elts) {
+                var changed = set_to(new_elts);
+                if (changed) {
+                    set("serialized", serialize());
+                }
+            };
+
+
+            that.add = function (new_elts) {
+                var added = [];
+                var item;
+
+                for (var i = 0; i < new_elts.length; i++) {
+                    item = new_elts[i];
+
+                    if (!elements[item]) {
+                        elements[item] = true;
+                        added.push(item);
+                    }
+                }
+
+                if (added.length > 0) {
+                    set("added", added);
+                    set("removed", []);
+                    set("serialized", serialize());
+                }
+            };
+
+
+            that.remove = function (to_remove) {
+                var removed = [];
+                var item;
+
+                for (var i = 0; i < to_remove.length; i++) {
+                    item = to_remove[i];
+
+                    delete elements[item];
+                    removed.push(item);
+                }
+
+                if (removed.length > 0) {
+                    set("removed", removed);
+                    set("added", []);
+                    set("serialized", serialize());
+                }
+            };
+
+
+            that.as_list = function () {
+                return dict_to_list(elements);
+            };
+
+
+            // let serialized be a read/write property for the sake of simplicty of history mechanism
+
+            propmgr.setter("serialized", function (s) {
+                deserialize(s);
+            });
+
+
+            return that;
+        };
+
+
+        set("rows", new_element_set());
+        set("cols", new_element_set());
+        set("cells", new_element_set());
+
+
+        return that;
+    };
+
+    that.init = function () {
+
+        var root = {};
+
+        var propmgr = tstate.add_property_manager(root);
+        propmgr.add("selected");
+        var set = propmgr.set;
+
+        set("selected", new_selected_elements());
+
+        tstate.root(root);                          // now tstate("tree") = tree as defined above, etc.
+    };
+
+
+    return that;
+}());
+
+
 $(document).ready(function() {
+    
+    appstate.init();
+
+
+    
     $("#stats-panel").tabs();
     
     $('#stats-panel ul.ui-tabs-nav a').click(function(){
-        idx = $(this).parent().prevAll().length;
+        var idx = $(this).parent().prevAll().length;
         $.bbq.pushState({'stats-panel': idx});
         return false;
     });
@@ -30,17 +219,40 @@ $(document).ready(function() {
     
     
     $("#column-labels-table").click( function (e) {
-        var col_class_selector = "."+$(e.target).attr("className").match(/\b(c\d+)\b/)[1];
-        var col = $(col_class_selector);
         
-        if ($(e.target).hasClass("selected")) {
-            col.removeClass("selected"); 
+        var col_class = $(e.target).attr("className").match(/\b(c\d+)\b/)[1];
+        var col_num = col_class.substring(1,col_class.length)*1
+        
+        if ($("."+col_class).hasClass("selected")) {
+            tstate("selected.cols").remove([col_num]);
         }
-        else {   
-            col.addClass("selected"); 
+        else {
+            tstate("selected.cols").add([col_num]);
         }
     });
+
+    tstate("selected.cols.added").on_change(function () {
+        // probably want to modify on_change so it passes in the new value
+        var added = tstate("selected.cols.added").val()
+        var n_added = added.length;
         
+        for (i = 0; i < n_added; i++) {
+            $(".c" + added[i]).addClass("selected");
+        }            
+    });
+    
+    tstate("selected.cols.removed").on_change(function () {
+        var removed = tstate("selected.cols.removed").val()
+        var n_removed = removed.length;
+        
+        for (i = 0; i < n_removed; i++) {
+            $(".c" + removed[i]).removeClass("selected");
+        }
+    });
+
+    
+    tstate("selected.cols.serialized").hist("scol");
+
     $("#row-label-panel").resizable({'helper': 'ui-state-highlight'});
     
     safely_size_overflow_containers();

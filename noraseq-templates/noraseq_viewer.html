@@ -167,23 +167,22 @@
 				<div class="scrolling-panel">
 					<div class="scrolling-content">
 						<div id="column-labels">
-						  <table id="column-labels-table"  width="{{table_width}}px">
-						    <thead>
-					        <tr class="column-labels-table-row">
-										{% for col_num in header_row %}
-										<th class="c{{col_num}}"></th>
-										{% endfor %}
-					      </thead>
-				      </table>
+						    <table id="column-labels-table"  width="{{table_width}}px">
+    						    <thead>
+    					        <tr class="column-labels-table-row">
+    										{% for col_num in header_row %}
+    										<th class="c{{col_num}}"></th>
+    										{% endfor %}
+    					        </thead>
+				            </table>
 						</div>
 
 						{% comment %}
-						 <!-- comment: if it's desirable to have scroll bars to indicate the scroll
-                        position of the sequence table, one solution is to put the sequence table into a
-                        programmatically-generated iframe that is resized when the window resizes. (Using the more
-                        obvious strategy of placing the sequence table in a *div* that gets resized is problematic
-                        because resizing a div containing a large table can be a very slow operation in Firefox.
-                        Resizing an iframe is immediate.) --> 
+    <!-- comment: if it's desirable to have scroll bars to indicate the scroll position of the sequence
+         table, one solution is to put the sequence table into a programmatically-generated iframe that is
+         resized when the window resizes. (Using the more obvious strategy of placing the sequence table in a
+         *div* that gets resized is problematic because resizing a div containing a large table can be a very
+         slow operation in Firefox. Resizing an iframe is immediate.) -->
                         {% endcomment %}
 
 						<div class="y-overflow-container">

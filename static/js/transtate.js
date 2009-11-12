@@ -91,10 +91,23 @@ var tstate = (function () {
         node.path = (parent.path === "") ? node.name : parent.path + "." + node.name;
         node.parent = parent;
         node.callback = function () {
+            // called whenever parent object's set method is called to change the property represented by this
+            // node
             console.log("in node-change callback");
-            parent.children[name] = subtree(name, parent);
-            notify(node.path);
-            remove_callbacks(node);
+            
+            // ignore the callback from set() if the new value (parent.val.get(name)) is exactly the same
+            // as the old value (node.val). (This is less useful than it might seem given javascript's lack
+            // of a good notion of equality of, for example, arrays;
+            //    [1] == [1] --> false
+            
+            // *** so: allow user to define an equality operator? ***
+            
+            if (node.val !== parent.val.get(name)) {
+                // update the tstate tree with new values *before* notifying observers of the change!                
+                parent.children[name] = subtree(name, parent);  
+                notify(node.path);
+                remove_callbacks(node);
+            }
         };
         parent.val.register_listener(name, node.callback);
         
@@ -162,6 +175,8 @@ var tstate = (function () {
                         node.parent.val.set(node.name, new_val);
                     }
                 });
+                
+                $(window).trigger('hashchange');
             }
         };
 
