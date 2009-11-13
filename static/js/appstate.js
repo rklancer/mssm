@@ -121,7 +121,7 @@ var appstate = (function () {
 
         that.seturl_success = function (html, status) {
             var jq_base = $(html);
-
+            
             tstate("tree").set_instance_url( jq_base.find("a[rel='tree']").attr("href") );
             tstate("seq-table").set_instance_url( jq_base.find("a[rel='seq-table']").attr("href") );
 

@@ -2,6 +2,157 @@ var appstate = (function () {
 
     var that = {};
     
+    /* new_url_backed_instance(args):
+
+       Create object with "loaded", "error", "urL" properties to object; try to load it from args.url; handle
+       retry logic (and redirection logic?) as necessary. Callback to (object).seturl_success() when we have
+       data; callback (object).seturl_error() when we decide to give up retrying. Also endow object with
+       cancel_loading() method */
+
+    var new_url_backed_instance = function (args) {
+
+        var that = {};
+
+        var propmgr = tstate.add_property_manager(that);
+
+        args.secrets.property_manager = propmgr;
+        propmgr.add("url", "loaded", "error");
+
+        var set = propmgr.set;
+        var url = args.url || null;
+
+        var xhr;
+
+        set("loaded", false);
+        set("error", false);
+        set("url", args.url);
+
+        if (url) {
+            var handle_success = function (response, status) {
+                // implement redirection logic here if needed
+                set("loaded", true);
+                that.seturl_success(response, status);
+            };
+
+            var handle_error = function (xhr, status, err) {
+                // implement retry logic here
+
+                if (!that.get("loaded")) {
+                    set("error", true);
+                    that.seturl_error(xhr, status, err);
+                }
+            };
+        }
+        
+        that.load = function () {
+            xhr = $.ajax({
+                url: url,
+                success: handle_success,
+                error: handle_error,
+                dataType: args.data_type
+            });
+        };
+        
+        that.cancel_loading = function () {
+            if (xhr) {
+                xhr.abort();
+            }
+        };
+
+        return that;
+    };
+
+
+    var new_url_backed_container = function (instance_constructor) {
+
+        var that = {};
+
+        var propmgr = tstate.add_property_manager(that);
+        var set = propmgr.set;
+
+        propmgr.add("instance");
+
+        that.set_instance_url = function (url) {
+            url = url || null;
+
+            var instance = that.get("instance");
+            var instance_url = instance ? instance.get("url") : undefined;
+
+            if (url !== instance_url) {
+                if (instance) {
+                    instance.cancel_loading();
+                }
+                set("instance", instance_constructor(url));
+            }
+        };
+
+        return that;
+    };
+
+
+    var new_base_instance = function (url) {
+
+        // Representation of the single point for updating alignment info, requesting sorted versions
+        // Like a "main menu". Linked from the resources that actually contain alignment data.
+
+        var secrets = {};
+
+        var that = new_url_backed_instance({
+            url: url,
+            secrets: secrets
+        });
+
+        var propmgr = secrets.property_manager;
+
+
+        that.seturl_success = function (html, status) {
+            var jq_base = $(html);
+            
+            global_jq_base = jq_base;
+            console.log("tree url: " + jq_base.find("a[rel='tree']").attr("href"));
+            console.log("seq-table: " + jq_base.find("a[rel='seq-table']").attr("href") );
+
+            //tstate("tree").set_instance_url( jq_base.find("a[rel='tree']").attr("href") );
+            //tstate("seq-table").set_instance_url( jq_base.find("a[rel='seq-table']").attr("href") );
+
+            /* If the server provides a *link* to a groups_def, that means it has determined the grouping
+               to use, and we should pass the url to the groups_def object. If the server provides a
+               *form* (with class "form.groups-def-request"), the server is providing a facility for
+               requesting a grouping based on some parameter(s) (specified by an additional class)-- so
+               pass the form along to the groups_def object.*/
+
+            var grplink = jq_base.find("a[rel='groups-def']");
+            if (grplink.length > 0) {
+                var g=grplink;
+                console.log("set grplink");
+                /*tstate("seq-table.instance.groups-def").set_source({
+                    type: "url",
+                    url: grplink.attr("href")
+                });*/
+            }
+            else {
+                var f = jq_base.find("form.groups-def-request.threshold-request");
+                console.log("set threshold groups def url");
+                // note the use of 2 classes: groups-def-request AND the refinement "threshold-request"
+                /*tstate("seq-table.instance.groups-def").set_source({
+                    type: "threshold",
+                    form: jq_base.find("form.groups-def-request.threshold-request")
+                });*/
+            }
+        };
+
+
+        that.seturl_error = function (xhr, status, err) {
+            console.log("error: new_base_instance() ajax call returned error, url = " + url);
+        };
+
+        that.load();
+        
+        
+        return that;
+    };
+    
+
     var new_selected_elements = function () {
 
         var that = {};
@@ -115,7 +266,8 @@ var appstate = (function () {
 
                 if (added.length > 0) {
                     set("added", added);
-                    set("removed", []);
+                    //could change sense of "removed" to be "most recently removed" (& then remove next line:)
+                    set("removed", []);     
                     set("serialized", serialize());
                 }
             };
@@ -169,11 +321,14 @@ var appstate = (function () {
         var root = {};
 
         var propmgr = tstate.add_property_manager(root);
-        propmgr.add("selected");
+        propmgr.add("selected", "base");
         var set = propmgr.set;
 
+        global_pm = propmgr;
+        global_new_base = new_base_instance;
+        
         set("selected", new_selected_elements());
-
+        set("base", new_url_backed_container(new_base_instance));
         tstate.root(root);                          // now tstate("tree") = tree as defined above, etc.
     };
 
@@ -185,8 +340,8 @@ var appstate = (function () {
 $(document).ready(function() {
     
     appstate.init();
-
-
+    
+    tstate("base").set_instance_url(BASE_URL);
     
     $("#stats-panel").tabs();
     
@@ -202,7 +357,6 @@ $(document).ready(function() {
             $(this).tabs('select', idx);
         });
     });
-
     $(window).trigger('hashchange');
     
     $("#column-labels-table").mouseover( function (e) {
@@ -219,9 +373,8 @@ $(document).ready(function() {
     
     
     $("#column-labels-table").click( function (e) {
-        
         var col_class = $(e.target).attr("className").match(/\b(c\d+)\b/)[1];
-        var col_num = col_class.substring(1,col_class.length)*1
+        var col_num = col_class.substring(1,col_class.length)*1;
         
         if ($("."+col_class).hasClass("selected")) {
             tstate("selected.cols").remove([col_num]);
@@ -231,21 +384,16 @@ $(document).ready(function() {
         }
     });
 
-    tstate("selected.cols.added").on_change(function () {
-        // probably want to modify on_change so it passes in the new value
-        var added = tstate("selected.cols.added").val()
+    tstate("selected.cols.added").on_change(function (added) {
         var n_added = added.length;
-        
-        for (i = 0; i < n_added; i++) {
+        for (var i = 0; i < n_added; i++) {
             $(".c" + added[i]).addClass("selected");
         }            
     });
     
-    tstate("selected.cols.removed").on_change(function () {
-        var removed = tstate("selected.cols.removed").val()
+    tstate("selected.cols.removed").on_change(function (removed) {
         var n_removed = removed.length;
-        
-        for (i = 0; i < n_removed; i++) {
+        for (var i = 0; i < n_removed; i++) {
             $(".c" + removed[i]).removeClass("selected");
         }
     });

@@ -7,7 +7,7 @@ var tstate = (function () {
     
     var init = function () {
         if (!inited) {
-            console.log("initial trigger of hashchange event");
+            //console.log("initial trigger of hashchange event");
             $(window).trigger("hashchange");
             inited = true;
         }
@@ -51,14 +51,23 @@ var tstate = (function () {
 
 
     var notify = function (notify_path_root) {
-        var actions, path;
+        var actions, path, node, val;
         
         for (path in on_change_mapping.mapping) {
             if (on_change_mapping.mapping.hasOwnProperty(path)) {
                 if(path.substring(0, notify_path_root.length) === notify_path_root) {
                     actions = on_change_mapping.mapping[path];
+                    try {
+                        node = get_node(path);
+                    }
+                    catch(err) {
+                        // we can implement typed errors later...
+                        node = undefined;
+                    }
+                    val = (node === undefined) ? undefined : node.val;
+
                     for (var i = 0; i < actions.length; i++) {
-                        actions[i]();
+                        actions[i](val);
                     }
                 }
             }
@@ -93,7 +102,7 @@ var tstate = (function () {
         node.callback = function () {
             // called whenever parent object's set method is called to change the property represented by this
             // node
-            console.log("in node-change callback");
+            //console.log("in node-change callback");
             
             // ignore the callback from set() if the new value (parent.val.get(name)) is exactly the same
             // as the old value (node.val). (This is less useful than it might seem given javascript's lack
@@ -158,7 +167,7 @@ var tstate = (function () {
                     var new_state = {};
                     new_state[hash_key] = node.val;
                     
-                    console.log("writing state '" + node.val + "' to key '" + hash_key + "'.");
+                    //console.log("writing state '" + node.val + "' to key '" + hash_key + "'.");
                     
                     $.bbq.pushState(new_state);
                 });
@@ -169,9 +178,9 @@ var tstate = (function () {
                     
                     var new_val = $.bbq.getState(hash_key, true) || '';
                     var node = get_node(path);
-                    console.log("read state '" + new_val + "' from key '" + hash_key + "'.");
+                    //console.log("read state '" + new_val + "' from key '" + hash_key + "'.");
                     if (new_val !== node.val) {
-                        console.log("  (state changed, old val was '" + node.val + "'.)");
+                        //console.log("  (state changed, old val was '" + node.val + "'.)");
                         node.parent.val.set(node.name, new_val);
                     }
                 });
@@ -273,7 +282,7 @@ var tstate = (function () {
 
         obj.set = function (prop, val) {
             if (!setters[prop]) {
-                console.log("error: attempted to use public set method to set an un-settable property.");
+                //console.log("error: attempted to use public set method to set an un-settable property.");
                 return;
             }
 
@@ -295,7 +304,7 @@ var tstate = (function () {
             var listener;
             if (listeners.hasOwnProperty(prop)) {
                 for (var i = 0; i < listeners[prop].length; i++) {
-                    console.log("calling listener, i = " + i);
+                    //console.log("calling listener, i = " + i);
                     listeners[prop][i]();
                 }
             }
@@ -307,7 +316,7 @@ var tstate = (function () {
 
         mgr.add = function () {
             if (props !== undefined) {
-                console.log("error: attempted to define property list twice!");
+                //console.log("error: attempted to define property list twice!");
                 return;
             }
             props = {};
