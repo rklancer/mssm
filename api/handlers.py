@@ -98,7 +98,7 @@ class ColumnSortedTable(BaseHandler):
         keys_and_row_nums = get_keys_and_row_nums(alignment, sort_cols)
         sorted_rows = [alignment_rows[row_num-1] for key, row_num in sorted(keys_and_row_nums)]
     
-        return render_to_response('api/alignment_table.html',
+        response = render_to_response('api/alignment_table.html',
             { 'alignment' : alignment,
               'column_sorted': True,
               'sort_cols_humanized': sort_cols.replace('/', ', '),
@@ -108,6 +108,13 @@ class ColumnSortedTable(BaseHandler):
               'num_cols' : alignment.length
             })
             
+        # set for the benefit of xmlhttprequest clients that are redirected to this view (and which are
+        # unable to determine the redirected url for themselves). Relative urls are okay.
+        
+        response['Content-Location'] = request.get_full_path()
+        return response
+
+
 def row_num_to_url(alignment_id, row_num):
     return reverse('noraseq.api.resources.row', 
         kwargs={'alignment_id': str(alignment_id), 'row_num': str(row_num)})
@@ -167,7 +174,7 @@ class ColumnSortedTableRedirector(BaseHandler):
         
         # check that the alignment exists before redirecting to it
         alignment = get_object_or_404(Alignment, pk=alignment_id)
-        
+      
         return HttpResponseRedirect(reverse('noraseq.api.resources.column_sorted_table',
             kwargs = {
                 'alignment_id': alignment_id,

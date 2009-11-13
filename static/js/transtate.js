@@ -204,6 +204,7 @@ var tstate = (function () {
                     tstate_object[method_name] = (function (method_name) {
                         return function () {
                             return node.val[method_name].apply(node.val, arguments);
+                            console.log("executing: " + method_name + "on node: " + node.path);
                         };
                     }(method_name));
                 }
@@ -315,11 +316,8 @@ var tstate = (function () {
         // keys
 
         mgr.add = function () {
-            if (props !== undefined) {
-                //console.log("error: attempted to define property list twice!");
-                return;
-            }
-            props = {};
+
+            props = props || {};
 
             var arg, key, i;
 

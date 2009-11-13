@@ -20,21 +20,32 @@ var appstate = (function () {
 
         var set = propmgr.set;
         var url = args.url || null;
-
-        var xhr;
+        var handle_success, handle_error;
+        var xhr, canonical_url;
 
         set("loaded", false);
         set("error", false);
         set("url", args.url);
 
         if (url) {
-            var handle_success = function (response, status) {
+            handle_success = function (response, status) {
                 // implement redirection logic here if needed
                 set("loaded", true);
+                
+                // the server may inform us of the canonical url, which may not be the url we requested
+                // (because of redirects). By setting "url" to this value, we can avoid an unnecessary reload
+                // if url_backed_container.set_instance_url is ever called with the canonical url
+                
+                canonical_url = xhr.getResponseHeader('Content-Location');
+                if (canonical_url && (canonical_url !== url)) {
+                    set("url", canonical_url);
+                }
+                
+                console.log("url_backed_instance base class about to call that.seturl_success()");
                 that.seturl_success(response, status);
             };
 
-            var handle_error = function (xhr, status, err) {
+            handle_error = function (xhr, status, err) {
                 // implement retry logic here
 
                 if (!that.get("loaded")) {
@@ -113,7 +124,7 @@ var appstate = (function () {
             console.log("seq-table: " + jq_base.find("a[rel='seq-table']").attr("href") );
 
             //tstate("tree").set_instance_url( jq_base.find("a[rel='tree']").attr("href") );
-            //tstate("seq-table").set_instance_url( jq_base.find("a[rel='seq-table']").attr("href") );
+            tstate("seq-table").set_instance_url( jq_base.find("a[rel='seq-table']").attr("href") );
 
             /* If the server provides a *link* to a groups_def, that means it has determined the grouping
                to use, and we should pass the url to the groups_def object. If the server provides a
@@ -152,7 +163,251 @@ var appstate = (function () {
         return that;
     };
     
+    
+    var new_seq_table_instance = function (url) {
 
+        /* Some quick Firebug experimentation suggests passing a ~1M string around between javascript
+           methods/functions is no problem at all. So we'll stick to always building the new table on the
+           server side--for now.
+
+           However, we want to be able to modify the system at a later date to accomodate 2 performance
+           improvements:
+               1. Send JSON, once, for table; construct <table> html on client side; and let server just
+                  pass a data structure representing how to sort the JSON
+               2. Actually sort the JSON client side, without reporting back to the server, each time
+                  user requests a sort on the sort_cols.
+        */
+
+        var secrets = {};
+        var that = new_url_backed_instance({
+            url: url,
+            secrets: secrets
+        });
+
+        var propmgr = secrets.property_manager;
+        var set = propmgr.set;
+
+        propmgr.add("table", "groups-def");
+        //set("groups-def", new_groups_def());
+
+        var sort_form;
+
+
+        that.seturl_success = function (response, status) {
+            var jq_doc = $(response);
+            var jq_table = jq_doc.find("table.seq-table");
+
+            set("table", {
+                html: jq_table.html(),
+                jquery_obj: jq_table
+            });
+
+            // also keep the sort form for that.sort()
+            sort_form = jq_doc.find("form.sort-form");
+
+            /* each table representation links to a "base resource" that points to it. This keeps
+               these in sync. Note this implies a guarantee: if seq_table "loaded" state is true, then the
+               corresponding base_resource MUST:
+                  1. correspond to *this* version of the seq_table
+               OR 2. have "loaded" property == false */
+
+            var base_url = jq_doc.find("a[rel='base-resource']").attr("href");
+            console.log("about to call tstate('base').set_instance_url with url: " + base_url);
+            tstate("base").set_instance_url(base_url);
+        };
+
+        that.seturl_error = function (xhr, status, err) {
+            set("error", true);
+            console.log("error: new_seq_table_instance() ajax call returned error, url = " + url);
+        };
+
+
+        /* seq_table.sort(): request a version of this table sorted (by the server) on sort_cols */
+
+        that.sort = function (sort_cols) {
+            sort_form.find("input[name=sort-cols]").val(sort_cols.serialize());
+            tstate("seq-table").set_instance_url( sort_form.attr("action") + "?" + sort_form.serialize() );
+        };
+
+
+        that.coldata = function (col_id) {
+            var col_selector = '.' + (col_id[0] === 'c' ? col_id : "c" + col_id);
+
+            var jq_rows = that.get("table").jquery_obj.find("tr");
+            var jq_row;
+            
+            var col = [];
+            for (var i = 0; i < jq_rows.length; i++) {
+                jq_row = jq_rows.filter(".r"+(i+1));
+                col[i] = jq_row.find(col_selector).text();
+            }
+
+            return col;
+        };
+
+
+        that.rowdata = function (row_id) {
+            var row_num = '.' + (row_id[0] === 'r' ? row_id : "r" + row_id);
+
+            var jq_tds = that.get("table").jquery_obj.find("tr." + row_num).find("td");
+            
+            var row = [];
+            for (var i = 0; i < jq_tds.length; i++) {
+                row[i] = jq_tds.filter('.c' + (i+1)).text();
+            }
+
+            return row;
+        };
+
+
+        that.celldata = function (row_id, col_id) {
+            var row_num = row_id[0] === 'r' ? row_id : "r" + row_id;
+            var col_num = col_id[0] === 'c' ? col_id : "c" + col_id;
+            
+            return that.get("table").jquery_obj.find("tr." + row_num).find("td." + col_num).text();
+        };
+
+
+        that.colname = function (col_id) {
+            // Depends on ref_row. See spec for details
+            return ("(" + col_id + " name here)");
+        };
+
+
+        that.rowname = function (row_id) {
+            return ("(" + row_id + " name here)");
+        };
+
+
+        that.cellname = function (row_id, col_id) {
+            return ("(["+ row_id + "," + col_id + "] name here)");
+        };
+
+
+        that.load();
+        
+        return that;
+    };
+    
+    
+    var new_sort_cols = function () {
+
+        var that = {};
+
+        var propmgr = tstate.add_property_manager(that);
+        propmgr.add("cols", "serialized");
+
+        var deserialize = function (s) {
+            s = s.toString();
+            that.set_to(s.split(','));
+        };
+        
+        propmgr.setter("serialized", function (s) {
+            deserialize(s);
+        });
+        
+
+        that.set_to = function (cols) {
+            var old_cols = that.get("cols");
+            var different = false;
+            
+            // oh, for a native javascript map and filter...
+            
+            if (old_cols === null)
+                different = true;
+            else if (old_cols.length !== cols.length) {
+                different = true;
+            }
+            else {
+                for (var i = 0; i < cols.length; i++) {
+                    if (old_cols[i] !== cols[i]) {
+                        different = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (different) {
+                propmgr.set("cols", cols);
+                propmgr.set("serialized", that.serialize(cols));
+            }
+        };
+
+
+        var insert = function (cols, col, idx) {
+            // uses zero based indexing
+            var front = cols.slice(0, idx);
+            var end = cols.slice(idx, cols.length);
+            front.push(col);
+            
+            return front.concat(end);
+        };
+
+
+        var remove = function (cols, idx) {
+            // uses zero based indexing
+            var front = cols.slice(0, idx);
+            var end = cols.slice(idx+1, cols.length);
+            return front.concat(end);
+        };
+
+
+        that.insert = function (col, idx) {
+            // uses one-based indexing, so call insert() function with idx subtracted by one            
+            if ((idx > (1+that.get("cols").length)) || (idx < 1)) {
+                console.log("sort_cols.insert: idx out of range");
+                return;
+            }
+            that.set_to(insert(that.get("cols"), col, idx-1));
+        };
+
+
+        that.remove = function (idx) {
+            // uses one-based indexing, so call remove() function with idx subtracted by one            
+            if ((idx > that.get("cols").length) || (idx < 1)) {
+                console.log("sort_cols.removecol: idx out of range");
+                return;
+            }
+            that.set_to(remove(that.get("cols"), idx-1));
+        };
+
+
+        that.move = function (oldidx, newidx) {
+            // doing this "the lazy way" (add then remove)
+            // uses one-based indexing, so subtracts one from newidx, oldidx where appropriate            
+
+            var cols = that.get("cols");
+            
+            if ((oldidx > cols.length) || (oldidx < 1)) {
+                console.log("sort_cols.move: oldidx out of range");
+                return;
+            }
+            if ((newidx > cols.length) || (newidx < 1)) {
+                console.log("sort_cols.move: newidx out of range");
+                return;
+            }
+            
+            var moving_col = cols[oldidx-1];
+            cols = remove(cols, oldidx-1);
+            that.set_to(insert(cols, moving_col, newidx-1));
+        };
+        
+        
+        that.remove_all = function () {
+            that.set_to([]);
+        };
+        
+        
+        that.serialize = function () {
+            return that.get("cols").join(",");
+        };
+        
+        
+        that.set_to([]);
+        return that;
+    };
+
+    
     var new_selected_elements = function () {
 
         var that = {};
@@ -316,12 +571,13 @@ var appstate = (function () {
         return that;
     };
 
+
     that.init = function () {
 
         var root = {};
 
         var propmgr = tstate.add_property_manager(root);
-        propmgr.add("selected", "base");
+        propmgr.add("selected", "base", "seq-table", "sort-cols");
         var set = propmgr.set;
 
         global_pm = propmgr;
@@ -329,6 +585,9 @@ var appstate = (function () {
         
         set("selected", new_selected_elements());
         set("base", new_url_backed_container(new_base_instance));
+        set("seq-table", new_url_backed_container(new_seq_table_instance));
+        set("sort-cols", new_sort_cols());
+        
         tstate.root(root);                          // now tstate("tree") = tree as defined above, etc.
     };
 
@@ -400,6 +659,7 @@ $(document).ready(function() {
 
     
     tstate("selected.cols.serialized").hist("scol");
+    tstate("sort-cols.serialized").hist("sort");
 
     $("#row-label-panel").resizable({'helper': 'ui-state-highlight'});
     
