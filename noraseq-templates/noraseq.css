@@ -182,38 +182,82 @@ body {
     background-color: #CFBD87;
 }
 
-.sequence-table-row > .selected {
-    background-color: #CFBD87;
-    color: white;
-    font-weight: bold;
-    border-color: #CFBD87;
-}
 
 .column-labels-table-row > .hovered {
     border-color: #aaaaaa;
     background-color: #EBE9B8;
 }
 
-.sequence-table-row > .hovered {
+
+.seq-table {
+    table-layout: fixed;
+    background-color: #efefe0;
+    border-spacing: 0px;
+    border-collapse: separate;
+    font-family: "Verdana";
+    font-size: 12px;
+    color: #333333;
+    cursor: pointer;
+}
+
+.seq-table th {
+    padding: 0px 1px;
+    width: 15px;
+}
+
+.seq-table td {
+    text-align: center;
+    background-color: #ebead3;
+    border: 1px solid #ebead3;
+    padding: 0;
+}
+
+.seq-table .gap {
+    background: transparent;
+    color: #efefe0;                                  /* invisible, but selectable and 'web-scrapable' */
+    border-color: #E6E5C6 #efefe0 #efefe0 #efefe0;   /* alternately #EBE9B8*/
+    cursor: default;
+}
+
+.seq-table .selected.commented {
+    /*background-color: #CFBD87; color: yellow; */
+    background-color: #ffff80; color: #666666;
+}
+
+.seq-table .commented {
+    background-color: #ffff80;
+}
+
+
+
+.seq-table .selected {
+    background-color: #CFBD87;
+    color: white;
+    font-weight: bold;
+    border-color: #CFBD87;
+}
+
+
+.seq-table .hovered {
     border-color: #EBE9B8 #CFBD87;
     background-color: #EBE9B8;
 }
 
-.sequence-table-row > .hovered-cell {
+.seq-table .hovered-cell {
     border-color: #CFBD87;
     background-color: #EBE9B8;
 }
 
-.sequence-table-row > .hovered.gap {
+.seq-table .hovered.gap {
     border-color: #efefe0 #CFBD87;
 }
 
-.sequence-table-row > .hovered.selected {
+.seq-table .hovered.selected {
     background-color: #dfd2ab;
     border-color: #dfd2ab #CFBD87;
 }
 
-.column-labels-table-row > .hovered.selected {
+.column-labels-table-row .hovered.selected {
     background-color: #dfd2ab;
 }
 
@@ -238,46 +282,6 @@ body {
     float: left;
 }
 
-#sequence-table {
-    table-layout: fixed;
-    background-color: #efefe0;
-    border-spacing: 0px;
-    border-collapse: separate;
-    font-family: "Verdana";
-    font-size: 12px;
-    color: #333333;
-    cursor: pointer;
-}
-
-
-.sequence-table-row > th {
-    padding: 0px 1px;
-    width: 15px;
-}
-
-
-.sequence-table-row > td {
-    text-align: center;
-    background-color: #ebead3;
-    border: 1px solid #ebead3;
-    padding: 0;
-}
-
-.sequence-table-row > .gap {
-    background: transparent;
-    color: #efefe0;                                  /* invisible, but selectable and 'web-scrapable' */
-    border-color: #E6E5C6 #efefe0 #efefe0 #efefe0;   /* alternately #EBE9B8*/
-    cursor: default;
-}
-
-.sequence-table-row > .selected.commented {
-    /*background-color: #CFBD87; color: yellow; */
-    background-color: #ffff80; color: #666666;
-}
-
-.sequence-table-row > .commented {
-    background-color: #ffff80;
-}
 
 /* helpers */
 

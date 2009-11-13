@@ -143,7 +143,14 @@ var tstate = (function () {
 
     var tstate = function (path) {
 
-        var node = get_node(path);
+        var node;
+        
+        try {
+            node = get_node(path);
+        }
+        catch (err) {
+            node = null;
+        }
 
         var tstate_object = {};
         var method_name;
@@ -153,6 +160,12 @@ var tstate = (function () {
 
         var methods_to_add = {
             val: function () {
+                try {
+                    node = get_node(path);
+                }
+                catch (err) {
+                    return null;
+                }
                 return node.val;
             },
             
@@ -190,7 +203,7 @@ var tstate = (function () {
         };
 
 
-        if (typeof(node.val) === "object" || typeof(node.val) === "function") {
+        if (node && (typeof(node.val) === "object" || typeof(node.val) === "function")) {
 
             /* For convenience, copy methods from node.val to tstate_object, except any named "val",
                "on_change", etc. so you can do tstate("path").method() (if method is named "on_change" for

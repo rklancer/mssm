@@ -1,3 +1,7 @@
+if(typeof(console) === "undefined" || typeof(console.log) === "undefined") {
+    var console = { log: function() { } };
+}
+
 var appstate = (function () {
 
     var that = {};
@@ -29,7 +33,6 @@ var appstate = (function () {
 
         if (url) {
             handle_success = function (response, status) {
-                // implement redirection logic here if needed
                 set("loaded", true);
                 
                 // the server may inform us of the canonical url, which may not be the url we requested
@@ -56,12 +59,14 @@ var appstate = (function () {
         }
         
         that.load = function () {
-            xhr = $.ajax({
-                url: url,
-                success: handle_success,
-                error: handle_error,
-                dataType: args.data_type
-            });
+            if (url) {
+                xhr = $.ajax({
+                    url: url,
+                    success: handle_success,
+                    error: handle_error,
+                    dataType: args.data_type
+                });
+            }
         };
         
         that.cancel_loading = function () {
@@ -155,6 +160,7 @@ var appstate = (function () {
 
         that.seturl_error = function (xhr, status, err) {
             console.log("error: new_base_instance() ajax call returned error, url = " + url);
+            tstate("seq-table").set_instance_url(null);
         };
 
         that.load();
@@ -197,8 +203,12 @@ var appstate = (function () {
             var jq_doc = $(response);
             var jq_table = jq_doc.find("table.seq-table");
 
+            jq_table.find("th").empty();
+            jq_table.find("th td:nth-child(1), tr th:nth-child(2)").remove();
+            jq_table.find("tr td:nth-child(1), tr td:nth-child(2)").remove();
+                
             set("table", {
-                html: jq_table.html(),
+                html: jq_doc.find("div.seq-table-wrapper").html(),
                 jquery_obj: jq_table
             });
 
@@ -241,7 +251,6 @@ var appstate = (function () {
                 jq_row = jq_rows.filter(".r"+(i+1));
                 col[i] = jq_row.find(col_selector).text();
             }
-
             return col;
         };
 
@@ -255,7 +264,6 @@ var appstate = (function () {
             for (var i = 0; i < jq_tds.length; i++) {
                 row[i] = jq_tds.filter('.c' + (i+1)).text();
             }
-
             return row;
         };
 
@@ -600,6 +608,20 @@ $(document).ready(function() {
     
     appstate.init();
     
+    tstate("seq-table.instance.table").on_change(function (val) {
+        if (tstate("seq-table.instance.loaded").val()) {
+            $("#seq-table-container").html(val.html);
+            safely_size_overflow_containers();
+        }
+
+    });
+
+    tstate("seq-table.instance.loaded").on_change( function (loaded) {
+        if (!loaded) {
+            $(".seq-table").remove();
+        }
+    });
+    
     tstate("base").set_instance_url(BASE_URL);
     
     $("#stats-panel").tabs();
@@ -662,8 +684,6 @@ $(document).ready(function() {
     tstate("sort-cols.serialized").hist("sort");
 
     $("#row-label-panel").resizable({'helper': 'ui-state-highlight'});
-    
-    safely_size_overflow_containers();
 });
 
 
