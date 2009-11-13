@@ -179,6 +179,7 @@ var tstate = (function () {
                     var node = get_node(path);
                     var new_state = {};
                     
+                    console.log("writing key '" + hash_key + "' for value '" + node.val + "'.");
                     var all_params = $.deparam.fragment();
                     if (node.val && (node.val.length > 0)) {
                         all_params[hash_key] = node.val;
@@ -198,9 +199,9 @@ var tstate = (function () {
                     
                     var new_val = $.bbq.getState(hash_key, true) || '';
                     var node = get_node(path);
-                    //console.log("read state '" + new_val + "' from key '" + hash_key + "'.");
+                    console.log("read state '" + new_val + "' from key '" + hash_key + "'.");
                     if (new_val !== node.val) {
-                        //console.log("  (state changed, old val was '" + node.val + "'.)");
+                        console.log("  (state changed, old val was '" + node.val + "'.)");
                         node.parent.val.set(node.name, new_val);
                     }
                 });

@@ -167,9 +167,9 @@
 				<div class="scrolling-panel">
 					<div class="scrolling-content">
 						<div id="column-labels">
-						    <table id="column-labels-table"  width="{{table_width}}px">
+						    <table id="column-labels-table">
     						    <thead>
-    					        <tr class="column-labels-table-row">
+    					        <tr id="column-labels-table-row">
     										{% for col_num in header_row %}
     										<th class="c{{col_num}}"></th>
     										{% endfor %}
@@ -187,6 +187,9 @@
 
 						<div class="y-overflow-container">
 							<div class="scrolling-panel"> 
+                                <div id="loading-panel">
+                                    <p> (Alignment is not loaded.) </p>
+                                </div>
 								<div id="seq-table-container" class="scrolling-content">
                                     
                                     <!-- sequence table goes here -->

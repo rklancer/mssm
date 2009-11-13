@@ -159,11 +159,12 @@ body {
     cursor: pointer;
 }
 
-.column-labels-table-row {
+#column-labels-table-row {
     height: 20px;
 }
 
-.column-labels-table-row > th {
+
+#column-labels-table th {
     width: 16px;
     padding: 0;
     background-color: #ebead3;
@@ -178,16 +179,19 @@ body {
     border-top-right-radius: 5px;
 }
 
-.column-labels-table-row > .selected {
+#column-labels-table .selected {
     background-color: #CFBD87;
 }
 
 
-.column-labels-table-row > .hovered {
+#column-labels-table .hovered {
     border-color: #aaaaaa;
     background-color: #EBE9B8;
 }
 
+#column-labels-table .hovered.selected {
+    background-color: #dfd2ab;
+}
 
 .seq-table {
     table-layout: fixed;
@@ -228,8 +232,6 @@ body {
     background-color: #ffff80;
 }
 
-
-
 .seq-table .selected {
     background-color: #CFBD87;
     color: white;
@@ -257,9 +259,7 @@ body {
     border-color: #dfd2ab #CFBD87;
 }
 
-.column-labels-table-row .hovered.selected {
-    background-color: #dfd2ab;
-}
+
 
 /* the ridiculous width of #sequence-panel is necessary to make sure #row-label-panel and
    #sequence-content-panel

@@ -197,6 +197,7 @@ var appstate = (function () {
         //set("groups-def", new_groups_def());
 
         var sort_form;
+        var unsorted_table_url;
 
 
         that.seturl_success = function (response, status) {
@@ -214,6 +215,7 @@ var appstate = (function () {
 
             // also keep the sort form for that.sort()
             sort_form = jq_doc.find("form.sort-form");
+            unsorted_table_url = jq_doc.find("a[rel='unsorted-table']").attr("href");
 
             /* each table representation links to a "base resource" that points to it. This keeps
                these in sync. Note this implies a guarantee: if seq_table "loaded" state is true, then the
@@ -235,8 +237,17 @@ var appstate = (function () {
         /* seq_table.sort(): request a version of this table sorted (by the server) on sort_cols */
 
         that.sort = function (sort_cols) {
-            sort_form.find("input[name=sort-cols]").val(sort_cols.serialize());
-            tstate("seq-table").set_instance_url( sort_form.attr("action") + "?" + sort_form.serialize() );
+            if (typeof(sort_cols) === "undefined") {
+                sort_cols = tstate("sort-cols").val();
+            }
+            
+            if (sort_cols.is_empty()) {
+                tstate("seq-table").set_instance_url(unsorted_table_url);
+            }
+            else {
+                sort_form.find("input[name=sort-cols]").val(sort_cols.serialize());
+                tstate("seq-table").set_instance_url(sort_form.attr("action") + "?" + sort_form.serialize());
+            }
         };
 
 
@@ -410,11 +421,13 @@ var appstate = (function () {
             that.set_to([]);
         };
         
-        
         that.serialize = function () {
             return that.get("cols").join(",");
         };
         
+        that.is_empty = function () {
+            return (that.get("cols").length === 0);
+        }
         
         that.set_to([]);
         return that;
@@ -506,7 +519,7 @@ var appstate = (function () {
 
             // uses a pretty trivial serialization-deserialization protocol: commas!
             var serialize = function () {
-                return dict_to_list(elements).join(",");
+                return dict_to_list(elements).sort().join(",");
             };
 
 
@@ -627,11 +640,21 @@ $(document).ready(function() {
         if (tstate("seq-table.instance.loaded").val()) {
             $("#seq-table-container").html(val.html);
             safely_size_overflow_containers();
+        
+            var scols = tstate("selected.cols").as_list();
+            var col_selector = ".c" + scols.join(",.c");
+            console.log("adding class 'selected' to selector '" + col_selector + "'");
+            $(col_selector).addClass("selected");
         }
     });
 
     tstate("seq-table.instance.loaded").on_change( function (loaded) {
-        if (!loaded) {
+        if (loaded) {
+            console.log("hiding #loaded-panel");
+            $("#loading-panel").hide();
+        }
+        else {
+            $("#loading-panel").show();
             $(".seq-table").remove();
         }
     });
