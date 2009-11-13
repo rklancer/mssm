@@ -307,7 +307,12 @@ var appstate = (function () {
 
         var deserialize = function (s) {
             s = s.toString();
-            that.set_to(s.split(','));
+            if (s.length == 0) {
+                that.set_to([]);
+            }
+            else {
+                that.set_to(s.split(','));
+            }
         };
         
         propmgr.setter("serialized", function (s) {
@@ -437,6 +442,11 @@ var appstate = (function () {
             set("removed", []);
 
             var elements = {};
+            
+            // temporary.
+            that.get_elements = function () {
+                return elements;
+            };
 
 
             var list_to_dict = function (list) {
@@ -501,8 +511,13 @@ var appstate = (function () {
 
 
             var deserialize = function (s) {
-                s = s.toString();           // if s has no commas it may be passed in as a number
-                that.set_to(s.split(","));
+                s = s.toString();               // if s has no commas, it may be construed as a number
+                if (s.length == 0) {
+                    that.set_to([]);
+                }
+                else {
+                    that.set_to(s.split(','));
+                }
             };
 
 
@@ -613,7 +628,6 @@ $(document).ready(function() {
             $("#seq-table-container").html(val.html);
             safely_size_overflow_containers();
         }
-
     });
 
     tstate("seq-table.instance.loaded").on_change( function (loaded) {
@@ -669,7 +683,7 @@ $(document).ready(function() {
         var n_added = added.length;
         for (var i = 0; i < n_added; i++) {
             $(".c" + added[i]).addClass("selected");
-        }            
+        }
     });
     
     tstate("selected.cols.removed").on_change(function (removed) {
@@ -682,7 +696,20 @@ $(document).ready(function() {
     
     tstate("selected.cols.serialized").hist("scol");
     tstate("sort-cols.serialized").hist("sort");
+    
 
+    /*  workaround the "forward-back-forward problem" by setting the document fragment
+
+                               /alignment/1/viewer             
+        (select column 1) -->  /alignment/1/viewer/#scol=1
+        (hit back button) -->  /alignment/1/viewer/#
+        (now forward button is empty, since '/alignment/1/viewer/#' looks like a completely new url
+    */
+    
+    if (window.location.hash.length === 0) {
+        window.location.href = '#';
+    }
+    
     $("#row-label-panel").resizable({'helper': 'ui-state-highlight'});
 });
 

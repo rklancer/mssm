@@ -178,11 +178,18 @@ var tstate = (function () {
                 on_change_mapping.add(path, function () {
                     var node = get_node(path);
                     var new_state = {};
-                    new_state[hash_key] = node.val;
                     
-                    //console.log("writing state '" + node.val + "' to key '" + hash_key + "'.");
-                    
-                    $.bbq.pushState(new_state);
+                    var all_params = $.deparam.fragment();
+                    if (node.val && (node.val.length > 0)) {
+                        all_params[hash_key] = node.val;
+                    }
+                    else {
+                        // *remove key from the url fragment* if node.val == '' 
+                        // (rather than setting empty value for the key, a la "#key=")
+                        delete all_params[hash_key];
+                    }
+
+                    $.bbq.pushState(all_params, 2);
                 });
 
                 $(window).bind('hashchange', function (e) {
