@@ -193,26 +193,25 @@ var appstate = (function () {
         var propmgr = secrets.property_manager;
         var set = propmgr.set;
 
-        propmgr.add("table", "groups-def");
+        propmgr.add("table", "groups-def", "row-label-tds");
         //set("groups-def", new_groups_def());
 
         var sort_form;
         var unsorted_table_url;
 
-
+        
         that.seturl_success = function (response, status) {
             var jq_doc = $(response);
             var jq_table = jq_doc.find("table.seq-table");
 
-            jq_table.find("th").empty();
-            jq_table.find("th td:nth-child(1), tr th:nth-child(2)").remove();
-            jq_table.find("tr td:nth-child(1), tr td:nth-child(2)").remove();
-                
-            set("table", {
-                html: jq_doc.find("div.seq-table-wrapper").html(),
-                jquery_obj: jq_table
-            });
+            set("row-label-tds", jq_table.find("td:first-child").clone());
 
+            jq_table.find("th").empty();
+            jq_table.find("th:nth-child(1), th:nth-child(2)").remove();
+            jq_table.find("td:nth-child(1), td:nth-child(2)").remove();
+                
+            set("table", jq_table);
+ 
             // also keep the sort form for that.sort()
             sort_form = jq_doc.find("form.sort-form");
             unsorted_table_url = jq_doc.find("a[rel='unsorted-table']").attr("href");
@@ -636,9 +635,9 @@ $(document).ready(function() {
     
     appstate.init();
     
-    tstate("seq-table.instance.table").on_change(function (val) {
+    tstate("seq-table.instance.table").on_change(function (jq_table) {
         if (tstate("seq-table.instance.loaded").val()) {
-            $("#seq-table-container").html(val.html);
+            $("#seq-table-container").append(jq_table);
             safely_size_overflow_containers();
         
             var scols = tstate("selected.cols").as_list();
@@ -647,6 +646,13 @@ $(document).ready(function() {
             $(col_selector).addClass("selected");
         }
     });
+    
+    tstate("seq-table.instance.row-label-tds").on_change(function (jq_tds) {
+        if (tstate("seq-table.instance.loaded").val()) {
+            $("#row-labels-table tbody").append(jq_tds.wrap("<tr></tr>"));
+        }
+    });
+    
 
     tstate("seq-table.instance.loaded").on_change( function (loaded) {
         if (loaded) {
@@ -656,6 +662,7 @@ $(document).ready(function() {
         else {
             $("#loading-panel").show();
             $(".seq-table").remove();
+            $("#row-labels-table tbody").empty();
         }
     });
     
