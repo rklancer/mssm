@@ -183,11 +183,11 @@ body {
 
 
 #column-labels-table th {
-    width: 16px;
+    width: 15px;
     padding: 0;
     background-color: #ebead3;
     border-color: #dddddd;
-    border-style: solid solid none none;
+    border-style: solid solid none solid;
     border-width: 1px;
     -moz-border-radius-topleft: 5px;
     -webkit-border-top-left-radius: 5px;
@@ -197,12 +197,9 @@ body {
     border-top-right-radius: 5px;
 }
 
-#column-labels-table th:first-child {
-    border-left-style: solid;
-}
-
 #column-labels-table .selected {
     background-color: #CFBD87;
+    border-color: #CFBD87;
 }
 
 
@@ -271,6 +268,11 @@ body {
     background-color: #EBE9B8;
 }
 
+.seq-table .hovered-row {
+    border-color: #CFBD87 #EBE9B8;
+    background-color: #EBE9B8;
+}
+
 .seq-table .hovered-cell {
     border-color: #CFBD87;
     background-color: #EBE9B8;
@@ -307,7 +309,7 @@ body {
     font-style: italic;
     height: 18px;
     
-    padding: 0px 5px 1px 15px;
+    padding: 1px 5px 0px 15px;
     border-style: none none solid solid;
     border-width: 1px;
     -moz-border-radius-topleft: 5px;
@@ -320,6 +322,13 @@ body {
 
 #row-labels-table tr:first-child td {
     border-top-style: solid;
+}
+
+#row-labels-table .hovered-row {
+    border-top-style: solid;
+    padding-top: 0px;
+    border-color: #CFBD87 #EBE9B8;
+    background-color: #EBE9B8;
 }
 
 /*** tree ***/

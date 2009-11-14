@@ -193,7 +193,7 @@ var appstate = (function () {
         var propmgr = secrets.property_manager;
         var set = propmgr.set;
 
-        propmgr.add("table", "groups-def", "row-label-tds");
+        propmgr.add("table", "groups-def", "row-label-table");
         //set("groups-def", new_groups_def());
 
         var sort_form;
@@ -204,8 +204,20 @@ var appstate = (function () {
             var jq_doc = $(response);
             var jq_table = jq_doc.find("table.seq-table");
 
-            set("row-label-tds", jq_table.find("td:first-child").clone());
-
+            var row_label_table = $("<table id='row-labels-table'><tbody></tbody></table>");
+            var body = row_label_table.find("tbody");
+            
+            jq_table.find("tr").each(function () {
+                // do these clones one-by-one, rather than doing jq_table.find('tr').clone().(...)
+                var tr_clone = $("<tr></tr>");
+                var td = $(this).find("td:first-child").clone()
+                tr_clone.append(td);
+                tr_clone.addClass($(this).attr("className"));
+                body.append(tr_clone);
+            });
+                
+            set("row-label-table", row_label_table);
+            
             jq_table.find("th").empty();
             jq_table.find("th:nth-child(1), th:nth-child(2)").remove();
             jq_table.find("td:nth-child(1), td:nth-child(2)").remove();
@@ -645,8 +657,6 @@ $(document).ready(function() {
         safely_size_overflow_containers();
     };
     
-
-    
     appstate.init();
     
     tstate("seq-table.instance.table").on_change(function (table) {
@@ -659,24 +669,37 @@ $(document).ready(function() {
             var scols = tstate("selected.cols").as_list();
             $(".c" + scols.join(",.c")).addClass("selected");
             
-            if (tstate("seq-table.instance.row-label-tds").val()) {
+            if (tstate("seq-table.instance.row-label-table").val()) {
                 size();
             }
         }
     });
     
-    tstate("seq-table.instance.row-label-tds").on_change(function (row_label_tds) {
+    tstate("seq-table.instance.row-label-table").on_change(function (row_label_table) {
         
-        if (row_label_tds && tstate("seq-table.instance.loaded").val()) {      
-            $("#row-labels-table tbody").append(row_label_tds);
-            row_label_tds.wrap("<tr></tr>");
+        if (row_label_table && tstate("seq-table.instance.loaded").val()) {      
+            $("#row-labels").append(row_label_table);
+            
+            // is 'live' of use here?
+            $("#row-labels-table").mouseover(function (e) {
+                var tr = $(e.target).closest("tr");
+                var row_class_selector = "."+tr.attr("className").match(/\b(r\d+)\b/)[1];
+                var row_tds = $(row_class_selector + " td");
+
+                row_tds.addClass("hovered-row");
+                
+                tr.bind("mouseout.noraseq-hover", function () {
+                    row_tds.removeClass("hovered-row");
+                    th.unbind("mouseout.noraseq-hover");
+                });
+
+            });
             
             if (tstate("seq-table.instance.table").val()) {
                 size();
             }
         }
     });
-    
     
     tstate("seq-table.instance.loaded").on_change(function (loaded) {
         if (!loaded) {
@@ -685,8 +708,7 @@ $(document).ready(function() {
             $("#row-labels-table tbody").empty();
         }
     });
-    
-    tstate("base").set_instance_url(BASE_URL);
+
     
     $("#stats-panel").tabs();
     
@@ -729,6 +751,12 @@ $(document).ready(function() {
         }
     });
 
+
+    
+    
+    
+
+
     tstate("selected.cols.added").on_change(function (added) {
         var n_added = added.length;
         for (var i = 0; i < n_added; i++) {
@@ -742,11 +770,12 @@ $(document).ready(function() {
             $(".c" + removed[i]).removeClass("selected");
         }
     });
-
     
     tstate("selected.cols.serialized").hist("scol");
     tstate("sort-cols.serialized").hist("sort");
-    
+
+
+
 
     /*  workaround the "forward-back-forward problem" by setting the document fragment
 
@@ -759,6 +788,8 @@ $(document).ready(function() {
     if (window.location.hash.length === 0) {
         window.location.href = '#';
     }
+    
+    tstate("base").set_instance_url(BASE_URL);
 
 });
 
