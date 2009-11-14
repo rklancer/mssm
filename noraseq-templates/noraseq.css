@@ -202,7 +202,6 @@ body {
     border-color: #CFBD87;
 }
 
-
 #column-labels-table .hovered {
     border-style: solid solid none solid;
     border-color: #CFBD87;
@@ -255,6 +254,8 @@ body {
     border-color: #EBE9B8 #CFBD87;    
 }
 
+/* necessary to specify 'td' here b/c .hovered-row is class of the *parent*, meaning that the more-specific
+  '.seqtable td' rule above would override this rule, if it didn't have the additional 'td' specifier */
 .seq-table .hovered-row td {
     border-color: #CFBD87 #EBE9B8;
     background-color: #EBE9B8;
@@ -264,6 +265,36 @@ body {
     border-color: #CFBD87 #EBE9B8;
 }
 
+/* This rule is selected for seq-table td's with class 'selected' (i.e, selected *columns*) */
+.seq-table .selected {
+    color: white;
+    font-weight: bold;
+    background-color: #CFBD87;
+    border-color: #CFBD87;
+}
+
+/* This rule is selected for seq-table td's whose parent tr has class 'selected' (i.e, selected *rows*).
+   Also see note above about td specifier for .hovered-row rule */
+.seq-table .selected td {
+    background-color: #CFBD87;
+    border-color: #CFBD87;
+}
+
+.seq-table .hovered.selected {
+    background-color: #dfd2ab;
+    border-color: #dfd2ab #CFBD87;
+}
+
+.seq-table .hovered.selected td {
+    background-color: #dfd2ab;
+    border-color: #dfd2ab #CFBD87;
+}
+
+
+.seq-table .hovered-row.selected td {
+    background-color: #dfd2ab;
+    border-color: #CFBD87 #dfd2ab;
+}
 
 
 /*
@@ -276,24 +307,9 @@ body {
     background-color: #ffff80;
 }
 
-.seq-table .selected {
-    background-color: #CFBD87;
-    color: white;
-    font-weight: bold;
-    border-color: #CFBD87;
-}
-
-
-
-
 .seq-table .hovered-cell {
     border-color: #CFBD87;
     background-color: #EBE9B8;
-}
-
-.seq-table .hovered.selected {
-    background-color: #dfd2ab;
-    border-color: #dfd2ab #CFBD87;
 }
 
 */
@@ -314,7 +330,6 @@ body {
 #row-labels-table td {
     color: #666666;
     background-color: #ebead3;
-    /*border-color: #dfd2ab;*/
     border-color: #ebead3 #dddddd #dddddd #dddddd;
     font-style: italic;
     height: 18px;
@@ -337,6 +352,18 @@ body {
 #row-labels-table .hovered-row {
     border-color: #CFBD87 #EBE9B8;
     background-color: #EBE9B8;
+}
+
+#row-labels-table .selected td {
+    color: white;
+    background-color: #CFBD87;
+    border-color: #CFBD87;
+}
+
+#row-labels-table .hovered-row.selected td {
+    color: white;
+    background-color: #dfd2ab;
+    border-color: #dfd2ab #CFBD87;
 }
 
 /*** tree ***/

@@ -665,9 +665,12 @@ $(document).ready(function() {
             $("#loading-panel").hide();
             $("#seq-table-container").append(table);
             
-            /* make the selected columns visible */
+            /* make the selected rows and columns visible */
             var scols = tstate("selected.cols").as_list();
             $(".c" + scols.join(",.c")).addClass("selected");
+            
+            var srows = tstate("selected.rows").as_list();
+            $(".r" + srows.join(",.r")).addClass("selected");
             
             if (tstate("seq-table.instance.row-label-table").val()) {
                 size();
@@ -680,21 +683,9 @@ $(document).ready(function() {
         if (row_label_table && tstate("seq-table.instance.loaded").val()) {      
             $("#row-labels").append(row_label_table);
             
-            $("#row-labels-table").mouseover( function (e) {
-                var tr = $(e.target).closest("tr");
-                var row_class_selector = "."+tr.attr("className").match(/\b(r\d+)\b/)[1];
-                var row = $(row_class_selector);
-
-                tr.find("td").addClass("hovered-row");
-                row.addClass("hovered-row");
-
-                tr.bind("mouseout.noraseq-hover", function () {
-                    tr.find("td").removeClass("hovered-row");
-                    row.removeClass("hovered-row");
-                    tr.unbind("mouseout.noraseq-hover");
-                });
-            });
-
+            var srows = tstate("selected.rows").as_list();
+            $(".r" + srows.join(",.r")).addClass("selected");
+            
             if (tstate("seq-table.instance.table").val()) {
                 size();
             }
@@ -726,6 +717,9 @@ $(document).ready(function() {
     });
     $(window).trigger('hashchange');
     
+    
+    /*** column hovering and clicking ***/
+    
     $("#column-labels-table").mouseover( function (e) {
         var th = $(e.target).closest("th");
         var col_class_selector = "."+th.attr("className").match(/\b(c\d+)\b/)[1];
@@ -751,9 +745,6 @@ $(document).ready(function() {
         }
     });
 
-
-
-
     tstate("selected.cols.added").on_change(function (added) {
         var n_added = added.length;
         for (var i = 0; i < n_added; i++) {
@@ -768,16 +759,71 @@ $(document).ready(function() {
         }
     });
     
+
+    /*** row hovering and clicking ***/
+    
+
+    $("#row-labels-table").live("mouseover", function (e) {
+        var tr = $(e.target).closest("tr");
+        var row_class_selector = "."+tr.attr("className").match(/\b(r\d+)\b/)[1];
+        var row = $(row_class_selector);
+
+        tr.find("td").addClass("hovered-row");
+        row.addClass("hovered-row");
+
+        tr.bind("mouseout.noraseq-hover", function () {
+            tr.find("td").removeClass("hovered-row");
+            row.removeClass("hovered-row");
+            tr.unbind("mouseout.noraseq-hover");
+        });
+    });
+
+    $("#row-labels-table").live("click", function (e) {
+        var row_class = $(e.target).closest("tr").attr("className").match(/\b(r\d+)\b/)[1];
+        var row_num = row_class.substring(1,row_class.length)*1;
+        
+        if ($("."+row_class).hasClass("selected")) {
+            tstate("selected.rows").remove([row_num]);
+        }
+        else {
+            tstate("selected.rows").add([row_num]);
+        }
+    });
+    
+    
+    tstate("selected.rows.added").on_change(function (added) {
+        var n_added = added.length;
+        for (var i = 0; i < n_added; i++) {
+            $(".r" + added[i]).addClass("selected");
+        }
+    });
+    
+    tstate("selected.rows.removed").on_change(function (removed) {
+        var n_removed = removed.length;
+        for (var i = 0; i < n_removed; i++) {
+            $(".r" + removed[i]).removeClass("selected");
+        }
+    });
+    
+
+    /*** history and the back button ***/
+
     tstate("selected.cols.serialized").hist("scol");
+    tstate("selected.rows.serialized").hist("srow");
     tstate("sort-cols.serialized").hist("sort");
 
 
-    /*  workaround the "forward-back-forward problem" by setting the document fragment
+    /*  workaround the "forward-back-forward problem" by setting the document fragment.
 
-                               /alignment/1/viewer             
+        The problem:
+        
+                  starting at  /alignment/1/viewer             
         (select column 1) -->  /alignment/1/viewer/#scol=1
         (hit back button) -->  /alignment/1/viewer/#
-        (now forward button is empty, since '/alignment/1/viewer/#' looks like a completely new url
+
+        Now the forward button is greyed out, since the browser thinks '/alignment/1/viewer/#' is a 'new' url
+        
+        The solution: set href to '#' before doing anything else.
     */
     
     if (window.location.hash.length === 0) {
