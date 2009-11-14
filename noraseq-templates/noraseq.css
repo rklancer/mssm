@@ -218,13 +218,14 @@ body {
 
 .seq-table {
     table-layout: fixed;
-    background-color: #efefe0;
     border-spacing: 0px;
     border-collapse: separate;
-    font-family: "Verdana";
+    font-family: Verdana, Arial, sans-serif;
     font-size: 12px;
     color: #333333;
     cursor: pointer;
+    text-align: center;
+    background-color: #ebead3;
 }
 
 .seq-table th {
@@ -233,22 +234,41 @@ body {
 }
 
 .seq-table td {
-    text-align: center;
-    background-color: #ebead3;
     border: 1px solid #ebead3;
     padding: 0;
-    height: 18px;                           /* must remain same as #row-labels-table td */
+    height: 18px;
 }
 
 .seq-table .gap {
-    background: transparent;
+    background-color: #efefe0;
     color: #efefe0;                                  /* invisible, but selectable and 'web-scrapable' */
     border-color: #E6E5C6 #efefe0 #efefe0 #efefe0;   /* alternately #EBE9B8*/
     cursor: default;
 }
 
+.seq-table .hovered {
+    border-color: #EBE9B8 #CFBD87;
+    background-color: #EBE9B8;
+}
+
+.seq-table .hovered.gap {
+    border-color: #EBE9B8 #CFBD87;    
+}
+
+.seq-table .hovered-row td {
+    border-color: #CFBD87 #EBE9B8;
+    background-color: #EBE9B8;
+}
+
+.seq-table .hovered-row.gap td  {
+    border-color: #CFBD87 #EBE9B8;
+}
+
+
+
+/*
 .seq-table .selected.commented {
-    /*background-color: #CFBD87; color: yellow; */
+    /*background-color: #CFBD87; color: yellow; 
     background-color: #ffff80; color: #666666;
 }
 
@@ -263,23 +283,12 @@ body {
     border-color: #CFBD87;
 }
 
-.seq-table .hovered {
-    border-color: #EBE9B8 #CFBD87;
-    background-color: #EBE9B8;
-}
 
-.seq-table .hovered-row {
-    border-color: #CFBD87 #EBE9B8;
-    background-color: #EBE9B8;
-}
+
 
 .seq-table .hovered-cell {
     border-color: #CFBD87;
     background-color: #EBE9B8;
-}
-
-.seq-table .hovered.gap {
-    border-color: #efefe0 #CFBD87;
 }
 
 .seq-table .hovered.selected {
@@ -287,6 +296,7 @@ body {
     border-color: #dfd2ab #CFBD87;
 }
 
+*/
 
 /*** row labels ***/
 
@@ -305,12 +315,12 @@ body {
     color: #666666;
     background-color: #ebead3;
     /*border-color: #dfd2ab;*/
-    border-color: #dddddd;
+    border-color: #ebead3 #dddddd #dddddd #dddddd;
     font-style: italic;
     height: 18px;
     
-    padding: 1px 5px 0px 15px;
-    border-style: none none solid solid;
+    padding: 0px 5px 0px 15px;
+    border-style: solid none solid solid;
     border-width: 1px;
     -moz-border-radius-topleft: 5px;
     -webkit-border-top-left-radius: 5px;
@@ -325,8 +335,6 @@ body {
 }
 
 #row-labels-table .hovered-row {
-    border-top-style: solid;
-    padding-top: 0px;
     border-color: #CFBD87 #EBE9B8;
     background-color: #EBE9B8;
 }

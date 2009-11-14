@@ -664,7 +664,7 @@ $(document).ready(function() {
         if (table && tstate("seq-table.instance.loaded").val()) {  
             $("#loading-panel").hide();
             $("#seq-table-container").append(table);
-
+            
             /* make the selected columns visible */
             var scols = tstate("selected.cols").as_list();
             $(".c" + scols.join(",.c")).addClass("selected");
@@ -680,21 +680,21 @@ $(document).ready(function() {
         if (row_label_table && tstate("seq-table.instance.loaded").val()) {      
             $("#row-labels").append(row_label_table);
             
-            // is 'live' of use here?
-            $("#row-labels-table").mouseover(function (e) {
+            $("#row-labels-table").mouseover( function (e) {
                 var tr = $(e.target).closest("tr");
                 var row_class_selector = "."+tr.attr("className").match(/\b(r\d+)\b/)[1];
-                var row_tds = $(row_class_selector + " td");
+                var row = $(row_class_selector);
 
-                row_tds.addClass("hovered-row");
-                
+                tr.find("td").addClass("hovered-row");
+                row.addClass("hovered-row");
+
                 tr.bind("mouseout.noraseq-hover", function () {
-                    row_tds.removeClass("hovered-row");
-                    th.unbind("mouseout.noraseq-hover");
+                    tr.find("td").removeClass("hovered-row");
+                    row.removeClass("hovered-row");
+                    tr.unbind("mouseout.noraseq-hover");
                 });
-
             });
-            
+
             if (tstate("seq-table.instance.table").val()) {
                 size();
             }
@@ -752,9 +752,6 @@ $(document).ready(function() {
     });
 
 
-    
-    
-    
 
 
     tstate("selected.cols.added").on_change(function (added) {
@@ -775,8 +772,6 @@ $(document).ready(function() {
     tstate("sort-cols.serialized").hist("sort");
 
 
-
-
     /*  workaround the "forward-back-forward problem" by setting the document fragment
 
                                /alignment/1/viewer             
@@ -789,8 +784,8 @@ $(document).ready(function() {
         window.location.href = '#';
     }
     
+    // and finally load the alignment
     tstate("base").set_instance_url(BASE_URL);
-
 });
 
 
