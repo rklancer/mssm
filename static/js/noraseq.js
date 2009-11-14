@@ -805,6 +805,39 @@ $(document).ready(function() {
             $(".r" + removed[i]).removeClass("selected");
         }
     });
+
+
+    /*** scrolling ***/
+
+    $(".seq-table").live("mousedown", function (e) {
+        var x, y, dx, dy;
+        $(".seq-table").addClass("scrolling");
+        
+        x = e.screenX;
+        y = e.screenY;
+
+        $(".scrolling").bind("mousemove.noraseq-scrolling", function (e) {
+            dx = e.screenX - x;
+            x = e.screenX;
+            dy = e.screenY - y;
+            y = e.screenY;
+            
+            $(".y-overflow-container").each(function () {
+                $(this).scrollTop($(this).scrollTop() - dy);
+            });
+            $(".x-overflow-container").each(function () {
+                $(this).scrollLeft($(this).scrollLeft() - dx);
+            });
+        });
+        
+        return false;
+    });
+    
+    $(".scrolling").live("mouseup", function (e) {
+        var target = $(e.target).closest(".scrolling")
+        target.removeClass("scrolling");
+        target.unbind("mousemove.noraseq-scrolling");
+    });
     
 
     /*** history and the back button ***/
