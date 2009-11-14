@@ -256,7 +256,7 @@ body {
 
 /* necessary to specify 'td' here b/c .hovered-row is class of the *parent*, meaning that the more-specific
   '.seqtable td' rule above would override this rule, if it didn't have the additional 'td' specifier */
-.seq-table .hovered-row td {
+.seq-table .hovered-row > td {
     border-color: #CFBD87 #EBE9B8;
     background-color: #EBE9B8;
 }
@@ -290,12 +290,15 @@ body {
     border-color: #dfd2ab #CFBD87;
 }
 
-
 .seq-table .hovered-row.selected td {
     background-color: #dfd2ab;
     border-color: #CFBD87 #dfd2ab;
 }
 
+.seq-table tr.selected > .hovered {
+    background-color: #dfd2ab;
+    border-color: #dfd2ab #CFBD87;
+}
 
 /*
 .seq-table .selected.commented {
