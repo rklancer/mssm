@@ -161,7 +161,6 @@ body {
 /*** column labels ***/
 
 #column-labels {
-    background-color: #d5ddf3;
     height: 30px;           /* must remain same as #row-label-control */
     width: 100%;
     position: relative;
@@ -187,7 +186,7 @@ body {
     width: 16px;
     padding: 0;
     background-color: #ebead3;
-    border-color: #babfcf;
+    border-color: #dddddd;
     border-style: solid solid none none;
     border-width: 1px;
     -moz-border-radius-topleft: 5px;
@@ -198,13 +197,18 @@ body {
     border-top-right-radius: 5px;
 }
 
+#column-labels-table th:first-child {
+    border-left-style: solid;
+}
+
 #column-labels-table .selected {
     background-color: #CFBD87;
 }
 
 
 #column-labels-table .hovered {
-    border-color: #aaaaaa;
+    border-style: solid solid none solid;
+    border-color: #CFBD87;
     background-color: #EBE9B8;
 }
 
@@ -296,21 +300,26 @@ body {
 }
 
 #row-labels-table td {
-    color: #333333;
+    color: #666666;
     background-color: #ebead3;
-    border-color: #dfd2ab;
-
+    /*border-color: #dfd2ab;*/
+    border-color: #dddddd;
+    font-style: italic;
     height: 18px;
     
-    padding: 0px 5px 1px 5px;
-    border-style: solid none none solid;
+    padding: 0px 5px 1px 15px;
+    border-style: none none solid solid;
     border-width: 1px;
     -moz-border-radius-topleft: 5px;
     -webkit-border-top-left-radius: 5px;
     border-top-left-radius: 5px;
-    -moz-border-radius-bottomright: 5px;
-    -webkit-border-bottom-right-radius: 5px;
-    border-bottom-right-radius: 5px;
+    -moz-border-radius-bottomleft: 5px;
+    -webkit-border-bottom-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+#row-labels-table tr:first-child td {
+    border-top-style: solid;
 }
 
 /*** tree ***/

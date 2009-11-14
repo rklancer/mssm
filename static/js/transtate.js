@@ -197,7 +197,7 @@ var tstate = (function () {
                     
                     // FIXME: unsure what to do if state isn't *in* hash to start with.
                     
-                    var new_val = $.bbq.getState(hash_key, true) || '';
+                    var new_val = $.bbq.getState(hash_key, false) || '';
                     var node = get_node(path);
                     console.log("read state '" + new_val + "' from key '" + hash_key + "'.");
                     if (new_val !== node.val) {
