@@ -217,13 +217,16 @@ body {
 
 .seq-table {
     table-layout: fixed;
+    cursor: pointer;
+        
     border-spacing: 0px;
     border-collapse: separate;
+    
     font-family: Verdana, Arial, sans-serif;
     font-size: 12px;
-    color: #333333;
-    cursor: pointer;
+
     text-align: center;
+    color: #333333;    
     background-color: #ebead3;
 }
 
@@ -328,16 +331,19 @@ body {
     border-collapse: separate;
     margin-left: 5px;
     white-space: nowrap;
+
+    color: #666666;        
+    font-style: italic;
+    cursor: pointer;
 }
 
 #row-labels-table td {
-    color: #666666;
+    height: 18px;
+    padding: 0px 5px 0px 15px;
+    
     background-color: #ebead3;
     border-color: #ebead3 #dddddd #dddddd #dddddd;
-    font-style: italic;
-    height: 18px;
     
-    padding: 0px 5px 0px 15px;
     border-style: solid none solid solid;
     border-width: 1px;
     -moz-border-radius-topleft: 5px;

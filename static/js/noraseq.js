@@ -696,7 +696,7 @@ $(document).ready(function() {
         if (!loaded) {
             $("#loading-panel").show();
             $(".seq-table").remove();
-            $("#row-labels-table tbody").empty();
+            $("#row-labels-table").remove();
         }
     });
 
@@ -719,6 +719,7 @@ $(document).ready(function() {
     
     
     /*** column hovering and clicking ***/
+    
     
     $("#column-labels-table").mouseover( function (e) {
         var th = $(e.target).closest("th");
