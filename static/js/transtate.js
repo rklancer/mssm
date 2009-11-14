@@ -386,22 +386,6 @@ var tstate = (function () {
 }());
 
 
-setup = function () {
-    r = {"bval": 1};
-    pm = tstate.add_property_manager(r);
-    pm.add("child1", "child2");
-    pm.set("child1", "v1");
-    c2 = {"c2val": 2};
-    pm2 = tstate.add_property_manager(c2);
-    pm2.add("child2child");
-    pm2.set("child2child", "v2");
-    pm.set("child2", c2);
-    tstate.root(r);
-    
-    pm2.settable("child2child");
-    tstate("child2.child2child").hist("c2c");
-};
-
 
 /* note usages:
 

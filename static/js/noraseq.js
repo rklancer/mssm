@@ -632,34 +632,54 @@ var appstate = (function () {
 
 
 $(document).ready(function() {
+
+    var size = function () {
+        /* hacky - box model sets #row-label-panel's scrolling-content panel to *max* of children's
+           width. But they're floated next to each other, so "true" width should be their *sum* */
+
+        var content = $("#row-label-panel .scrolling-content");
+        var tree_width = $("#tree").width() 
+        var labels_width = $("#row-labels-table").width();
+        
+        content.width(tree_width + labels_width);
+        safely_size_overflow_containers();
+    };
+    
+
     
     appstate.init();
     
-    tstate("seq-table.instance.table").on_change(function (jq_table) {
-        if (tstate("seq-table.instance.loaded").val()) {
-            $("#seq-table-container").append(jq_table);
-            safely_size_overflow_containers();
+    tstate("seq-table.instance.table").on_change(function (table) {
         
-            var scols = tstate("selected.cols").as_list();
-            var col_selector = ".c" + scols.join(",.c");
-            console.log("adding class 'selected' to selector '" + col_selector + "'");
-            $(col_selector).addClass("selected");
-        }
-    });
-    
-    tstate("seq-table.instance.row-label-tds").on_change(function (jq_tds) {
-        if (tstate("seq-table.instance.loaded").val()) {
-            $("#row-labels-table tbody").append(jq_tds.wrap("<tr></tr>"));
-        }
-    });
-    
-
-    tstate("seq-table.instance.loaded").on_change( function (loaded) {
-        if (loaded) {
-            console.log("hiding #loaded-panel");
+        if (table && tstate("seq-table.instance.loaded").val()) {  
             $("#loading-panel").hide();
+            $("#seq-table-container").append(table);
+
+            /* make the selected columns visible */
+            var scols = tstate("selected.cols").as_list();
+            $(".c" + scols.join(",.c")).addClass("selected");
+            
+            if (tstate("seq-table.instance.row-label-tds").val()) {
+                size();
+            }
         }
-        else {
+    });
+    
+    tstate("seq-table.instance.row-label-tds").on_change(function (row_label_tds) {
+        
+        if (row_label_tds && tstate("seq-table.instance.loaded").val()) {      
+            $("#row-labels-table tbody").append(row_label_tds);
+            row_label_tds.wrap("<tr></tr>");
+            
+            if (tstate("seq-table.instance.table").val()) {
+                size();
+            }
+        }
+    });
+    
+    
+    tstate("seq-table.instance.loaded").on_change(function (loaded) {
+        if (!loaded) {
             $("#loading-panel").show();
             $(".seq-table").remove();
             $("#row-labels-table tbody").empty();
@@ -739,8 +759,7 @@ $(document).ready(function() {
     if (window.location.hash.length === 0) {
         window.location.href = '#';
     }
-    
-    $("#row-label-panel").resizable({'helper': 'ui-state-highlight'});
+
 });
 
 

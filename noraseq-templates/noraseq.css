@@ -9,12 +9,59 @@ body {
     font-family: Verdana, Arial, sans-serif;
 }
 
+
+.option-link {
+    font-size: 0.9em;
+}
+
+.option-link > p {
+    display: inline;
+}
+
+.option-link > a {
+    color: #0000ee;
+    text-decoration: none;
+}
+
+.option-link > a:visited {
+    color: #0000ee;
+}
+
+.option-link > a:hover {
+    text-decoration: underline;
+}
+
+
+/*** header ***/
+
 #header h1 {
     font-weight: normal;
     font-size: 2.5em;
     color: #888888;
     margin: 0.2em 0.2em 0.2em 0.2em;
 }
+
+
+/*** overall layout (the 'panels') ***/
+
+/* the ridiculous width of #sequence-panel is necessary to make sure #row-label-panel and
+   #sequence-content-panel always float next to each other, no matter how wide #sequence-content-panel becomes
+   (and it may become very wide when it contains a long sequence alignment...) */
+
+#sequence-panel {
+    width: 100000px;
+}
+
+#row-label-panel {
+    float: left;
+}
+
+#sequence-content-panel {
+    float: left;
+}
+
+
+/*** admin ***/
 
 .noraseq-admin {
     font-size: 1em;
@@ -59,28 +106,7 @@ body {
     float: right;
 }
 
-
-.option-link {
-    font-size: 0.9em;
-}
-
-.option-link > p {
-    display: inline;
-}
-
-.option-link > a {
-    color: #0000ee;
-    text-decoration: none;
-}
-
-.option-link > a:visited {
-    color: #0000ee;
-}
-
-.option-link > a:hover {
-    text-decoration: underline;
-}
-
+/*** stats-panel (tab box) ***/
 
 #stats-panel {
     background: transparent;
@@ -103,10 +129,12 @@ body {
     float: left;
 }
 
-
 .admin-display-cell {
     float: left;
 }
+
+/*** specific contents of each tab ***/
+
 
 .column-score-histogram {
     float: left;
@@ -129,21 +157,12 @@ body {
     background-color: #ffffff;
 }
 
-.x-overflow-container {
-    overflow: hidden;
-}
 
-.y-overflow-container {
-    overflow: hidden;
-}
-
-#row-label-control {
-    background-color: #e8ecf9;
-}
+/*** column labels ***/
 
 #column-labels {
     background-color: #d5ddf3;
-    height: 30px;
+    height: 30px;           /* must remain same as #row-label-control */
     width: 100%;
     position: relative;
 }
@@ -193,6 +212,9 @@ body {
     background-color: #dfd2ab;
 }
 
+
+/*** sequence table ***/
+
 .seq-table {
     table-layout: fixed;
     background-color: #efefe0;
@@ -214,6 +236,7 @@ body {
     background-color: #ebead3;
     border: 1px solid #ebead3;
     padding: 0;
+    height: 18px;                           /* must remain same as #row-labels-table td */
 }
 
 .seq-table .gap {
@@ -239,7 +262,6 @@ body {
     border-color: #CFBD87;
 }
 
-
 .seq-table .hovered {
     border-color: #EBE9B8 #CFBD87;
     background-color: #EBE9B8;
@@ -260,30 +282,47 @@ body {
 }
 
 
+/*** row labels ***/
 
-/* the ridiculous width of #sequence-panel is necessary to make sure #row-label-panel and
-   #sequence-content-panel
-   always float next to each other, no matter how wide #sequence-content-panel becomes (and it may become very
-   wide when it contains a long sequence alignment...) */
-
-#sequence-panel {
-    width: 100000px;
+#row-label-control {
+    height: 30px;
 }
 
-#row-label-panel {
+#row-labels-table {
+    border-spacing: 0;
+    border-collapse: separate;
+    margin-left: 5px;
+    white-space: nowrap;
+}
+
+#row-labels-table td {
+    color: #333333;
+    background-color: #ebead3;
+    border-color: #dfd2ab;
+
+    height: 18px;
+    
+    padding: 0px 5px 1px 5px;
+    border-style: solid none none solid;
+    border-width: 1px;
+    -moz-border-radius-topleft: 5px;
+    -webkit-border-top-left-radius: 5px;
+    border-top-left-radius: 5px;
+    -moz-border-radius-bottomright: 5px;
+    -webkit-border-bottom-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+/*** tree ***/
+
+#tree {
+    width: 100px;
+    height:100px;
     float: left;
-    width:200px;
-    height: 500px;
-    background-color: #cccccc;
-    color: black;
-}
-
-#sequence-content-panel {
-    float: left;
 }
 
 
-/* helpers */
+/*** helpers ***/
 
 /* add this class to remove pesky left margin from leftmost inline element */
 .noraseq-left-align {
@@ -308,4 +347,12 @@ body {
 .noraseq-bottom-anchor {
     float: none;
     clear: both;
+}
+
+.x-overflow-container {
+    overflow: hidden;
+}
+
+.y-overflow-container {
+    overflow: hidden;
 }
