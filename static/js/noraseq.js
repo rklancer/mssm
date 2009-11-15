@@ -203,7 +203,8 @@ var appstate = (function () {
         that.seturl_success = function (response, status) {
             var jq_doc = $(response);
             var jq_table = jq_doc.find("table.seq-table");
-
+        
+            
             var row_label_table = $("<table id='row-labels-table'><tbody></tbody></table>");
             var body = row_label_table.find("tbody");
             
@@ -216,8 +217,8 @@ var appstate = (function () {
                 body.append(tr_clone);
             });
                 
-            set("row-label-table", row_label_table);
-            
+            set("row-label-table", row_label_table);  
+
             jq_table.find("th").empty();
             jq_table.find("th:nth-child(1), th:nth-child(2)").remove();
             jq_table.find("td:nth-child(1), td:nth-child(2)").remove();
@@ -459,9 +460,10 @@ var appstate = (function () {
             var that = {};
             var propmgr = tstate.add_property_manager(that);
             var set = propmgr.set;
-            propmgr.add("serialized", "added", "removed");
+            propmgr.add("serialized", "added", "removed", "num");
 
             set("serialized", "");
+            set("num", 0);
             set("added", []);
             set("removed", []);
 
@@ -549,6 +551,7 @@ var appstate = (function () {
                 var changed = set_to(new_elts);
                 if (changed) {
                     set("serialized", serialize());
+                    set("num", that.as_list().length);
                 }
             };
 
@@ -571,6 +574,7 @@ var appstate = (function () {
                     //could change sense of "removed" to be "most recently removed" (& then remove next line:)
                     set("removed", []);     
                     set("serialized", serialize());
+                    set("num", that.as_list().length);                    
                 }
             };
 
@@ -590,6 +594,7 @@ var appstate = (function () {
                     set("removed", removed);
                     set("added", []);
                     set("serialized", serialize());
+                    set("num", that.as_list().length);                    
                 }
             };
 
@@ -719,13 +724,13 @@ $(document).ready(function() {
     
     
     /*** column hovering and clicking ***/
-    
+        
     
     $("#column-labels-table").mouseover( function (e) {
         var th = $(e.target).closest("th");
         var col_class_selector = "."+th.attr("className").match(/\b(c\d+)\b/)[1];
         var col = $(col_class_selector);
-        
+    
         col.addClass("hovered");
         th.bind("mouseout.noraseq-hover", function () {
             col.removeClass("hovered");
@@ -745,6 +750,18 @@ $(document).ready(function() {
             tstate("selected.cols").add([col_num]);
         }
     });
+    
+    var display_count = function() {
+
+    }
+    
+    tstate("selected.cols.num").on_change(function (n_cols) {
+        $(".num-selected-display p.cols").text(n_cols + " columns selected:");
+    });
+    
+    tstate("selected.rows.num").on_change(function (n_rows) {
+        $(".num-selected-display p.rows").text(n_rows + " rows selected:");
+    });
 
     tstate("selected.cols.added").on_change(function (added) {
         var n_added = added.length;
@@ -758,6 +775,8 @@ $(document).ready(function() {
         for (var i = 0; i < n_removed; i++) {
             $(".c" + removed[i]).removeClass("selected");
         }
+        
+        display_count();
     });
     
 
@@ -809,14 +828,22 @@ $(document).ready(function() {
 
     /*** scrolling ***/
 
-    $(".seq-table").live("mousedown", function (e) {
+    var scroll_done = function (e) {
+        var target = $(e.target).closest(".scrolling");
+        target.removeClass("scrolling");
+        target.unbind("mousemove.noraseq-scrolling");
+    };
+    
+
+    $("#sequence-content-panel .y-overflow-container .scrolling-panel").live("mousedown", function (e) {
         var x, y, dx, dy;
-        $(".seq-table").addClass("scrolling");
+        var panel = $(e.target).closest(".scrolling-panel");
+        panel.addClass("scrolling");
         
         x = e.screenX;
         y = e.screenY;
 
-        $(".scrolling").bind("mousemove.noraseq-scrolling", function (e) {
+        panel.bind("mousemove.noraseq-scrolling", function (e) {
             dx = e.screenX - x;
             x = e.screenX;
             dy = e.screenY - y;
@@ -829,18 +856,15 @@ $(document).ready(function() {
                 $(this).scrollLeft($(this).scrollLeft() - dx);
             });
         });
+        panel.bind("mouseleave", scroll_done);        /* bind here b/c live() doesn't support mouseleave */
+        panel.bind("mouseup", scroll_done);
         
         return false;
     });
     
-    $(".scrolling").live("mouseup", function (e) {
-        var target = $(e.target).closest(".scrolling")
-        target.removeClass("scrolling");
-        target.unbind("mousemove.noraseq-scrolling");
-    });
-    
 
     /*** history and the back button ***/
+
 
     tstate("selected.cols.serialized").hist("scol");
     tstate("selected.rows.serialized").hist("srow");
@@ -866,6 +890,22 @@ $(document).ready(function() {
     
     // and finally load the alignment
     tstate("base").set_instance_url(BASE_URL);
+    
+    
+    /*** test ***/
+    
+    $("#re-sort").click(function () {
+        var t0 = (new Date()).getTime();
+        
+        trs = $(".seq-table tr");
+        
+        for (var i = 1; i < trs.length+1; i++) 
+        { 
+            $('.seq-table').append(trs.filter(".r"+i)); 
+        }
+        
+        alert((new Date()).getTime() - t0);
+    });
 });
 
 

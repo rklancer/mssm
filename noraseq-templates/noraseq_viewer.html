@@ -44,7 +44,8 @@
 		<div id="stats-panel">
 			<ul>
 				<li><a href="#column-stats">Columns scored individually</a></li>
-				<li><a href="#column-pair-stats">Pairs of columns scored for relatedness</a></li>
+				<!-- Not sure whether pairs are all that important, right now.
+				<li><a href="#column-pair-stats">Pairs of columns scored for relatedness</a></li> -->
 				<li><a href="#column-vs-selected-column-stats">Columns scored for relatedness to...</a></li>
 			</ul>
 			<div id="column-stats">
@@ -72,17 +73,17 @@
 		
 					<p>approx # residues allowed:</p>
 					<p>
-					  <input id="one-allowed-radio-button" type="radio" style="margin-left: 1em" 
-					         name="column-rank-statistic" value="one-allowed">
-				  	<label for="one-allowed-radio-button">1</label>
-		
-					  <input id="two-allowed-radio-button" type="radio" 
+					  <input id="two-allowed-radio-button" type="radio" style="margin-left: 1em"
 					         name="column-rank-statistic" value="two-allowed">
 					  <label for="two-allowed-radio-button">2</label>
 		
-					  <input id="three-plus-allowed-radio-button" type="radio" 
-					         name="column-rank-statistic" value="three-plus-allowed">
-				    <label for="three-plus-allowed-radio-button">many</label>
+  					  <input id="three-allowed-radio-button" type="radio"  
+  					         name="column-rank-statistic" value="three-allowed">
+  				  	  <label for="three-allowed-radio-button">3</label>
+  				  	
+					  <input id="many-allowed-radio-button" type="radio" 
+					         name="column-rank-statistic" value="many-allowed">
+				    <label for="many-allowed-radio-button">many</label>
 				  </p>
 				</div>  <!-- admin-display-cell -->
 			
@@ -117,13 +118,13 @@
 				<div class="noraseq-bottom-anchor"></div>
 			</div> <!-- column-stats -->
 
-			
+			<!--
 			<div id="column-pair-stats">
 			  Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis. 
 			  Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus.
 			  Mauris porttitor ullamcorper augue.
 			</div> 
-			
+			-->
 			<div id="column-vs-selected-column-stats">
 			  Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis. 
 			  Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus.
@@ -136,6 +137,11 @@
 		<p class="option-link">
 		  color: <a href="#">conservation</a> | <a href="#">hydrophobicity</a> | <a href="#">size</a>
 		</p>
+		
+		<div class="num-selected-display">
+		    <p class="cols">0 columns selected</p>
+		    <p class="rows">0 rows selected</p>
+		</div>
 	</div> <!-- admin -->
 	
 
@@ -144,6 +150,7 @@
 		
 		<button id="display-none" type="button">set display: none</button>
 	-->
+	<button id="re-sort" type="button">resort</button>
 
 
 	<div id="sequence-panel">
