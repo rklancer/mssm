@@ -170,7 +170,7 @@ var appstate = (function () {
     };
     
     
-    var new_seq_table_instance = function (url) {
+    var new_seq_table_inst ance = function (url) {
 
         /* Some quick Firebug experimentation suggests passing a ~1M string around between javascript
            methods/functions is no problem at all. So we'll stick to always building the new table on the
@@ -204,7 +204,6 @@ var appstate = (function () {
             var jq_doc = $(response);
             var jq_table = jq_doc.find("table.seq-table");
         
-            
             var row_label_table = $("<table id='row-labels-table'><tbody></tbody></table>");
             var body = row_label_table.find("tbody");
             
@@ -218,7 +217,7 @@ var appstate = (function () {
             });
                 
             set("row-label-table", row_label_table);  
-
+                        
             jq_table.find("th").empty();
             jq_table.find("th:nth-child(1), th:nth-child(2)").remove();
             jq_table.find("td:nth-child(1), td:nth-child(2)").remove();

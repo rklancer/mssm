@@ -270,6 +270,76 @@ class ThresholdGrouping(models.Model):
     threshold = models.FloatField()
 
 
+class RowGroup(models.Model):
+    
+    # issue. Would like to have a 'Group' table against which to score relatedness. 
+    # ThresholdGroupings are currently
+    # essentially the same as Clades. But other groupings will be specified differently...
+    
+    # solution. 
+    # 1. create the 'RowGroup' model
+    # 2. for each type of row group (threshold group, column-sorted group), create a model with a one-to-one
+    #    relationship with RowGroup. This model contains the uniquely specifying info for that group (i.e.,
+    #    the root clade for a threshold_group; a M2M field on Rows for manual-sort groups, etc.)
+    # 3. Possibly include an M2M relationship with Rows in RowGroup model -- but notice this is a sort
+    #    of denormalization (the augmenting model should contain the methods necessary to calculate the rows)
+    # 4. Update Alignment.get_threshold_grouping, ThresholdGrouping (which should now point to RowGroups
+    #    instead of Clades), and the Piston resources that return groupings
+    
+    pass
+    
+
+class UniqueColumnScore(models.Model):
+    
+    column = models.OneToOneField(Column, db_index=True)
+    value = models.FloatField(null=True)               # null -> not calculated for this col (too many gaps)
+    pending = models.BooleanField()                    # whether the calculation's value is available yet
+    
+    class Meta:
+        abstract = True
+
+
+class Conservation(UniqueColumnScore):
+
+    pass
+
+    
+class RelatednessScore(models.Model):
+    
+    related_column = models.ForeignKey(Column)
+    value = models.FloatField(null=True)
+    pending = models.BooleanField()
+    
+    def save(self, *args, **kwargs):
+        if (column1.alignment != column2.alignment):
+            return              # FIXME what exception should this raise?
+        super(Relatedness, self).save(*args, **kwargs)
+    
+    class Meta:
+        unique_together = ('subject', 'related_column')
+        abstract = True
+        
+
+class ColumnRelatedness(RelatednessScore):
+    
+    subject = models.ForeignKey(Column, db_index=True, related_name='relatedness_scores')
+    
+
+class CladeRelatedness(RelatednessScore):
+    
+    subject = models.ForeignKey(Clade, db_index=True, related_name='relatedness_scores')
+
+
+class RowGroupRelatedness(RelatednessScore):
+
+    subject = models.ForeignKey(RowGroup, db_index=True, related_name='relatedness_scores')
+
+
+
+### forms ###
+
+
+
 class BaseAlignmentForm(ModelForm):
 
     class Meta:
