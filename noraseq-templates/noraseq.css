@@ -148,6 +148,7 @@ body {
     width: 250px;
     height: 150px;
     background-color: #ffffff;
+    overflow-y: auto;
 }
 
 .selected-column-histogram {

@@ -223,11 +223,11 @@ class Alignment(models.Model):
         seq_list = self.rows.values_list('sequence', flat=True)
         seq_weights = calculate_sequence_weights(seq_list)
         
-        cols = [col for col in self.columns.order_by('num')]
+        cols = self.columns.order_by('num')
         scores = window_score([conservation(col.sequence, seq_weights) for col in cols])
     
         for col, score in izip(cols, scores):
-            cons = Conservation(column=col, value=score, pending=False)
+            cons = Conservation(column=col, score=score, pending=False)
             cons.save()
 
         
@@ -309,8 +309,7 @@ class RowGroup(models.Model):
 class UniqueColumnScore(models.Model):
     
     column = models.OneToOneField(Column, db_index=True)
-    # rename as 'score'?
-    value = models.FloatField(null=True)               # null -> not calculated for this col (too many gaps)
+    score = models.FloatField(null=True)               # null -> not calculated for this col (too many gaps)
     pending = models.BooleanField()                    # whether the calculation's value is available yet
     
     class Meta:

@@ -64,10 +64,10 @@ column_urls = patterns('',
 )
 
 
-statistic_urls = patterns('',
-    (r'^conservation/', conservation_statistics),
-    (r'^size/', size_statistics),
-    (r'^charge/', charge_statistics),
+score_urls = patterns('',
+    (r'^conservation/', conservation_scores),
+    (r'^size/', size_scores),
+    (r'^charge/', charge_scores),
 )
 
 
@@ -123,7 +123,7 @@ alignment_urls = patterns('',
     (r'^rows/$', row_list),
     (r'^row/(?P<row_num>\d+)/', include(row_urls)),
     (r'^columns/$', column_list),
-    (r'^columns/statistics/', include(statistic_urls)),
+    (r'^columns/statistics/', include(score_urls)),
     (r'^column/(?P<col_num>\d+)/', include(column_urls)),
     (r'^tags/', include(tag_urls)),
     (r'^tag/row/(?P<tag>[-\w]+)/$', row_scoped_tag),

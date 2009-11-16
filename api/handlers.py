@@ -11,7 +11,7 @@ import re
 from noraseq.utils import PreRenderer
 
 # import models below
-from noraseq.models import Alignment, Row, ThresholdGrouping
+from noraseq.models import Alignment, Row, ThresholdGrouping, Conservation
 
 class TunneledBaseHandler(BaseHandler):
     
@@ -288,6 +288,33 @@ class CommentOnRow(TunneledBaseHandler):
         row.save()
         return HttpResponse(status=204)
 
+
+class ConservationScores(BaseHandler):
+    
+    def read(self, request, alignment_id):
+        alignment = get_object_or_404(Alignment, pk = alignment_id)
         
+        cons = Conservation.objects.select_related(
+            'column'
+        ).filter(
+            column__alignment=alignment
+        ).values_list(
+            'column__num', 'score'
+        )
         
+        scores = {}
+        for col_num, score in cons:
+            #url = reverse('noraseq.api.resources.column', 
+            #    kwargs = {'alignment_id': alignment_id, 'col_num': str(col_num)})
+            url = 'c'+str(col_num)      # temporarily, for demo.
+            scores[url] = score
+        
+        return scores
+            
+            
+class ColumnResource(BaseHandler):
+    
+    def read(self, request, alignment_id, col_num):
+        return HttpResponse("column " + col_num)
+
     

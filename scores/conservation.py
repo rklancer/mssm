@@ -72,6 +72,11 @@ PSEUDOCOUNT = .0000001
 
 amino_acids = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', '-']
 
+# This is the BLOSUM62 distribution. It is the default background distribution.
+# The amino acid order is 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V'
+
+blosum62_bgdist = [0.078, 0.051, 0.041, 0.052, 0.024, 0.034, 0.059, 0.083, 0.025, 0.062, 0.092, 0.056, 0.024, 0.044, 0.043, 0.059, 0.055, 0.014, 0.034, 0.072]
+
 # dictionary to map from amino acid to its row/column in a similarity matrix
 aa_to_index = {}
 for i, aa in enumerate(amino_acids):
@@ -280,14 +285,9 @@ def calc_z_scores(scores, score_cutoff):
     return z_scores
 
 
-# This is the BLOSUM62 distribution. It is the default background distribution.
-# The amino acid order is 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V'
-
-blosum62_bkgd = [0.078, 0.051, 0.041, 0.052, 0.024, 0.034, 0.059, 0.083, 0.025, 0.062, 0.092, 0.056, 0.024, 0.044, 0.043, 0.059, 0.055, 0.014, 0.034, 0.072]
-
 def conservation(col, seq_weights, gap_cutoff=0.3):
     if gap_percentage(col) <= gap_cutoff:
-        return js_divergence(col, blosum62_bkgd, seq_weights)
+        return js_divergence(col, blosum62_bgdist, seq_weights)
     else:
         return None
 

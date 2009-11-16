@@ -11,7 +11,6 @@ auth = NoAuthentication
 
 # alignment basics
 
-#alignment_base = dummy
 alignment_base = Resource(AlignmentBase)
 alignment_table = Resource(Table)
 row_list = dummy
@@ -56,7 +55,7 @@ name_of_row = dummy
 comment_on_row = Resource(CommentOnRow)
 tags_for_row = dummy
 
-column = dummy
+column = Resource(ColumnResource)
 comment_on_column = dummy
 tags_for_column = dummy
 
@@ -65,9 +64,9 @@ tags_for_column = dummy
 
 pair_correlations = dummy         # takes query parameters 'bins', 'bin', 'start', 'num'
 column_correlations = dummy       # take query parameter 'url' identifying a column, tag, group, or clade
-conservation_statistics = dummy
-size_statistics = dummy
-charge_statistics = dummy
+conservation_scores = Resource(ConservationScores)
+size_scores = dummy
+charge_scores = dummy
 
 
 # tags

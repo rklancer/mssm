@@ -63,6 +63,14 @@
         link</a>
         </dd>
         {% endif %}
+        <dt>
+            Conservation scores
+        </dt>
+        <dd>
+            <a rel="conservation-scores"
+               href="{% url noraseq.api.resources.conservation_scores alignment_id=alignment.id %}">    
+            link</a>
+        </dd>
     </dl>
     
     {% if not column_sorted %}
@@ -74,6 +82,7 @@
             <input type="submit"></input>
         </form>
     {% endif %}
+    
 </div>
 </body>
 </html>

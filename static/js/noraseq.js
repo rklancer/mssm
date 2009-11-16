@@ -104,6 +104,35 @@ var appstate = (function () {
 
         return that;
     };
+    
+    
+    var new_column_scores_instance = function (url) {
+        var secrets = {};
+
+        var that = new_url_backed_instance({
+            url: url,
+            data_type: "json",
+            secrets: secrets
+        });
+
+        var propmgr = secrets.property_manager;
+        propmgr.add("scores");
+        var set = propmgr.set;
+        
+
+        that.seturl_success = function (scores, status) {
+            set("scores", scores);
+        }
+        
+        that.seturl_error = function (xhr, status, err) {
+            console.log("error: new_column_scores_instance() ajax call returned error, url = " + url);
+        };
+        
+        that.load();
+        return that;
+    }
+        
+
 
 
     var new_base_instance = function (url) {
@@ -155,6 +184,10 @@ var appstate = (function () {
                     form: jq_base.find("form.groups-def-request.threshold-request")
                 });*/
             }
+            
+            // make a helper function for this pattern of setting instance url for a given a[rel=...]
+            tstate("conservation-scores").set_instance_url(
+                jq_base.find("a[rel='conservation-scores']").attr("href"));
         };
 
 
@@ -170,7 +203,7 @@ var appstate = (function () {
     };
     
     
-    var new_seq_table_inst ance = function (url) {
+    var new_seq_table_instance = function (url) {
 
         /* Some quick Firebug experimentation suggests passing a ~1M string around between javascript
            methods/functions is no problem at all. So we'll stick to always building the new table on the
@@ -555,6 +588,18 @@ var appstate = (function () {
             };
 
 
+            that.toggle = function (elt) {
+                if (typeof(elt) === "number") {
+                    if (elements[elt]) {
+                        that.remove([elt]);
+                    }
+                    else {
+                        that.add([elt]);
+                    }
+                }
+            }                        
+                
+
             that.add = function (new_elts) {
                 var added = [];
                 var item;
@@ -628,7 +673,7 @@ var appstate = (function () {
         var root = {};
 
         var propmgr = tstate.add_property_manager(root);
-        propmgr.add("selected", "base", "seq-table", "sort-cols");
+        propmgr.add("selected", "base", "seq-table", "sort-cols", "conservation-scores");
         var set = propmgr.set;
 
         global_pm = propmgr;
@@ -638,6 +683,7 @@ var appstate = (function () {
         set("base", new_url_backed_container(new_base_instance));
         set("seq-table", new_url_backed_container(new_seq_table_instance));
         set("sort-cols", new_sort_cols());
+        set("conservation-scores", new_url_backed_container(new_column_scores_instance));
         
         tstate.root(root);                          // now tstate("tree") = tree as defined above, etc.
     };
@@ -705,6 +751,26 @@ $(document).ready(function() {
     });
 
     
+    tstate("conservation-scores.instance.scores").on_change(function (scores) {
+        // Quickly hacked together to show that it *can* be done.
+        
+        if (tstate("conservation-scores.instance.loaded").val()) {
+            var scores_list = [];
+            for (col in scores) {
+                if (scores.hasOwnProperty(col)) {                        
+                    col_num = col.substring(1, col.length)*1;
+                    scores_list[col_num] = scores[col];
+                }
+            }
+            
+            column_by_score_vis.w(scores_list.length * 3);
+            column_by_score_vis.d(scores_list);
+            column_by_score_vis.render();
+        };
+    });
+    
+    
+    
     $("#stats-panel").tabs();
     
     $('#stats-panel ul.ui-tabs-nav a').click(function(){
@@ -727,13 +793,25 @@ $(document).ready(function() {
     
     $("#column-labels-table").mouseover( function (e) {
         var th = $(e.target).closest("th");
-        var col_class_selector = "."+th.attr("className").match(/\b(c\d+)\b/)[1];
-        var col = $(col_class_selector);
+        var col_class = th.attr("className").match(/\b(c\d+)\b/)[1];
+        var col_num = col_class.substring(1,col_class.length)*1
+        var col = $("."+col_class);
     
         col.addClass("hovered");
+        
+        // quickie protovis interaction. Refactor to tstate("hovered.cols") object to handle e.g.,
+        // hovering of multiple columns via single histogram bar
+        
+        column_by_score_vis.i(col_num-1);
+        column_by_score_vis.render();
+  
         th.bind("mouseout.noraseq-hover", function () {
             col.removeClass("hovered");
             th.unbind("mouseout.noraseq-hover");
+            
+            // quickie protovis interaction
+            column_by_score_vis.i(-1);
+            column_by_score_vis.render();
         });
     });
     
@@ -742,17 +820,9 @@ $(document).ready(function() {
         var col_class = $(e.target).attr("className").match(/\b(c\d+)\b/)[1];
         var col_num = col_class.substring(1,col_class.length)*1;
         
-        if ($("."+col_class).hasClass("selected")) {
-            tstate("selected.cols").remove([col_num]);
-        }
-        else {
-            tstate("selected.cols").add([col_num]);
-        }
+        tstate("selected.cols").toggle(col_num);
     });
     
-    var display_count = function() {
-
-    }
     
     tstate("selected.cols.num").on_change(function (n_cols) {
         $(".num-selected-display p.cols").text(n_cols + " columns selected:");
@@ -774,8 +844,6 @@ $(document).ready(function() {
         for (var i = 0; i < n_removed; i++) {
             $(".c" + removed[i]).removeClass("selected");
         }
-        
-        display_count();
     });
     
 
@@ -801,12 +869,7 @@ $(document).ready(function() {
         var row_class = $(e.target).closest("tr").attr("className").match(/\b(r\d+)\b/)[1];
         var row_num = row_class.substring(1,row_class.length)*1;
         
-        if ($("."+row_class).hasClass("selected")) {
-            tstate("selected.rows").remove([row_num]);
-        }
-        else {
-            tstate("selected.rows").add([row_num]);
-        }
+        tstate("selected.rows").toggle(row_num);
     });
     
     
