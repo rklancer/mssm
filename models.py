@@ -11,10 +11,12 @@ from Bio import AlignIO
 from Bio.Nexus.Nexus import Tree
 from StringIO import StringIO
 from datetime import datetime
+from itertools import izip
 
 import os, tempfile
 import mptt
 
+from noraseq.scores.conservation import calculate_sequence_weights, conservation, window_score
 
 ALIGNMENT_FORMAT_CHOICES = (
     ('clustal', 'Clustal'),
@@ -97,6 +99,7 @@ class Alignment(models.Model):
 
     def extract_related_objects(self):
         self.extract_rows_and_columns()
+        self.extract_conservation_scores()
         self.newick_tree = self.get_newick_tree()
         self.save()
         tree = Tree(self.newick_tree)
@@ -213,7 +216,21 @@ class Alignment(models.Model):
 
         return new_grouping
 
+    
+    def extract_conservation_scores(self):
+        # okay, this could surely be modified to hit only the 'columns' table instead of rows and columns
+         
+        seq_list = self.rows.values_list('sequence', flat=True)
+        seq_weights = calculate_sequence_weights(seq_list)
+        
+        cols = [col for col in self.columns.order_by('num')]
+        scores = window_score([conservation(col.sequence, seq_weights) for col in cols])
+    
+        for col, score in izip(cols, scores):
+            cons = Conservation(column=col, value=score, pending=False)
+            cons.save()
 
+        
 class Row(models.Model):
     alignment = models.ForeignKey(Alignment, related_name = 'rows', db_index=True)
     num = models.IntegerField(editable=False, db_index=True)
@@ -292,6 +309,7 @@ class RowGroup(models.Model):
 class UniqueColumnScore(models.Model):
     
     column = models.OneToOneField(Column, db_index=True)
+    # rename as 'score'?
     value = models.FloatField(null=True)               # null -> not calculated for this col (too many gaps)
     pending = models.BooleanField()                    # whether the calculation's value is available yet
     
