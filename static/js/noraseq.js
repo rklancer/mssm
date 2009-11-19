@@ -759,7 +759,7 @@ $(document).ready(function() {
             for (col in scores) {
                 if (scores.hasOwnProperty(col)) {                        
                     col_num = col.substring(1, col.length)*1;
-                    scores_list[col_num] = scores[col];
+                    scores_list[col_num-1] = scores[col];
                 }
             }
             

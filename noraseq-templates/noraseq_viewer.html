@@ -1,118 +1,118 @@
 <!doctype html>
 <html lang="en">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-	
-	<title>NORASeq view of {{ alignment.name }}</title>
-	
-	<!-- generic jquery UI theme -->
-	<link type="text/css" 
-  	    href="{{MEDIA_URL}}noraseq/css/smoothness/jquery-ui-1.7.2.custom.css" 
-  	    rel="stylesheet" />
-  
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+    <title>NORASeq view of {{ alignment.name }}</title>
+
+    <!-- generic jquery UI theme -->
+    <link type="text/css"
+        href="{{MEDIA_URL}}noraseq/css/smoothness/jquery-ui-1.7.2.custom.css"
+        rel="stylesheet" />
+
   <!-- jquery UI theme scoped to .noraseq-admin -->
-	<link type="text/css" 
-		    href="{{MEDIA_URL}}noraseq/css/noraseq-admin-grey-theme-1/jquery-ui-1.7.2.custom.css" 
-		    rel="stylesheet" />
-  
-	<link type="text/css" 
-	      href="{% url noraseq.noraseq_css.css css_file_name='noraseq.css' %}" 
-	      rel="stylesheet" />
-	
-	<script type="text/javascript" src="{{MEDIA_URL}}js/jquery-1.3.2.min.js"></script>
+    <link type="text/css"
+            href="{{MEDIA_URL}}noraseq/css/noraseq-admin-grey-theme-1/jquery-ui-1.7.2.custom.css"
+            rel="stylesheet" />
+
+    <link type="text/css"
+          href="{% url noraseq.noraseq_css.css css_file_name='noraseq.css' %}"
+          rel="stylesheet" />
+
+    <script type="text/javascript" src="{{MEDIA_URL}}js/jquery-1.3.2.min.js"></script>
     <!-- FIXME replace bbq with min version eventually -->
-	<script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/jquery.ba-bbq.js"></script>
-	<script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/jquery-ui-1.7.2.custom.min.js"></script>
-	<script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/protovis-d3.1.js"></script>
-	<script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/noraseq.js"></script>
-	<script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/transtate.js"></script>
-	<script type="text/javascript">
-	    BASE_URL="{{base_url}}";
-	</script>
-	
+    <script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/jquery.ba-bbq.js"></script>
+    <script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/jquery-ui-1.7.2.custom.min.js"></script>
+    <script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/protovis-d3.1.js"></script>
+    <script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/noraseq.js"></script>
+    <script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/transtate.js"></script>
+    <script type="text/javascript">
+        BASE_URL="{{base_url}}";
+    </script>
+
 </head>
 
 <body>
-	<div id="header">
-		<h1>
-		    NORA<span style="font-weight: bold">Seq</span>
-		</h1>
-	</div>
-	<hr>
-	<div id="admin" class="noraseq-admin">
-		<!-- stats-panel must be contained within an element with class noraseq-admin, rather than merely being
-			a *member* of the class, in order for jquery-ui tabs() to style it correctly -->
-		<div id="stats-panel">
-			<ul>
-				<li><a href="#column-stats">Columns scored individually</a></li>
-				<!-- Not sure whether pairs are all that important, right now.
-				<li><a href="#column-pair-stats">Pairs of columns scored for relatedness</a></li> -->
-				<li><a href="#column-vs-selected-column-stats">Columns scored for relatedness to...</a></li>
-			</ul>
-			<div id="column-stats">
-				<div class="admin-display-cell">
-					<div class="header-block">
-						<h2>score columns by</h2>
-					</div>
-					<p>
-					  <input id="conservation-radio-button" type="radio" class="noraseq-left-align" 
-					         name="column-rank-statistic" value="conservation">
-					  <label for="conservation-radio-button">conservation</label>
-					</p>
-		
-					<p>
-					  <input id="hydrophobicity-radio-button" type="radio" class="noraseq-left-align" 
-					         name="column-rank-statistic" value="hydrophobicity">
-					  <label for="hydrophobicity-radio-button">hydrophobicity</label>
-					</p>
-		
-					<p>
-					  <input id="size-radio-button" type="radio" class="noraseq-left-align" 
-					         name="column-rank-statistic" value="size">
-					  <label for="size-radio-button">residue size</label>
-				  </p>
-		
-					<p>approx # residues allowed:</p>
-					<p>
-					  <input id="two-allowed-radio-button" type="radio" style="margin-left: 1em"
-					         name="column-rank-statistic" value="two-allowed">
-					  <label for="two-allowed-radio-button">2</label>
-		
-  					  <input id="three-allowed-radio-button" type="radio"  
-  					         name="column-rank-statistic" value="three-allowed">
-  				  	  <label for="three-allowed-radio-button">3</label>
-  				  	
-					  <input id="many-allowed-radio-button" type="radio" 
-					         name="column-rank-statistic" value="many-allowed">
-				    <label for="many-allowed-radio-button">many</label>
-				  </p>
-				</div>  <!-- admin-display-cell -->
-			
-				<div class="noraseq-vrule" id="column-l-rule"></div>
-			
-				<div class="admin-display-cell">
-					<div class="header-block">
-					  <h2>summary of scores</h2>
-					</div>
-					<div class="column-score-histogram">
-					    
-					   
-					   
-					   
-					</div>
-				</div>  <!-- admin-display-cell -->
-			
-				<div class="noraseq-vrule" id="column-mid-rule"></div>
-			
-				<div class="admin-display-cell">
-					<div class="header-block">
-						<h2>columns by score</h2>
-						<p class="option-link"><a href="#">sort</a> | <a href="#">unsort</a></p>
-					</div>
-					<div class="column-by-score">
-					    		    
+    <div id="header">
+        <h1>
+            NORA<span style="font-weight: bold">Seq</span>
+        </h1>
+    </div>
+    <hr>
+    <div id="admin" class="noraseq-admin">
+        <!-- stats-panel must be contained within an element with class noraseq-admin, rather than merely
+            be a *member* of the class, in order for jquery-ui tabs() to style it correctly -->
+        <div id="stats-panel">
+            <ul>
+                <li><a href="#column-stats">Columns scored individually</a></li>
+                <!-- Not sure whether pairs are all that important, right now.
+                <li><a href="#column-pair-stats">Pairs of columns scored for relatedness</a></li> -->
+                <li><a href="#column-vs-selected-column-stats">Columns scored for relatedness to...</a></li>
+            </ul>
+            <div id="column-stats">
+                <div class="admin-display-cell">
+                    <div class="header-block">
+                        <h2>score columns by</h2>
+                    </div>
+                    <p>
+                      <input id="conservation-radio-button" type="radio" class="noraseq-left-align"
+                             name="column-rank-statistic" value="conservation">
+                      <label for="conservation-radio-button">conservation</label>
+                    </p>
 
-					    <script type="text/javascript+protovis">                            
+                    <p>
+                      <input id="hydrophobicity-radio-button" type="radio" class="noraseq-left-align"
+                             name="column-rank-statistic" value="hydrophobicity">
+                      <label for="hydrophobicity-radio-button">hydrophobicity</label>
+                    </p>
+
+                    <p>
+                      <input id="size-radio-button" type="radio" class="noraseq-left-align"
+                             name="column-rank-statistic" value="size">
+                      <label for="size-radio-button">residue size</label>
+                  </p>
+
+                    <p>approx # residues allowed:</p>
+                    <p>
+                      <input id="two-allowed-radio-button" type="radio" style="margin-left: 1em"
+                             name="column-rank-statistic" value="two-allowed">
+                      <label for="two-allowed-radio-button">2</label>
+
+                      <input id="three-allowed-radio-button" type="radio"
+                             name="column-rank-statistic" value="three-allowed">
+                      <label for="three-allowed-radio-button">3</label>
+
+                      <input id="many-allowed-radio-button" type="radio"
+                             name="column-rank-statistic" value="many-allowed">
+                    <label for="many-allowed-radio-button">many</label>
+                  </p>
+                </div>  <!-- admin-display-cell -->
+
+                <div class="noraseq-vrule" id="column-l-rule"></div>
+
+                <div class="admin-display-cell">
+                    <div class="header-block">
+                      <h2>summary of scores</h2>
+                    </div>
+                    <div class="column-score-histogram">
+
+
+
+
+                    </div>
+                </div>  <!-- admin-display-cell -->
+
+                <div class="noraseq-vrule" id="column-mid-rule"></div>
+
+                <div class="admin-display-cell">
+                    <div class="header-block">
+                        <h2>columns by score</h2>
+                        <p class="option-link"><a href="#">sort</a> | <a href="#">unsort</a></p>
+                    </div>
+                    <div class="column-by-score">
+
+
+                        <script type="text/javascript+protovis">
 
                             var vis = new pv.Panel()
                                 .def("d", [])
@@ -120,10 +120,10 @@
                                 .def("w", 0)
                                 .width(function () { return vis.w(); })
                                 .height(130);
-                                
+
                               vis.add(pv.Bar)
                                 .data(function () { return vis.d(); })
-                                .left(function() this.index * 3)                              
+                                .left(function() this.index * 3)
                                 .bottom(0)
                                 .width(3)
                                 .height(function(d) d * 130)
@@ -136,96 +136,99 @@
                                 .event("mouseout", function() {
                                     vis.i(-1);
                                     $(".hovered").removeClass("hovered");
-                                    return this; 
+                                    return this;
                                 })
-                                .event("click", function () {tstate("selected.cols").toggle(this.index+1); return this; });
-                                
+                                .event("click", function () {
+                                    tstate("selected.cols").toggle(this.index+1); 
+                                    return this; 
+                                });
+
                               vis.render();
-                              
+
                               var column_by_score_vis = vis;
-                              
-                          </script>                         
 
-					</div>
-				</div> <!-- admin-display-cell -->
-			
-				<div class="noraseq-vrule" id="column-r-rule"></div>
-			
-				<div class="admin-display-cell">
-					<div class="header-block">
-						<h2 class="ghosted">selected column</h2>
-					</div>
-					<div class="selected-column-histogram"></div>
-				</div>  <!-- admin-display-cell -->
-				
-				<div class="noraseq-bottom-anchor"></div>
-			</div> <!-- column-stats -->
+                          </script>
 
-			<!--
-			<div id="column-pair-stats">
-			  Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis. 
-			  Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus.
-			  Mauris porttitor ullamcorper augue.
-			</div> 
-			-->
-			<div id="column-vs-selected-column-stats">
-			  Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis. 
-			  Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus.
-			  Mauris porttitor ullamcorper augue.
-			</div>
-			
-		  <div style="float: none; clear: both" class="noraseq-bottom-anchor"></div>
-		</div> <!--stats-panel -->
-	
-		<p class="option-link">
-		  color: <a href="#">conservation</a> | <a href="#">hydrophobicity</a> | <a href="#">size</a>
-		</p>
-		
-		<div class="num-selected-display">
-		    <p class="cols">0 columns selected</p>
-		    <p class="rows">0 rows selected</p>
-		</div>
-	</div> <!-- admin -->
-	
+                    </div>
+                </div> <!-- admin-display-cell -->
 
-	<!--
-		put test buttons here: 
-		
-		<button id="display-none" type="button">set display: none</button>
+                <div class="noraseq-vrule" id="column-r-rule"></div>
+
+                <div class="admin-display-cell">
+                    <div class="header-block">
+                        <h2 class="ghosted">selected column</h2>
+                    </div>
+                    <div class="selected-column-histogram"></div>
+                </div>  <!-- admin-display-cell -->
+
+                <div class="noraseq-bottom-anchor"></div>
+            </div> <!-- column-stats -->
+
+            <!--
+            <div id="column-pair-stats">
+              Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis.
+              Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus.
+              Mauris porttitor ullamcorper augue.
+            </div>
+            -->
+            <div id="column-vs-selected-column-stats">
+              Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis.
+              Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus.
+              Mauris porttitor ullamcorper augue.
+            </div>
+
+          <div style="float: none; clear: both" class="noraseq-bottom-anchor"></div>
+        </div> <!--stats-panel -->
+
+        <p class="option-link">
+          color: <a href="#">conservation</a> | <a href="#">hydrophobicity</a> | <a href="#">size</a>
+        </p>
+
+        <div class="num-selected-display">
+            <p class="cols">0 columns selected</p>
+            <p class="rows">0 rows selected</p>
+        </div>
+    </div> <!-- admin -->
+
+
+    <!--
+        put test buttons here:
+
+        <button id="display-none" type="button">set display: none</button>
         <button id="re-sort" type="button">resort</button>
-	-->
+    -->
 
 
-	<div id="sequence-panel">
-		<div id="row-label-panel">
-			<div id="row-label-control"></div>
-			<div class="y-overflow-container">
-				<div class="scrolling-panel">
-					<div class="scrolling-content">
-						<div id="tree"></div>
-						<div id="row-labels">
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<div id="sequence-content-panel">
-			<div class="x-overflow-container">
-				<div class="scrolling-panel">
-					<div class="scrolling-content">
-						<div id="column-labels">
-						    <table id="column-labels-table">
-    						    <thead>
-    					        <tr id="column-labels-table-row">
-    										{% for col_num in header_row %}
-    										<th class="c{{col_num}}"></th>
-    										{% endfor %}
-    					        </thead>
-				            </table>
-						</div>
+    <div id="sequence-panel">
+        <div id="row-label-panel">
+            <div id="row-label-control"></div>
+            <div class="y-overflow-container">
+                <div class="scrolling-panel">
+                    <div class="scrolling-content">
+                        <div id="tree"></div>
+                        <div id="row-labels">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-						{% comment %}
+        <div id="sequence-content-panel">
+            <div class="x-overflow-container">
+                <div class="scrolling-panel">
+                    <div class="scrolling-content">
+                        <div id="column-labels">
+                            <table id="column-labels-table">
+                                <thead>
+                                <tr id="column-labels-table-row">
+                                            {% for col_num in header_row %}
+                                            <th class="c{{col_num}}"></th>
+                                            {% endfor %}
+                                </thead>
+                            </table>
+                        </div>
+
+                        {% comment %}
     <!-- comment: if it's desirable to have scroll bars to indicate the scroll position of the sequence
          table, one solution is to put the sequence table into a programmatically-generated iframe that is
          resized when the window resizes. (Using the more obvious strategy of placing the sequence table in a
@@ -233,22 +236,22 @@
          slow operation in Firefox. Resizing an iframe is immediate.) -->
                         {% endcomment %}
 
-						<div class="y-overflow-container">
-							<div class="scrolling-panel"> 
+                        <div class="y-overflow-container">
+                            <div class="scrolling-panel">
                                 <div id="loading-panel">
                                     <p> (Alignment is not loaded.) </p>
                                 </div>
-								<div id="seq-table-container" class="scrolling-content">
-                                    
+                                <div id="seq-table-container" class="scrolling-content">
+
                                     <!-- sequence table goes here -->
-                                    
-								</div> <!-- scrolling-content -->
-							</div> <!-- scrolling-panel -->
-						</div> <!-- y-overflow-container -->
-					</div> <!-- scrolling-content -->
-				</div> <!-- scrolling-panel -->
-			</div>	<!-- x-overflow-container -->		
-		</div> <!-- sequence-content-panel -->
-	</div> <!-- sequence-panel -->
+
+                                </div> <!-- scrolling-content -->
+                            </div> <!-- scrolling-panel -->
+                        </div> <!-- y-overflow-container -->
+                    </div> <!-- scrolling-content -->
+                </div> <!-- scrolling-panel -->
+            </div>  <!-- x-overflow-container -->
+        </div> <!-- sequence-content-panel -->
+    </div> <!-- sequence-panel -->
 </body>
 </html>
