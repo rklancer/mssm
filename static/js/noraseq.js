@@ -789,8 +789,8 @@ $(document).ready(function() {
     
     
     /*** column hovering and clicking ***/
-        
-    
+
+
     $("#column-labels-table").mouseover( function (e) {
         var th = $(e.target).closest("th");
         var col_class = th.attr("className").match(/\b(c\d+)\b/)[1];
@@ -804,6 +804,48 @@ $(document).ready(function() {
         
         column_by_score_vis.i(col_num-1);
         column_by_score_vis.render();
+
+
+        // FIXME this is just for the demo. Need to factor to using tstate("hovered.cols") etc.
+        
+        timeout(1000, function () {
+            if (th.hasClass('hovered')) {
+                th.qtip({
+                    content: 
+                        "Tags: ..."
+                         +"<p>Conservation: 12th of 438</p>"
+                         +"<p>Related Columns: 147, 29",
+                        show: { 
+                            ready: true,
+                        }, 
+                    hide: {
+                        delay: 200,
+                        fixed: true,
+                        effect: {
+                            length: 0,
+                        }
+                    },
+                    position: {
+                        adjust: {
+                            y: 15,
+                        },
+                        corner: {
+                            target: 'topRight',
+                            tooltip: 'topLeft',
+                        }
+                    },        
+                    style: {
+                        tip: 'leftMiddle',
+                        name: 'dark',
+                    },
+                    api: {
+                        onHide: function() { 
+                            th.qtip("destroy");
+                        },
+                    },
+                });
+            }
+        });
   
         th.bind("mouseout.noraseq-hover", function () {
             col.removeClass("hovered");
@@ -822,6 +864,7 @@ $(document).ready(function() {
         
         tstate("selected.cols").toggle(col_num);
     });
+    
     
     
     tstate("selected.cols.num").on_change(function (n_cols) {
