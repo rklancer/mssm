@@ -89,8 +89,26 @@
                       <h2>summary of scores</h2>
                     </div>
                     <div class="column-score-histogram">
+                        
+                        <script type="text/javascript+protovis">
+                            var scores_histogram_vis = (function () {
+                                var vis = new pv.Panel()
+                                    .def("d", [])
+                                    .width(200)
+                                    .height(150);
 
+                                vis.add(pv.Bar)
+                                    .data(function () { return vis.d(); })
+                                    .left(0)
+                                    .bottom(function() this.index * 5)
+                                    .width(function(d) d * 3)
+                                    .height(5);
 
+                                vis.render();
+
+                                return vis;
+                            }());
+                        </script>
 
 
                     </div>
@@ -107,39 +125,41 @@
 
 
                         <script type="text/javascript+protovis">
+                            column_by_score_vis = (function () {                            
+                                var vis = new pv.Panel()
+                                    .def("d", [])
+                                    .def("i", -1)
+                                    .def("w", 0)
+                                    .width(function () { return vis.w(); })
+                                    .height(150);
 
-                            var vis = new pv.Panel()
-                                .def("d", [])
-                                .def("i", -1)
-                                .def("w", 0)
-                                .width(function () { return vis.w(); })
-                                .height(130);
+                                  vis.add(pv.Bar)
+                                    .data(function () { return vis.d(); })
+                                    .left(function() this.index * 3)
+                                    .bottom(0)
+                                    .width(3)
+                                    .height(function(d) d * 150)
+                                    .fillStyle(function() vis.i() == this.index ? "orange" : "steelblue")
+                                    .event("mouseover", function() {
+                                        vis.i(this.index);
+                                        $(".c"+(this.index+1)).addClass("hovered");
+                                        return this;
+                                    })
+                                    .event("mouseout", function() {
+                                        vis.i(-1);
+                                        $(".hovered").removeClass("hovered");
+                                        return this;
+                                    })
+                                    .event("click", function () {
+                                        tstate("selected.cols").toggle(this.index+1); 
+                                        return this; 
+                                    });
 
-                              vis.add(pv.Bar)
-                                .data(function () { return vis.d(); })
-                                .left(function() this.index * 3)
-                                .bottom(0)
-                                .width(3)
-                                .height(function(d) d * 130)
-                                .fillStyle(function() vis.i() == this.index ? "orange" : "steelblue")
-                                .event("mouseover", function() {
-                                    vis.i(this.index);
-                                    $(".c"+(this.index+1)).addClass("hovered");
-                                    return this;
-                                })
-                                .event("mouseout", function() {
-                                    vis.i(-1);
-                                    $(".hovered").removeClass("hovered");
-                                    return this;
-                                })
-                                .event("click", function () {
-                                    tstate("selected.cols").toggle(this.index+1); 
-                                    return this; 
-                                });
+                                  vis.render();
+                                  
+                                  return vis;
+                            }());    
 
-                              vis.render();
-
-                              var column_by_score_vis = vis;
 
                           </script>
 
@@ -152,7 +172,32 @@
                     <div class="header-block">
                         <h2 class="ghosted">selected column</h2>
                     </div>
-                    <div class="selected-column-histogram"></div>
+                    <div class="selected-column-histogram">
+                        
+                        <script type="text/javascript+protovis">
+                            
+                            var column_histogram_vis = (function () {
+                                var vis = new pv.Panel()
+                                    .def("d", [])
+                                    .width(150)
+                                    .height(200);
+
+                                vis.add(pv.Bar)
+                                    .data(function () { return vis.d(); })
+                                    .left(function() 5 + this.index * 7)
+                                    .bottom(0)
+                                    .width(7)
+                                    .height(function(d) d * 7)
+
+                                vis.render();
+
+                                return vis;
+                            }());
+
+                          </script>
+                        
+                        
+                    </div>
                 </div>  <!-- admin-display-cell -->
 
                 <div class="noraseq-bottom-anchor"></div>

@@ -116,13 +116,35 @@ var appstate = (function () {
         });
 
         var propmgr = secrets.property_manager;
-        propmgr.add("scores");
+        propmgr.add("scores", "histogram");
         var set = propmgr.set;
         
 
         that.seturl_success = function (scores, status) {
             set("scores", scores);
-        }
+            
+            // calculate histogram. Might want to make this a function of the object
+            
+            var nbins = 30;
+            var binwidth = 1/nbins;
+            var bins = [];
+            
+            for (var i = 0; i < nbins; i++) {
+                bins[i] = 0;
+            };
+            
+            for (col in scores) {
+                if (scores.hasOwnProperty(col)) {
+                    if (scores[col] && scores[col] > 0) {
+                        bins[Math.ceil(scores[col]/binwidth)-1]++;
+                    }
+                }
+            }
+            
+            // FIXME make this a function instead of hardcoding binwidth, etc, etc.
+            
+            set("histogram", bins);
+        };
         
         that.seturl_error = function (xhr, status, err) {
             console.log("error: new_column_scores_instance() ajax call returned error, url = " + url);
@@ -770,6 +792,13 @@ $(document).ready(function() {
     });
     
     
+    tstate("conservation-scores.instance.histogram").on_change(function (histogram) {
+        if (tstate("conservation-scores.instance.loaded").val()) {
+            scores_histogram_vis.d(histogram);
+            scores_histogram_vis.render();
+        }
+    });
+    
     
     $("#stats-panel").tabs();
     
@@ -808,7 +837,7 @@ $(document).ready(function() {
 
         // FIXME this is just for the demo. Need to factor to using tstate("hovered.cols") etc.
         
-        timeout(1000, function () {
+        timeout(500, function () {
             if (th.hasClass('hovered')) {
                 th.qtip({
                     content: 
