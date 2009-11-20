@@ -972,6 +972,7 @@ $(document).ready(function() {
     $("#sequence-content-panel .y-overflow-container .scrolling-panel").live("mousedown", function (e) {
         var x, y, dx, dy;
         var panel = $(e.target).closest(".scrolling-panel");
+
         panel.addClass("scrolling");
         
         x = e.screenX;
@@ -986,9 +987,17 @@ $(document).ready(function() {
             $(".y-overflow-container").each(function () {
                 $(this).scrollTop($(this).scrollTop() - dy);
             });
+            
+            var scroll_left_px;
+            
             $(".x-overflow-container").each(function () {
-                $(this).scrollLeft($(this).scrollLeft() - dx);
+                scroll_left_px = $(this).scrollLeft() - dx;
+                $(this).scrollLeft( scroll_left_px );
             });
+            
+            // FIXME hardcoded column width; want to replace with tstate("scroll.left") anyway            
+            $(".column-by-score").scrollLeft( Math.floor(scroll_left_px / 17) * 3);
+            
         });
         panel.bind("mouseleave", scroll_done);        /* bind here b/c live() doesn't support mouseleave */
         panel.bind("mouseup", scroll_done);
