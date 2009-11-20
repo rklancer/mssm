@@ -833,11 +833,13 @@ $(document).ready(function() {
         
         column_by_score_vis.i(col_num-1);
         column_by_score_vis.render();
-
+        scores_histogram_vis.highlight(tstate("conservation-scores.instance.scores").val()[col_class]);
+        scores_histogram_vis.render();
+        
 
         // FIXME this is just for the demo. Need to factor to using tstate("hovered.cols") etc.
         
-        timeout(500, function () {
+        timeout(1000, function () {
             if (th.hasClass('hovered')) {
                 th.qtip({
                     content: 
@@ -883,6 +885,8 @@ $(document).ready(function() {
             // quickie protovis interaction
             column_by_score_vis.i(-1);
             column_by_score_vis.render();
+            scores_histogram_vis.highlight(-1);
+            scores_histogram_vis.render();
         });
     });
     

@@ -94,6 +94,7 @@
                             var scores_histogram_vis = (function () {
                                 var vis = new pv.Panel()
                                     .def("d", [])
+                                    .def("highlight", -1)
                                     .width(200)
                                     .height(150);
 
@@ -102,8 +103,9 @@
                                     .right(0)
                                     .bottom(function() this.index * 5)
                                     .width(function(d) d * 3)
-                                    .height(5);
-
+                                    .height(5)
+                                    .fillStyle(function() (Math.ceil(vis.highlight()*30)-1)==this.index ? "orange" : "steelblue");
+                            
                                 vis.render();
 
                                 return vis;
@@ -141,11 +143,17 @@
                                     .fillStyle(function() vis.i() == this.index ? "orange" : "steelblue")
                                     .event("mouseover", function() {
                                         vis.i(this.index);
+                                        var h = vis.d()[this.index];
+                                        scores_histogram_vis.highlight(h);
+                                        scores_histogram_vis.render();
                                         $(".c"+(this.index+1)).addClass("hovered");
                                         return this;
                                     })
                                     .event("mouseout", function() {
                                         vis.i(-1);
+                                        // FIXME this is why we need to use tstate("hovered.cols").add(..)!
+                                        scores_histogram_vis.highlight(-1);
+                                        scores_histogram_vis.render();
                                         $(".hovered").removeClass("hovered");
                                         return this;
                                     })
@@ -210,9 +218,72 @@
             </div>
             -->
             <div id="column-vs-selected-column-stats">
-              Nam dui erat, auctor a, dignissim quis, sollicitudin eu, felis.
-              Pellentesque nisi urna, interdum eget, sagittis et, consequat vestibulum, lacus.
-              Mauris porttitor ullamcorper augue.
+                
+                <div class="admin-display-cell">
+                    <div class="header-block">
+                        <h2>find columns related to</h2>
+                    </div>
+                    <p>
+                      <input id="related-column-radio-button" type="radio" class="noraseq-left-align"
+                             name="column-rank-statistic" value="column">
+                      <label for="conservation-radio-button">column</label>
+                    </p>
+
+                    <p>
+                      <input id="related-tag-radio-button" type="radio" class="noraseq-left-align"
+                             name="column-rank-statistic" value="hydrophobicity">
+                      <label for="hydrophobicity-radio-button">rows tagged</label>
+                    </p>
+
+                    <p>
+                      <input id="size-radio-button" type="radio" class="noraseq-left-align"
+                             name="column-rank-statistic" value="size">
+                      <label for="size-radio-button">clade</label>
+                  </p>
+
+                  <p>
+                      <input id="two-allowed-radio-button" type="radio" class="noraseq-left-align"
+                             name="column-rank-statistic" value="two-allowed">
+                      <label for="two-allowed-radio-button">groups</label>
+                </p>
+                </div>  <!-- admin-display-cell -->
+
+                <div class="noraseq-vrule" id="column-l-rule"></div>
+
+                <div class="admin-display-cell">
+                    <div class="header-block">
+                      <h2>summary of scores</h2>
+                    </div>
+                    <div class="column-score-histogram">
+                        
+                    </div>
+                </div>  <!-- admin-display-cell -->
+
+                <div class="noraseq-vrule" id="column-mid-rule"></div>
+
+                <div class="admin-display-cell">
+                    <div class="header-block">
+                        <h2>columns by score</h2>
+                        <p class="option-link"><a href="#">sort</a> | <a href="#">unsort</a></p>
+                    </div>
+                    <div class="column-by-score">
+
+                    </div>
+                </div> <!-- admin-display-cell -->
+
+                <div class="noraseq-vrule" id="column-r-rule"></div>
+
+                <div class="admin-display-cell">
+                    <div class="header-block">
+                        <h2 class="ghosted">selected column</h2>
+                    </div>
+                    <div class="selected-column-histogram">            
+                        
+                        
+                    </div>
+                </div>  <!-- admin-display-cell -->
+
+                <div class="noraseq-bottom-anchor"></div>    
             </div>
 
           <div style="float: none; clear: both" class="noraseq-bottom-anchor"></div>
