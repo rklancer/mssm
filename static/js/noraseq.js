@@ -868,6 +868,9 @@ $(document).ready(function() {
                     style: {
                         tip: 'leftMiddle',
                         name: 'dark',
+                        border: {
+                            radius: 5,
+                        },
                     },
                     api: {
                         onHide: function() { 
