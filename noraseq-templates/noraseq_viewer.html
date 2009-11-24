@@ -50,7 +50,7 @@
                     </div>
                     <p>
                       <input id="conservation-radio-button" type="radio" class="noraseq-left-align"
-                             name="column-rank-statistic" value="conservation">
+                             name="column-rank-statistic" value="conservation" checked="checked">
                       <label for="conservation-radio-button">conservation</label>
                     </p>
 
@@ -225,26 +225,26 @@
                     </div>
                     <p>
                       <input id="related-column-radio-button" type="radio" class="noraseq-left-align"
-                             name="column-rank-statistic" value="column">
-                      <label for="conservation-radio-button">column</label>
+                             name="related-item-statistic" value="column" checked="checked">
+                      <label for="related-column-radio-button">column</label>
                     </p>
 
                     <p>
                       <input id="related-tag-radio-button" type="radio" class="noraseq-left-align"
-                             name="column-rank-statistic" value="hydrophobicity">
-                      <label for="hydrophobicity-radio-button">rows tagged</label>
+                             name="related-item-statistic" value="tag">
+                      <label for="related-tag-radio-button">rows tagged</label>
                     </p>
 
                     <p>
-                      <input id="size-radio-button" type="radio" class="noraseq-left-align"
-                             name="column-rank-statistic" value="size">
-                      <label for="size-radio-button">clade</label>
+                      <input id="related-clade-radio-button" type="radio" class="noraseq-left-align"
+                             name="related-item-statistic" value="clade">
+                      <label for="related-clade-radio-button">clade</label>
                   </p>
 
                   <p>
-                      <input id="two-allowed-radio-button" type="radio" class="noraseq-left-align"
-                             name="column-rank-statistic" value="two-allowed">
-                      <label for="two-allowed-radio-button">groups</label>
+                      <input id="related-group-radio-button" type="radio" class="noraseq-left-align"
+                             name="related-item-statistic" value="group">
+                      <label for="related-group-radio-button">groups</label>
                 </p>
                 </div>  <!-- admin-display-cell -->
 
@@ -367,11 +367,10 @@
 </body>
 
 <script type="text/javascript" src="{{MEDIA_URL}}js/jquery-1.3.2.min.js"></script>
-<!-- FIXME replace bbq with min version eventually -->
-<script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/jquery.ba-bbq.js"></script>
-<script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/jquery.qtip-1.0.0-rc3.min.js"></script>
+<script type="text/javascript" src="{{MEDIA_URL}}js/jquery.ba-bbq.min.js"></script>
+<script type="text/javascript" src="{{MEDIA_URL}}js/jquery.qtip-1.0.0-rc3.min.js"></script>
+<script type="text/javascript" src="{{MEDIA_URL}}js/protovis-d3.1.js"></script>
 <script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/jquery-ui-1.7.2.custom.min.js"></script>
-<script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/protovis-d3.1.js"></script>
 <script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/noraseq.js"></script>
 <script type="text/javascript" src="{{MEDIA_URL}}noraseq/js/transtate.js"></script>
 
