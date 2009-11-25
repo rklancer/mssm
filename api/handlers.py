@@ -96,7 +96,15 @@ class ColumnSortedTable(BaseHandler):
         prerender_tds(alignment_rows, alignment)
 
         keys_and_row_nums = get_keys_and_row_nums(alignment, sort_cols)
-        sorted_rows = [alignment_rows[row_num-1] for key, row_num in sorted(keys_and_row_nums)]
+        
+        # get a mapping from a row's 'num' attribute to its position in the alignment_rows list:
+        i = 0
+        num_to_index = {}
+        for row in alignment_rows:
+            num_to_index[row['num']] = i
+            i+=1
+            
+        sorted_rows = (alignment_rows[num_to_index[row_num]] for key, row_num in sorted(keys_and_row_nums))
     
         response = render_to_response('api/alignment_table.html',
             { 'alignment' : alignment,
